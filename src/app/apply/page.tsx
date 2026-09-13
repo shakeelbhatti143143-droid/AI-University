@@ -24,6 +24,7 @@ import {
   Loader2,
   FileCheck,
   Lock,
+  Search,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { UniversityLogo } from "@/components/ui/UniversityLogo";
@@ -33,13 +34,22 @@ import { PasswordStrength } from "@/components/ui/PasswordStrength";
 import { getConvexClient, isConvexConfigured } from "@/lib/convex";
 import { api } from "../../../convex/_generated/api";
 
+interface DepartmentItem {
+  _id: string;
+  name: string;
+  code: string;
+  headOfDepartment?: string;
+  status: "active" | "inactive";
+}
+
 interface ProgramItem {
   _id: string;
   name: string;
   code: string;
-  degreeType: "Undergraduate" | "Graduate" | "Postgraduate";
-  campus: string;
+  degreeLevel?: string;
   department: string;
+  departmentId?: string;
+  status: "active" | "inactive";
 }
 
 interface UploadedDoc {
@@ -67,8 +77,16 @@ export default function AdmissionApplicationPage() {
 
   // Active step: 0 = Account Creation, 1 = Personal, 2 = Academic, 3 = Program & Preferences, 4 = Guardian, 5 = Documents, 6 = Review & Declaration, 7 = Confirmed
   const [step, setStep] = useState<number>(0);
+
+  // Dynamic Database Departments & Degree Programs
+  const [departments, setDepartments] = useState<DepartmentItem[]>([]);
+  const [loadingDepartments, setLoadingDepartments] = useState(true);
+  const [selectedDeptId, setSelectedDeptId] = useState<string>("");
+  const [departmentSearch, setDepartmentSearch] = useState<string>("");
+
   const [programs, setPrograms] = useState<ProgramItem[]>([]);
-  const [loadingPrograms, setLoadingPrograms] = useState(true);
+  const [loadingPrograms, setLoadingPrograms] = useState(false);
+  const [selectedProgramId, setSelectedProgramId] = useState<string>("");
 
   // Step 0: Account Creation (for visitors without account)
   const [accName, setAccName] = useState("");
@@ -97,7 +115,7 @@ export default function AdmissionApplicationPage() {
 
   // Step 2: Academic Info
   const [academic, setAcademic] = useState({
-    degreeApplyingFor: "BS Computer Science",
+    degreeApplyingFor: "",
     programType: "Undergraduate",
     preferredCampus: "Chak Shezad Campus, Islamabad",
     admissionType: "Regular",
@@ -112,8 +130,8 @@ export default function AdmissionApplicationPage() {
 
   // Step 3: Program Preferences
   const [preferences, setPreferences] = useState({
-    firstChoice: "BS Computer Science",
-    secondChoice: "BS Software Engineering",
+    firstChoice: "",
+    secondChoice: "",
     shift: "Morning",
     intake: "Fall",
   });
@@ -164,31 +182,67 @@ export default function AdmissionApplicationPage() {
     }
   }, [user, step]);
 
-  // Fetch real programs from Convex database
+  // 1. Fetch real active Departments from Convex database
   useEffect(() => {
-    const fetchPrograms = async () => {
+    const fetchDepartments = async () => {
+      setLoadingDepartments(true);
       try {
         const client = getConvexClient();
         if (client && isConvexConfigured) {
-          const progs = await client.query(api.programs.getPrograms, {});
-          if (progs && progs.length > 0) {
-            setPrograms(progs as any);
-            setAcademic((prev) => ({ ...prev, degreeApplyingFor: progs[0].name }));
+          const depts = await client.query(api.academicManagement.getDepartments, {});
+          const activeDepts = (depts || []).filter((d: any) => d.status === "active");
+          setDepartments(activeDepts as DepartmentItem[]);
+        }
+      } catch (err) {
+        console.warn("Failed to fetch departments:", err);
+      } finally {
+        setLoadingDepartments(false);
+      }
+    };
+    fetchDepartments();
+  }, []);
+
+  // 2. Fetch real active Degree Programs dynamically whenever selected department changes
+  useEffect(() => {
+    if (!selectedDeptId) {
+      setPrograms([]);
+      setSelectedProgramId("");
+      return;
+    }
+
+    const fetchProgramsForDept = async () => {
+      setLoadingPrograms(true);
+      try {
+        const client = getConvexClient();
+        if (client && isConvexConfigured) {
+          const progs = await client.query(api.academicManagement.getDegreeProgramsByDepartment, {
+            departmentId: selectedDeptId,
+          });
+          const activeProgs = (progs || []).filter((p: any) => p.status === "active");
+          setPrograms(activeProgs as ProgramItem[]);
+          if (activeProgs.length > 0) {
+            setSelectedProgramId(activeProgs[0]._id);
+            setAcademic((prev) => ({ ...prev, degreeApplyingFor: activeProgs[0].name }));
             setPreferences((prev) => ({
               ...prev,
-              firstChoice: progs[0].name,
-              secondChoice: progs[1]?.name || progs[0].name,
+              firstChoice: activeProgs[0].name,
+              secondChoice: activeProgs[1]?.name || activeProgs[0].name,
             }));
+          } else {
+            setSelectedProgramId("");
+            setAcademic((prev) => ({ ...prev, degreeApplyingFor: "" }));
+            setPreferences((prev) => ({ ...prev, firstChoice: "", secondChoice: "" }));
           }
         }
       } catch (err) {
-        console.warn("Failed to fetch programs:", err);
+        console.warn("Failed to fetch degree programs for department:", err);
+        setPrograms([]);
       } finally {
         setLoadingPrograms(false);
       }
     };
-    fetchPrograms();
-  }, []);
+    fetchProgramsForDept();
+  }, [selectedDeptId]);
 
   // Calculate percentage automatically
   useEffect(() => {
@@ -327,8 +381,12 @@ export default function AdmissionApplicationPage() {
     }
 
     if (currentStep === 3) {
-      if (!preferences.firstChoice || !preferences.secondChoice) {
-        setFormError("Please select both your first and second program choices.");
+      if (!selectedDeptId) {
+        setFormError("Please select an academic department.");
+        return false;
+      }
+      if (!selectedProgramId) {
+        setFormError("Please select a degree program belonging to your chosen department.");
         return false;
       }
     }
@@ -382,6 +440,11 @@ export default function AdmissionApplicationPage() {
       return;
     }
 
+    if (!selectedDeptId || !selectedProgramId) {
+      setFormError("Please select a valid academic department and degree program.");
+      return;
+    }
+
     setIsSubmitting(true);
     setFormError("");
 
@@ -391,14 +454,22 @@ export default function AdmissionApplicationPage() {
         throw new Error("Backend service is not configured.");
       }
 
+      const selectedProg = programs.find((p) => p._id === selectedProgramId);
+      const chosenProgramName = selectedProg?.name || preferences.firstChoice;
+
       const res = await client.mutation(api.applications.submitApplication, {
         userId: user.id as any,
+        departmentId: selectedDeptId,
+        degreeProgramId: selectedProgramId,
         personalInformation: personal,
         academicInformation: {
           ...academic,
-          degreeApplyingFor: preferences.firstChoice,
+          degreeApplyingFor: chosenProgramName,
         },
-        programPreferences: preferences,
+        programPreferences: {
+          ...preferences,
+          firstChoice: chosenProgramName,
+        },
         guardianInformation: guardian,
         documents,
         finalDeclaration: declaration,
@@ -408,7 +479,7 @@ export default function AdmissionApplicationPage() {
         setSubmissionResult({
           applicationId: res.applicationId,
           submittedAt: Date.now(),
-          program: preferences.firstChoice,
+          program: chosenProgramName,
         });
         setStep(7); // Confirmed screen
       }
@@ -930,40 +1001,142 @@ export default function AdmissionApplicationPage() {
               </p>
             </div>
 
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  First Choice Degree Program <span className="text-rose-400">*</span>
-                </label>
-                <select
-                  value={preferences.firstChoice}
-                  onChange={(e) => setPreferences({ ...preferences, firstChoice: e.target.value })}
-                  className="w-full bg-[#0a172d] border border-white/15 rounded-xl px-3.5 py-3 text-xs sm:text-sm text-white focus:outline-none focus:border-iqra-gold-500"
-                >
-                  {programs.map((p) => (
-                    <option key={p._id} value={p.name}>
-                      {p.name} ({p.code}) — {p.department}
-                    </option>
-                  ))}
-                </select>
+            <div className="space-y-5">
+              {/* 1. Dynamic Searchable Department Dropdown */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
+                    Select Department <span className="text-rose-400">*</span>
+                  </label>
+                  {loadingDepartments && (
+                    <span className="text-[11px] text-iqra-gold-400 flex items-center gap-1">
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      Fetching departments...
+                    </span>
+                  )}
+                </div>
+
+                {loadingDepartments ? (
+                  <div className="p-4 rounded-2xl bg-[#0a172d]/80 border border-white/10 text-xs text-blue-300 flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin text-iqra-gold-400" />
+                    <span>Loading verified academic departments from database...</span>
+                  </div>
+                ) : departments.length === 0 ? (
+                  <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs font-semibold flex items-center gap-2.5">
+                    <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                    <span>No departments are currently available for applications.</span>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {departments.length > 4 && (
+                      <div className="relative">
+                        <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                        <input
+                          type="text"
+                          placeholder="Filter departments by name or code..."
+                          value={departmentSearch}
+                          onChange={(e) => setDepartmentSearch(e.target.value)}
+                          className="w-full bg-[#071120] border border-white/10 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-iqra-gold-500"
+                        />
+                      </div>
+                    )}
+                    <select
+                      value={selectedDeptId}
+                      onChange={(e) => setSelectedDeptId(e.target.value)}
+                      className="w-full bg-[#0a172d] border border-white/15 rounded-xl px-3.5 py-3 text-xs sm:text-sm text-white focus:outline-none focus:border-iqra-gold-500"
+                    >
+                      <option value="">-- Select Academic Department --</option>
+                      {departments
+                        .filter(
+                          (d) =>
+                            d.name.toLowerCase().includes(departmentSearch.toLowerCase()) ||
+                            d.code.toLowerCase().includes(departmentSearch.toLowerCase())
+                        )
+                        .map((dept) => (
+                          <option key={dept._id} value={dept._id}>
+                            {dept.name} ({dept.code}){dept.headOfDepartment ? ` • HOD: ${dept.headOfDepartment}` : ""}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                )}
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  Second Choice Degree Program <span className="text-rose-400">*</span>
-                </label>
-                <select
-                  value={preferences.secondChoice}
-                  onChange={(e) => setPreferences({ ...preferences, secondChoice: e.target.value })}
-                  className="w-full bg-[#0a172d] border border-white/15 rounded-xl px-3.5 py-3 text-xs sm:text-sm text-white focus:outline-none focus:border-iqra-gold-500"
-                >
-                  {programs.map((p) => (
-                    <option key={`second-${p._id}`} value={p.name}>
-                      {p.name} ({p.code}) — {p.department}
-                    </option>
-                  ))}
-                </select>
+              {/* 2. Dynamic Dependent Degree Program Dropdown */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
+                    Degree Program <span className="text-rose-400">*</span>
+                  </label>
+                  {loadingPrograms && (
+                    <span className="text-[11px] text-iqra-gold-400 flex items-center gap-1">
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      Loading programs...
+                    </span>
+                  )}
+                </div>
+
+                {!selectedDeptId ? (
+                  <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/10 text-xs text-slate-400 flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-slate-500 shrink-0" />
+                    <span>Please select an academic department above to view available degree programs.</span>
+                  </div>
+                ) : loadingPrograms ? (
+                  <div className="p-4 rounded-2xl bg-[#0a172d]/80 border border-white/10 text-xs text-blue-300 flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin text-iqra-gold-400" />
+                    <span>Retrieving programs belonging to selected department...</span>
+                  </div>
+                ) : programs.length === 0 ? (
+                  <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs font-semibold flex items-center gap-2.5">
+                    <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                    <span>No degree programs are available for this department.</span>
+                  </div>
+                ) : (
+                  <select
+                    value={selectedProgramId}
+                    onChange={(e) => {
+                      const pId = e.target.value;
+                      setSelectedProgramId(pId);
+                      const chosen = programs.find((p) => p._id === pId);
+                      if (chosen) {
+                        setAcademic((prev) => ({ ...prev, degreeApplyingFor: chosen.name }));
+                        setPreferences((prev) => ({ ...prev, firstChoice: chosen.name }));
+                      }
+                    }}
+                    className="w-full bg-[#0a172d] border border-white/15 rounded-xl px-3.5 py-3 text-xs sm:text-sm text-white focus:outline-none focus:border-iqra-gold-500"
+                  >
+                    <option value="">-- Select Degree Program --</option>
+                    {programs.map((p) => (
+                      <option key={p._id} value={p._id}>
+                        {p.name} ({p.code}) — {p.degreeLevel || "Undergraduate"}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
+
+              {/* 3. Second Choice Program (Optional within same department) */}
+              {programs.length > 1 && (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                    Second Choice Degree Program (Optional)
+                  </label>
+                  <select
+                    value={preferences.secondChoice}
+                    onChange={(e) => setPreferences({ ...preferences, secondChoice: e.target.value })}
+                    className="w-full bg-[#0a172d] border border-white/15 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-iqra-gold-500"
+                  >
+                    <option value="">-- No Second Choice --</option>
+                    {programs
+                      .filter((p) => p._id !== selectedProgramId)
+                      .map((p) => (
+                        <option key={`second-${p._id}`} value={p.name}>
+                          {p.name} ({p.code})
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                 <div>

@@ -43,6 +43,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             accountStatus: freshUser.accountStatus as any,
             enrollmentId: freshUser.enrollmentId,
             department: freshUser.department,
+            departmentId: (freshUser as any).departmentId,
+            degreeProgram: (freshUser as any).degreeProgram,
+            degreeProgramId: (freshUser as any).degreeProgramId,
+            currentSemester: (freshUser as any).currentSemester,
+            profilePhoto: (freshUser as any).profilePhoto,
             createdAt: freshUser.createdAt,
           };
           setUser(mapped);
@@ -75,8 +80,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               email: FIXED_ADMIN_ACCOUNT.email,
               password: "adminPassword123!", // Standard default, changed when admin updates
             });
-            // Also seed programs
-            await client.mutation(api.programs.seedPrograms, {});
+            // Ensure baseline administrative structure if needed
+            await client.mutation(api.academicManagement.seedInitialBaselineStructure, {});
           } catch (err) {
             console.warn("Convex seeding check:", err);
           }
@@ -94,6 +99,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 accountStatus: freshUser.accountStatus as any,
                 enrollmentId: freshUser.enrollmentId,
                 department: freshUser.department,
+                departmentId: (freshUser as any).departmentId,
+                degreeProgram: (freshUser as any).degreeProgram,
+                degreeProgramId: (freshUser as any).degreeProgramId,
+                profilePhoto: (freshUser as any).profilePhoto,
                 createdAt: freshUser.createdAt,
               };
               setUser(mapped);
@@ -148,6 +157,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             accountStatus: result.user.accountStatus as any,
             enrollmentId: result.user.enrollmentId,
             department: result.user.department,
+            departmentId: (result.user as any).departmentId,
+            degreeProgram: (result.user as any).degreeProgram,
+            degreeProgramId: (result.user as any).degreeProgramId,
+            profilePhoto: (result.user as any).profilePhoto,
             createdAt: result.user.createdAt,
           };
 
@@ -203,6 +216,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             accountStatus: result.user.accountStatus as any,
             enrollmentId: (result.user as any).enrollmentId,
             department: result.user.department,
+            departmentId: (result.user as any).departmentId,
+            degreeProgram: (result.user as any).degreeProgram,
+            degreeProgramId: (result.user as any).degreeProgramId,
             createdAt: result.user.createdAt,
           };
 
@@ -252,8 +268,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         user,
         token,
         isLoading,
-        isAdmin: user?.role === "admin",
-        isStudent: user?.role === "student",
+        isAdmin: user?.role === "admin" || user?.role === "ADMIN" || user?.role === "super_admin" || user?.role === "SUPER_ADMIN",
+        isStudent: user?.role === "student" || user?.role === "STUDENT",
+        isFaculty: user?.role === "FACULTY" || user?.role === "faculty" || user?.role === "teacher",
         isApplicant: user?.role === "applicant",
         isConfigured: isConvexConfigured,
         login,

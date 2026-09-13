@@ -210,6 +210,13 @@ export const login = mutation({
       };
     }
 
+    // Verify account status
+    if (user.accountStatus === "suspended") {
+      throw new Error(
+        "This account is currently deactivated or suspended. Please contact the university administration."
+      );
+    }
+
     const computedHash = await hashPassword(args.password, user.salt);
     if (computedHash !== user.passwordHash) {
       throw new Error("Invalid credentials. Password does not match.");
@@ -238,7 +245,11 @@ export const login = mutation({
         role: user.role,
         accountStatus: user.accountStatus,
         enrollmentId: user.enrollmentId,
-        department: user.department || "Computing & Artificial Intelligence",
+        department: user.department,
+        departmentId: user.departmentId,
+        degreeProgram: user.degreeProgram,
+        degreeProgramId: user.degreeProgramId,
+        profilePhoto: user.profilePhoto,
         createdAt: user.createdAt,
       },
     };
@@ -337,6 +348,62 @@ export const setupUniversityPassword = mutation({
 });
 
 /**
+ * Securely change password for currently authenticated user (Faculty, Student, Admin)
+ */
+export const changePassword = mutation({
+  args: {
+    token: v.string(),
+    currentPassword: v.string(),
+    newPassword: v.string(),
+  },
+  handler: async (ctx, args) => {
+    if (args.newPassword.length < 6) {
+      throw new Error("New password must be at least 6 characters long.");
+    }
+
+    const session = await ctx.db
+      .query("sessions")
+      .withIndex("by_token", (q) => q.eq("token", args.token))
+      .first();
+
+    if (!session || session.expiresAt < Date.now()) {
+      throw new Error("Session has expired. Please log in again.");
+    }
+
+    const user = await ctx.db.get(session.userId);
+    if (!user) {
+      throw new Error("User account not found.");
+    }
+
+    const currentHash = await hashPassword(args.currentPassword, user.salt);
+    if (currentHash !== user.passwordHash) {
+      throw new Error("The current password entered is incorrect.");
+    }
+
+    const newSalt = generateRandomHex(16);
+    const newHash = await hashPassword(args.newPassword, newSalt);
+    const now = Date.now();
+
+    await ctx.db.patch(user._id, {
+      passwordHash: newHash,
+      salt: newSalt,
+      updatedAt: now,
+    });
+
+    await ctx.db.insert("notifications", {
+      userId: user._id,
+      title: "Password Changed Successfully",
+      message: "Your account password was updated successfully.",
+      type: "security",
+      read: false,
+      createdAt: now,
+    });
+
+    return { success: true };
+  },
+});
+
+/**
  * Logout and remove session
  */
 export const logout = mutation({
@@ -389,6 +456,11 @@ export const getCurrentUser = query({
       accountStatus: user.accountStatus,
       enrollmentId: user.enrollmentId,
       department: user.department,
+      departmentId: user.departmentId,
+      degreeProgram: user.degreeProgram,
+      degreeProgramId: user.degreeProgramId,
+      currentSemester: user.currentSemester || 1,
+      profilePhoto: user.profilePhoto,
       createdAt: user.createdAt,
     };
   },

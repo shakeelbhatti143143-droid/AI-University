@@ -21,19 +21,28 @@ import {
   AlertCircle,
   Copy,
   Check,
+  Camera,
+  UploadCloud,
+  Loader2,
 } from "lucide-react";
 import { StudentProfile } from "@/lib/dashboard-data";
 
 interface MyProfileSectionProps {
   profile: StudentProfile;
   onOpenEditProfile: () => void;
+  onUploadPhoto?: (file: File) => Promise<string>;
 }
 
 export const MyProfileSection: React.FC<MyProfileSectionProps> = ({
   profile,
   onOpenEditProfile,
+  onUploadPhoto,
 }) => {
   const [copiedField, setCopiedField] = React.useState<string | null>(null);
+  const [isUploading, setIsUploading] = React.useState(false);
+  const [uploadError, setUploadError] = React.useState<string | null>(null);
+  const [uploadSuccess, setUploadSuccess] = React.useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const copyToClipboard = (text: string, field: string) => {
     navigator.clipboard.writeText(text);
@@ -41,8 +50,49 @@ export const MyProfileSection: React.FC<MyProfileSectionProps> = ({
     setTimeout(() => setCopiedField(null), 2000);
   };
 
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setUploadError("Please select a valid image file (JPG, PNG, WEBP).");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadError("Image size exceeds 5MB limit. Please choose a smaller image.");
+      return;
+    }
+
+    if (!onUploadPhoto) return;
+
+    try {
+      setIsUploading(true);
+      setUploadError(null);
+      await onUploadPhoto(file);
+      setUploadSuccess(true);
+      setTimeout(() => setUploadSuccess(false), 3000);
+    } catch (err: any) {
+      setUploadError(err.message || "Failed to upload profile picture.");
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
+      {/* Hidden File Input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/gif"
+        onChange={handleFileChange}
+        className="hidden"
+      />
+
       {/* Profile Header Hero Card */}
       <div className="rounded-3xl bg-white border border-slate-200/90 p-6 sm:p-8 shadow-sm relative overflow-hidden">
         {/* Navy Header Accent Top Band */}
@@ -52,16 +102,62 @@ export const MyProfileSection: React.FC<MyProfileSectionProps> = ({
           {/* Avatar & Core Identity */}
           <div className="flex flex-col sm:flex-row items-start sm:items-end gap-5">
             {/* Student Profile Photo */}
-            <div className="relative">
-              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-gradient-to-br from-iqra-blue-600 to-iqra-navy-950 p-1 shadow-lg ring-4 ring-white">
+            <div className="relative group">
+              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-gradient-to-br from-iqra-blue-600 to-iqra-navy-950 p-1 shadow-lg ring-4 ring-white relative overflow-hidden">
                 <div className="w-full h-full rounded-xl bg-iqra-navy-900 flex items-center justify-center text-white text-3xl font-black font-heading overflow-hidden relative">
-                  {profile.name
-                    .split(" ")
-                    .map((n) => n[0])
-                    .slice(0, 2)
-                    .join("")}
+                  {profile.avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={profile.avatarUrl}
+                      alt={profile.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    profile.name
+                      .split(" ")
+                      .map((n) => n[0])
+                      .slice(0, 2)
+                      .join("")
+                  )}
+
+                  {/* Hover Upload Overlay */}
+                  {onUploadPhoto && (
+                    <button
+                      type="button"
+                      disabled={isUploading}
+                      onClick={() => fileInputRef.current?.click()}
+                      className="absolute inset-0 bg-slate-900/60 backdrop-blur-xs opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white cursor-pointer"
+                      title="Upload Profile Picture"
+                    >
+                      {isUploading ? (
+                        <Loader2 className="w-6 h-6 animate-spin text-white" />
+                      ) : (
+                        <>
+                          <Camera className="w-6 h-6 text-iqra-gold-400 mb-0.5" />
+                          <span className="text-[10px] font-bold">Change</span>
+                        </>
+                      )}
+                    </button>
+                  )}
                 </div>
               </div>
+
+              {/* Upload trigger button badge */}
+              {onUploadPhoto && (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploading}
+                  className="absolute -top-1 -right-1 p-1.5 rounded-full bg-iqra-navy-950 hover:bg-iqra-blue-700 text-white ring-2 ring-white shadow-xs cursor-pointer transition-colors"
+                  title="Upload profile picture"
+                >
+                  {isUploading ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
+                  ) : (
+                    <Camera className="w-3.5 h-3.5 text-iqra-gold-400" />
+                  )}
+                </button>
+              )}
 
               <span className="absolute -bottom-1 -right-1 p-1.5 rounded-full bg-emerald-500 text-white ring-2 ring-white shadow-xs" title="Enrolled & Active Student">
                 <ShieldCheck className="w-4 h-4" />
@@ -76,6 +172,11 @@ export const MyProfileSection: React.FC<MyProfileSectionProps> = ({
                 <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold">
                   {profile.status} Enrolled
                 </span>
+                {uploadSuccess && (
+                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold animate-in fade-in flex items-center gap-1">
+                    <Check className="w-3 h-3 text-emerald-600" /> Photo Updated
+                  </span>
+                )}
               </div>
 
               <p className="text-sm font-semibold text-iqra-blue-700">
@@ -92,17 +193,42 @@ export const MyProfileSection: React.FC<MyProfileSectionProps> = ({
                 <span>•</span>
                 <span className="font-semibold text-slate-700">{profile.batch}</span>
               </div>
+
+              {uploadError && (
+                <p className="text-xs font-bold text-rose-600 flex items-center gap-1 pt-1">
+                  <AlertCircle className="w-3.5 h-3.5" />
+                  {uploadError}
+                </p>
+              )}
             </div>
           </div>
 
-          {/* Edit Profile Action Button */}
-          <button
-            onClick={onOpenEditProfile}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-iqra-navy-900 hover:bg-iqra-blue-700 text-white text-xs font-bold shadow-md shadow-slate-900/10 transition-all duration-200"
-          >
-            <Edit3 className="w-4 h-4 text-iqra-gold-400" />
-            <span>Edit Profile Information</span>
-          </button>
+          {/* Action Buttons */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            {onUploadPhoto && (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+                className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all duration-200 cursor-pointer"
+              >
+                {isUploading ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-slate-600" />
+                ) : (
+                  <UploadCloud className="w-4 h-4 text-iqra-blue-700" />
+                )}
+                <span>{isUploading ? "Uploading..." : "Upload Photo"}</span>
+              </button>
+            )}
+
+            <button
+              onClick={onOpenEditProfile}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-iqra-navy-900 hover:bg-iqra-blue-700 text-white text-xs font-bold shadow-md shadow-slate-900/10 transition-all duration-200 cursor-pointer"
+            >
+              <Edit3 className="w-4 h-4 text-iqra-gold-400" />
+              <span>Edit Profile Information</span>
+            </button>
+          </div>
         </div>
       </div>
 

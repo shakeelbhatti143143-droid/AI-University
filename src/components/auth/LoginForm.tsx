@@ -54,11 +54,14 @@ export const LoginForm: React.FC = () => {
     try {
       const result = await login(email, password, rememberMe);
       if (result.success && result.user) {
-        if (result.user.role === "admin") {
+        const userRole = (result.user.role || "").toLowerCase();
+        if (userRole === "admin" || userRole === "super_admin") {
           router.push("/admin");
-        } else if (result.user.role === "student") {
+        } else if (userRole === "faculty" || userRole === "teacher") {
+          router.push("/faculty/dashboard");
+        } else if (userRole === "student") {
           router.push("/dashboard");
-        } else if (result.user.role === "applicant") {
+        } else if (userRole === "applicant") {
           router.push("/status");
         } else {
           router.push("/dashboard");

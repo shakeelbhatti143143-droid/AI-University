@@ -14,13 +14,17 @@ import {
   Layers,
   Sparkles,
 } from "lucide-react";
-import { StudentProfile, semesterHistory } from "@/lib/dashboard-data";
+import { StudentProfile, SemesterRecord, semesterHistory } from "@/lib/dashboard-data";
 
 interface AcademicOverviewSectionProps {
   profile: StudentProfile;
+  history?: SemesterRecord[];
 }
 
-export const AcademicOverviewSection: React.FC<AcademicOverviewSectionProps> = ({ profile }) => {
+export const AcademicOverviewSection: React.FC<AcademicOverviewSectionProps> = ({
+  profile,
+  history = semesterHistory,
+}) => {
   const progressPercent = Math.round((profile.completedCreditHours / profile.totalCreditHours) * 100);
 
   // Highest GPA for chart scaling (4.00 max)
@@ -201,7 +205,7 @@ export const AcademicOverviewSection: React.FC<AcademicOverviewSectionProps> = (
                 </div>
               </div>
 
-              {semesterHistory.map((item, idx) => {
+              {history.map((item, idx) => {
                 const heightPercent = (item.gpa / maxScale) * 100;
                 return (
                   <div key={idx} className="flex-1 flex flex-col items-center gap-2 group relative z-10">
@@ -222,11 +226,16 @@ export const AcademicOverviewSection: React.FC<AcademicOverviewSectionProps> = (
                     </div>
 
                     <span className="text-[10px] font-bold text-slate-500 whitespace-nowrap mt-1">
-                      Sem {idx + 1}
+                      Sem {item.semesterNumber || idx + 1}
                     </span>
                   </div>
                 );
               })}
+              {history.length === 0 && (
+                <div className="w-full h-full flex items-center justify-center text-xs text-slate-400">
+                  No semester records published yet
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -236,7 +245,7 @@ export const AcademicOverviewSection: React.FC<AcademicOverviewSectionProps> = (
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div>
               <h3 className="text-sm font-bold text-slate-900">Cumulative CGPA Trend</h3>
-              <p className="text-[11px] text-slate-500">Progressive standing over 6 semesters</p>
+              <p className="text-[11px] text-slate-500">Progressive standing over academic sessions</p>
             </div>
             <div className="flex items-center gap-2 text-xs">
               <span className="w-2.5 h-2.5 rounded bg-iqra-gold-500" />
@@ -259,7 +268,7 @@ export const AcademicOverviewSection: React.FC<AcademicOverviewSectionProps> = (
                 </div>
               </div>
 
-              {semesterHistory.map((item, idx) => {
+              {history.map((item, idx) => {
                 const heightPercent = (item.cgpa / maxScale) * 100;
                 return (
                   <div key={idx} className="flex-1 flex flex-col items-center gap-2 group relative z-10">
@@ -279,11 +288,16 @@ export const AcademicOverviewSection: React.FC<AcademicOverviewSectionProps> = (
                     </div>
 
                     <span className="text-[10px] font-bold text-slate-500 whitespace-nowrap mt-1">
-                      Sem {idx + 1}
+                      Sem {item.semesterNumber || idx + 1}
                     </span>
                   </div>
                 );
               })}
+              {history.length === 0 && (
+                <div className="w-full h-full flex items-center justify-center text-xs text-slate-400">
+                  No cumulative records published yet
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -297,41 +311,47 @@ export const AcademicOverviewSection: React.FC<AcademicOverviewSectionProps> = (
             <p className="text-[11px] text-slate-500">Iqra University Chak Shehzad Academic Records</p>
           </div>
           <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full">
-            All 6 Semesters Passed
+            {history.length > 0 ? `${history.length} Semesters Recorded` : "Current Term in Progress"}
           </span>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead>
-              <tr className="border-b border-slate-200 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
-                <th className="pb-3 font-bold">Academic Session</th>
-                <th className="pb-3 font-bold">Semester</th>
-                <th className="pb-3 font-bold text-center">Credit Hours</th>
-                <th className="pb-3 font-bold text-center">Semester GPA</th>
-                <th className="pb-3 font-bold text-center">Cumulative CGPA</th>
-                <th className="pb-3 font-bold text-right">Academic Standing</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {semesterHistory.map((item, idx) => (
-                <tr key={idx} className="hover:bg-slate-50/70 transition-colors">
-                  <td className="py-3 font-bold text-slate-800">{item.session}</td>
-                  <td className="py-3 font-medium text-slate-600">{item.semester}</td>
-                  <td className="py-3 text-center font-mono font-semibold text-slate-700">{item.creditHours} Cr</td>
-                  <td className="py-3 text-center font-mono font-bold text-iqra-blue-700">{item.gpa.toFixed(2)}</td>
-                  <td className="py-3 text-center font-mono font-bold text-slate-900">{item.cgpa.toFixed(2)}</td>
-                  <td className="py-3 text-right">
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200/50">
-                      <Award className="w-3 h-3 text-iqra-gold-500" />
-                      {item.status}
-                    </span>
-                  </td>
+        {history.length === 0 ? (
+          <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200/80 text-xs text-slate-500">
+            Official semester-by-semester grades will be cataloged here once approved by the Controller of Examinations.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-slate-200 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+                  <th className="pb-3 font-bold">Academic Session</th>
+                  <th className="pb-3 font-bold">Semester</th>
+                  <th className="pb-3 font-bold text-center">Credit Hours</th>
+                  <th className="pb-3 font-bold text-center">Semester GPA</th>
+                  <th className="pb-3 font-bold text-center">Cumulative CGPA</th>
+                  <th className="pb-3 font-bold text-right">Academic Standing</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {history.map((item, idx) => (
+                  <tr key={idx} className="hover:bg-slate-50/70 transition-colors">
+                    <td className="py-3 font-bold text-slate-800">{item.session}</td>
+                    <td className="py-3 font-medium text-slate-600">{item.semesterName}</td>
+                    <td className="py-3 text-center font-mono font-semibold text-slate-700">{item.creditHours} Cr</td>
+                    <td className="py-3 text-center font-mono font-bold text-iqra-blue-700">{item.gpa.toFixed(2)}</td>
+                    <td className="py-3 text-center font-mono font-bold text-slate-900">{item.cgpa.toFixed(2)}</td>
+                    <td className="py-3 text-right">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200/50">
+                        <Award className="w-3 h-3 text-iqra-gold-500" />
+                        {item.academicStanding}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

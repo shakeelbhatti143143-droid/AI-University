@@ -14,7 +14,13 @@ import {
 } from "lucide-react";
 import { weeklySchedule, ScheduleSlot } from "@/lib/dashboard-data";
 
-export const ClassScheduleSection: React.FC = () => {
+interface ClassScheduleSectionProps {
+  schedule?: ScheduleSlot[];
+}
+
+export const ClassScheduleSection: React.FC<ClassScheduleSectionProps> = ({
+  schedule = weeklySchedule,
+}) => {
   const [viewMode, setViewMode] = useState<"weekly" | "daily">("weekly");
   const [selectedDay, setSelectedDay] = useState<"Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday">("Monday");
 
@@ -26,13 +32,8 @@ export const ClassScheduleSection: React.FC = () => {
     "Friday",
   ];
 
-  // Current class highlight simulation:
-  // Let's set the "Active Now" class as Monday 08:30 AM CS-401 or first slot of Monday
-  const currentSlotId = "s1"; // CS-401 Mon 08:30 AM
-  const upcomingSlotId = "s2"; // CS-312 Mon 10:15 AM
-
-  const currentClass = weeklySchedule.find((s) => s.id === currentSlotId);
-  const upcomingClass = weeklySchedule.find((s) => s.id === upcomingSlotId);
+  const currentClass = schedule.length > 0 ? schedule[0] : null;
+  const upcomingClass = schedule.length > 1 ? schedule[1] : null;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -143,7 +144,7 @@ export const ClassScheduleSection: React.FC = () => {
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             {days.map((day) => {
-              const daySlots = weeklySchedule.filter((s) => s.day === day);
+              const daySlots = schedule.filter((s) => s.day === day);
 
               return (
                 <div key={day} className="space-y-3">
@@ -161,7 +162,7 @@ export const ClassScheduleSection: React.FC = () => {
                   <div className="space-y-3">
                     {daySlots.length > 0 ? (
                       daySlots.map((slot) => {
-                        const isCurrent = slot.id === currentSlotId;
+                        const isCurrent = currentClass ? slot.id === currentClass.id : false;
 
                         return (
                           <div
@@ -243,7 +244,7 @@ export const ClassScheduleSection: React.FC = () => {
 
           {/* Daily Schedule List */}
           <div className="space-y-3">
-            {weeklySchedule
+            {schedule
               .filter((s) => s.day === selectedDay)
               .map((slot) => (
                 <div

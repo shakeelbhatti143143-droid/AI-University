@@ -30,9 +30,14 @@ export interface AdminCourse {
   code: string;
   title: string;
   department: string;
+  departmentId?: string;
+  program?: string;
+  programId?: string;
+  degreeProgramId?: string;
   creditHours: number;
   semester: number;
   instructor: string;
+  instructorId?: string;
   instructorEmail: string;
   enrolledCount: number;
   capacity: number;
@@ -61,6 +66,7 @@ export interface RegistrationRequest {
   studentId: string;
   studentName: string;
   studentEmail?: string;
+  department?: string;
   program?: string;
   semester?: number;
   cgpa?: number;
@@ -92,7 +98,7 @@ export interface AdminScheduleSlot {
   building: string;
   section: string;
   semester?: string | number;
-  type: "Lecture" | "Lab";
+  type: "Lecture" | "Lab" | "Tutorial";
 }
 
 export interface AdminAttendanceLog {

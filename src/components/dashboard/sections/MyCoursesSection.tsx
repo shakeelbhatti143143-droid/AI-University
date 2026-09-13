@@ -14,6 +14,7 @@ import {
   ExternalLink,
   Search,
   Filter,
+  Plus,
 } from "lucide-react";
 import { EnrolledCourse } from "@/lib/dashboard-data";
 
@@ -21,12 +22,14 @@ interface MyCoursesSectionProps {
   courses: EnrolledCourse[];
   onOpenCourseModal: (course: EnrolledCourse) => void;
   searchFilter: string;
+  onNavigateTab?: (tab: any) => void;
 }
 
 export const MyCoursesSection: React.FC<MyCoursesSectionProps> = ({
   courses,
   onOpenCourseModal,
   searchFilter,
+  onNavigateTab,
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<"All" | "Computing" | "General">("All");
 
@@ -43,6 +46,7 @@ export const MyCoursesSection: React.FC<MyCoursesSectionProps> = ({
   });
 
   const totalCredits = courses.reduce((acc, c) => acc + c.creditHours, 0);
+  const primarySemester = (courses[0] as any)?.semester || 1;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -51,16 +55,18 @@ export const MyCoursesSection: React.FC<MyCoursesSectionProps> = ({
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-iqra-blue-800 uppercase">
-              Semester 6 • Fall 2026
+              {courses.length > 0 ? `Semester ${primarySemester} • Fall 2026` : "Fall 2026 Academic Session"}
             </span>
             <span className="text-xs text-slate-400">•</span>
-            <span className="text-xs font-semibold text-slate-600">Section CS-6A</span>
+            <span className="text-xs font-semibold text-slate-600">
+              {courses.length > 0 ? `Section ${(courses[0] as any)?.section || "A"}` : "Regular Session"}
+            </span>
           </div>
           <h2 className="text-2xl font-black font-heading text-slate-900 tracking-tight">
-            Currently Enrolled Courses ({courses.length})
+            My Enrolled Courses ({courses.length})
           </h2>
           <p className="text-xs text-slate-500">
-            Total Enrolled: <strong>{totalCredits} Credit Hours</strong> • All courses active
+            Total Approved: <strong>{totalCredits} Credit Hours</strong> • Showing only admin-approved courses
           </p>
         </div>
 
@@ -84,14 +90,31 @@ export const MyCoursesSection: React.FC<MyCoursesSectionProps> = ({
 
       {/* Courses Grid or Empty State */}
       {filteredCourses.length === 0 ? (
-        <div className="p-12 text-center bg-white rounded-3xl border border-slate-200 shadow-xs space-y-3">
-          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-iqra-blue-600 flex items-center justify-center mx-auto">
-            <BookOpen className="w-7 h-7" />
+        <div className="p-12 text-center bg-white rounded-3xl border border-slate-200 shadow-xs space-y-4">
+          <div className="w-16 h-16 rounded-2xl bg-blue-50 text-iqra-blue-600 flex items-center justify-center mx-auto shadow-inner">
+            <BookOpen className="w-8 h-8" />
           </div>
-          <h3 className="text-lg font-bold text-slate-900">No courses available</h3>
-          <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
-            You are not currently enrolled in any academic courses for this session. Use the Course Registration section to enroll in your approved degree subjects.
-          </p>
+          <div className="space-y-1.5 max-w-md mx-auto">
+            <h3 className="text-lg font-bold text-slate-900">
+              {courses.length === 0
+                ? "No Registered / Approved Courses Yet"
+                : "No courses match your filter criteria."}
+            </h3>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              {courses.length === 0
+                ? "You do not have any registered and approved courses in your curriculum yet. Please navigate to Course Registration to submit registration requests for your semester courses."
+                : "Try selecting \"All Courses\" or clearing your search query to view all your registered courses."}
+            </p>
+          </div>
+          {courses.length === 0 && onNavigateTab && (
+            <button
+              onClick={() => onNavigateTab("registration")}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-iqra-navy-900 hover:bg-iqra-blue-700 text-white text-xs font-bold shadow-md shadow-slate-900/10 transition-all hover:scale-102"
+            >
+              <Plus className="w-4 h-4 text-iqra-gold-400" />
+              <span>Go to Course Registration</span>
+            </button>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">

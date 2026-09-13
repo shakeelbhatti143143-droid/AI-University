@@ -16,6 +16,8 @@ function generateRandomHex(length = 32): string {
 export const submitApplication = mutation({
   args: {
     userId: v.id("users"),
+    departmentId: v.optional(v.string()),
+    degreeProgramId: v.optional(v.string()),
     personalInformation: v.object({
       fullName: v.string(),
       fatherName: v.string(),
@@ -95,6 +97,75 @@ export const submitApplication = mutation({
       throw new Error("You have already submitted an active admission application.");
     }
 
+    // 1. Relational Department & Degree Program Validation
+    let deptId = args.departmentId;
+    let progId = args.degreeProgramId;
+    let deptName = "";
+    let progName = "";
+
+    if (deptId && progId) {
+      const deptRecord = await ctx.db.get(deptId as any);
+      if (!deptRecord) {
+        throw new Error("The selected department does not exist in the university database.");
+      }
+      if ((deptRecord as any).status !== "active") {
+        throw new Error(`The department "${(deptRecord as any).name}" is not currently active for admissions.`);
+      }
+
+      const progRecord = await ctx.db.get(progId as any);
+      if (!progRecord) {
+        throw new Error("The selected degree program does not exist in the university database.");
+      }
+      if ((progRecord as any).status !== "active") {
+        throw new Error(`The degree program "${(progRecord as any).name}" is not currently active for admissions.`);
+      }
+
+      // Verify that Degree Program strictly belongs to selected Department
+      const progDeptId = (progRecord as any).departmentId;
+      const progDeptName = (progRecord as any).department?.trim().toLowerCase();
+      const targetDeptId = deptRecord._id;
+      const targetDeptName = (deptRecord as any).name?.trim().toLowerCase();
+
+      const belongs =
+        (progDeptId && progDeptId === targetDeptId) ||
+        (progDeptName && targetDeptName && progDeptName === targetDeptName);
+
+      if (!belongs) {
+        throw new Error(
+          `Invalid academic configuration: Degree program "${(progRecord as any).name}" does not belong to the selected department "${(deptRecord as any).name}".`
+        );
+      }
+
+      deptName = (deptRecord as any).name;
+      progName = (progRecord as any).name;
+    } else {
+      // Lookup based on program name if legacy call
+      const targetProgName = args.programPreferences.firstChoice || args.academicInformation.degreeApplyingFor;
+      const foundProg = await ctx.db
+        .query("academicPrograms")
+        .filter((q) => q.eq(q.field("name"), targetProgName))
+        .first();
+
+      if (foundProg) {
+        progId = foundProg._id;
+        progName = foundProg.name;
+        if (foundProg.departmentId) {
+          deptId = foundProg.departmentId;
+          const d = await ctx.db.get(foundProg.departmentId as any);
+          if (d) deptName = (d as any).name;
+        } else if (foundProg.department) {
+          const d = await ctx.db
+            .query("departments")
+            .filter((q) => q.eq(q.field("name"), foundProg.department))
+            .first();
+          if (d) {
+            deptId = d._id;
+            deptName = d.name;
+          }
+        }
+      }
+    }
+
     const randomSuffix = Math.floor(1000 + Math.random() * 9000);
     const applicationId = `APP-2026-${randomSuffix}`;
     const now = Date.now();
@@ -102,9 +173,17 @@ export const submitApplication = mutation({
     const id = await ctx.db.insert("applications", {
       userId: args.userId,
       applicationId,
+      departmentId: deptId,
+      degreeProgramId: progId,
       personalInformation: args.personalInformation,
-      academicInformation: args.academicInformation,
-      programPreferences: args.programPreferences,
+      academicInformation: {
+        ...args.academicInformation,
+        degreeApplyingFor: progName || args.academicInformation.degreeApplyingFor,
+      },
+      programPreferences: {
+        ...args.programPreferences,
+        firstChoice: progName || args.programPreferences.firstChoice,
+      },
       guardianInformation: args.guardianInformation,
       documents: args.documents,
       finalDeclaration: args.finalDeclaration,
@@ -301,13 +380,41 @@ export const approveApplication = mutation({
     const setupToken = generateRandomHex(32);
     const expiresAt = Date.now() + 48 * 60 * 60 * 1000;
 
-    // 3. Generate student enrollment ID
+    // 3. Resolve Academic Department and Degree Program from real Admin database records
+    let deptRecord = app.departmentId ? await ctx.db.get(app.departmentId as any) : null;
+    let progRecord = app.degreeProgramId ? await ctx.db.get(app.degreeProgramId as any) : null;
+
+    if (!progRecord && app.academicInformation?.degreeApplyingFor) {
+      progRecord = await ctx.db
+        .query("academicPrograms")
+        .filter((q) => q.eq(q.field("name"), app.academicInformation.degreeApplyingFor))
+        .first();
+    }
+
+    if (!deptRecord && progRecord) {
+      if ((progRecord as any).departmentId) {
+        deptRecord = await ctx.db.get((progRecord as any).departmentId as any);
+      } else if ((progRecord as any).department) {
+        deptRecord = await ctx.db
+          .query("departments")
+          .filter((q) => q.eq(q.field("name"), (progRecord as any).department))
+          .first();
+      }
+    }
+
+    const resolvedDeptId = deptRecord ? deptRecord._id : app.departmentId;
+    const resolvedDeptName = deptRecord ? (deptRecord as any).name : (app.academicInformation as any)?.department || "Academic Department";
+    const resolvedProgId = progRecord ? progRecord._id : app.degreeProgramId;
+    const resolvedProgName = progRecord ? (progRecord as any).name : app.academicInformation?.degreeApplyingFor || "Degree Program";
+    const deptCode = deptRecord ? (deptRecord as any).code : "CS";
+
+    // 4. Generate student enrollment ID with actual department code
     const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-    const enrollmentId = user.enrollmentId || `IU-CS-2026-${randomSuffix}`;
+    const enrollmentId = user.enrollmentId || `IU-${deptCode}-2026-${randomSuffix}`;
 
     const now = Date.now();
 
-    // 4. Update user account
+    // 5. Update user account preserving exact relational academic IDs
     await ctx.db.patch(user._id, {
       role: "student",
       universityEmail: generatedUniversityEmail,
@@ -316,7 +423,11 @@ export const approveApplication = mutation({
       passwordSetupToken: setupToken,
       passwordSetupTokenExpiresAt: expiresAt,
       enrollmentId,
-      department: "Computing & Artificial Intelligence",
+      department: resolvedDeptName,
+      departmentId: resolvedDeptId,
+      degreeProgram: resolvedProgName,
+      degreeProgramId: resolvedProgId,
+      currentSemester: 1,
       updatedAt: now,
     });
 

@@ -80,6 +80,18 @@ export const Header: React.FC<HeaderProps> = ({
         return "Attendance Records & Policies";
       case "assignments":
         return "Course Assignments & Submissions";
+      case "examinations":
+        return "Examinations & Assessment Schedule";
+      case "results":
+        return "Semester Results & Grades";
+      case "transcript":
+        return "Academic Transcript & Degree Audit";
+      case "analytics":
+        return "GPA & CGPA Analytics Dashboard";
+      case "ai-assistant":
+        return "AI University Assistant";
+      case "study-planner":
+        return "AI Study Planner & Roadmap";
       default:
         return "Student Portal";
     }
@@ -161,7 +173,7 @@ export const Header: React.FC<HeaderProps> = ({
                     <p className="text-[11px] text-slate-500">Iqra University Chak Shehzad Bulletins</p>
                   </div>
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
-                    3 New
+                    New
                   </span>
                 </div>
 
@@ -179,8 +191,8 @@ export const Header: React.FC<HeaderProps> = ({
                             item.category === "Examination"
                               ? "bg-rose-100 text-rose-700"
                               : item.category === "Administrative"
-                              ? "bg-blue-100 text-blue-700"
-                              : "bg-emerald-100 text-emerald-700"
+                                ? "bg-blue-100 text-blue-700"
+                                : "bg-emerald-100 text-emerald-700"
                           )}
                         >
                           {item.category}
@@ -216,12 +228,20 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={() => setProfileMenuOpen(!profileMenuOpen)}
               className="flex items-center gap-2 p-1.5 rounded-xl border border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition-colors"
             >
-              <div className="w-7 h-7 rounded-lg bg-iqra-navy-900 text-white font-bold text-xs flex items-center justify-center">
-                {profile.name
-                  .split(" ")
-                  .map((n) => n[0])
-                  .slice(0, 2)
-                  .join("")}
+              <div className="w-7 h-7 rounded-lg bg-iqra-navy-900 text-white font-bold text-xs flex items-center justify-center overflow-hidden shrink-0">
+                {profile.avatarUrl ? (
+                  <img
+                    src={profile.avatarUrl}
+                    alt={profile.name}
+                    className="w-full h-full object-cover rounded-lg"
+                  />
+                ) : (
+                  profile.name
+                    .split(" ")
+                    .map((n) => n[0])
+                    .slice(0, 2)
+                    .join("")
+                )}
               </div>
               <div className="hidden md:block text-left pr-1">
                 <span className="block text-xs font-bold text-slate-800 leading-none">

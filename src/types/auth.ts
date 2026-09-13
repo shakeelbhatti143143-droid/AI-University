@@ -1,4 +1,15 @@
-export type UserRole = "applicant" | "student" | "teacher" | "admin" | "staff";
+export type UserRole =
+  | "applicant"
+  | "student"
+  | "STUDENT"
+  | "teacher"
+  | "faculty"
+  | "FACULTY"
+  | "admin"
+  | "ADMIN"
+  | "super_admin"
+  | "SUPER_ADMIN"
+  | "staff";
 
 export type AccountStatus = "pending_application" | "pending_password_setup" | "active" | "suspended";
 
@@ -12,6 +23,11 @@ export interface User {
   accountStatus?: AccountStatus;
   enrollmentId?: string;
   department?: string;
+  departmentId?: string;
+  degreeProgram?: string;
+  degreeProgramId?: string;
+  currentSemester?: number;
+  profilePhoto?: string;
   createdAt: number;
 }
 
@@ -26,6 +42,7 @@ export interface AuthContextType {
   isLoading: boolean;
   isAdmin: boolean;
   isStudent: boolean;
+  isFaculty: boolean;
   isApplicant: boolean;
   isConfigured: boolean;
   login: (email: string, password: string, rememberMe?: boolean) => Promise<{ success: boolean; error?: string; code?: string; user?: User }>;

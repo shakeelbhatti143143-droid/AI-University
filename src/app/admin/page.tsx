@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect, Suspense, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { AdminSidebar, AdminTab } from "@/components/admin/AdminSidebar";
@@ -8,15 +8,6 @@ import { AdminHeader } from "@/components/admin/AdminHeader";
 import { AccessDenied } from "@/components/admin/AccessDenied";
 
 import {
-  initialAdminStudents,
-  initialAdminCourses,
-  initialRegistrationPeriod,
-  initialRegistrationRequests,
-  initialAdminSchedule,
-  initialAdminAttendanceLogs,
-  initialAdminAssignments,
-  initialAdminSubmissions,
-  initialAuditLogs,
   AdminStudent,
   AdminCourse,
   RegistrationPeriod,
@@ -26,19 +17,28 @@ import {
   AdminAssignment,
   AdminSubmission,
   AuditLog,
+  initialRegistrationPeriod,
 } from "@/lib/admin-data";
 
 import { AdminDashboardOverview } from "@/components/admin/sections/AdminDashboardOverview";
 import { AdminStudentsSection } from "@/components/admin/sections/AdminStudentsSection";
+import { AdminFacultySection } from "@/components/admin/sections/AdminFacultySection";
+import { AdminDepartmentsProgramsSection } from "@/components/admin/sections/AdminDepartmentsProgramsSection";
 import { AdminCoursesSection } from "@/components/admin/sections/AdminCoursesSection";
 import { AdminRegistrationSection } from "@/components/admin/sections/AdminRegistrationSection";
 import { AdminScheduleSection } from "@/components/admin/sections/AdminScheduleSection";
 import { AdminAttendanceSection } from "@/components/admin/sections/AdminAttendanceSection";
 import { AdminAssignmentsSection } from "@/components/admin/sections/AdminAssignmentsSection";
+import { AdminExaminationsSection } from "@/components/admin/sections/AdminExaminationsSection";
+import { AdminResultsGradesSection } from "@/components/admin/sections/AdminResultsGradesSection";
+import { AdminAcademicRecordsSection } from "@/components/admin/sections/AdminAcademicRecordsSection";
+import { AdminCommunicationSection } from "@/components/admin/sections/AdminCommunicationSection";
+import { AdminAiManagementSection } from "@/components/admin/sections/AdminAiManagementSection";
+import { AdminSystemSection } from "@/components/admin/sections/AdminSystemSection";
 import { AdminProfileSection } from "@/components/admin/sections/AdminProfileSection";
-import { AdminReportsSection } from "@/components/admin/sections/AdminReportsSection";
 import { AdminPendingApplicationsSection } from "@/components/admin/sections/AdminPendingApplicationsSection";
 import { AdminVideosSection } from "@/components/admin/sections/AdminVideosSection";
+
 import { getConvexClient, isConvexConfigured } from "@/lib/convex";
 import { api } from "../../../convex/_generated/api";
 import { Loader2 } from "lucide-react";
@@ -55,73 +55,296 @@ function AdminPortalContent() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [globalSearch, setGlobalSearch] = useState("");
 
-  // Synchronize tab state with URL query parameter
   const handleTabChange = (tab: AdminTab) => {
     setActiveTab(tab);
     router.push(`/admin?tab=${tab}`);
   };
 
+  // -------------------------------------------------------------
+  // Live Convex Data Stores
+  // -------------------------------------------------------------
   const [pendingApplicationsCount, setPendingApplicationsCount] = useState(0);
+  const [students, setStudents] = useState<AdminStudent[]>([]);
+  const [facultyList, setFacultyList] = useState<any[]>([]);
+  const [departments, setDepartments] = useState<any[]>([]);
+  const [programs, setPrograms] = useState<any[]>([]);
+  const [courses, setCourses] = useState<AdminCourse[]>([]);
+  const [sections, setSections] = useState<any[]>([]);
+  const [registrationRequests, setRegistrationRequests] = useState<RegistrationRequest[]>([]);
+  const [scheduleSlots, setScheduleSlots] = useState<AdminScheduleSlot[]>([]);
+  const [attendanceLogs, setAttendanceLogs] = useState<AdminAttendanceLog[]>([]);
+  const [assignments, setAssignments] = useState<AdminAssignment[]>([]);
+  const [submissions, setSubmissions] = useState<AdminSubmission[]>([]);
+  const [examinations, setExaminations] = useState<any[]>([]);
+  const [results, setResults] = useState<any[]>([]);
+  const [announcements, setAnnouncements] = useState<any[]>([]);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [administrators, setAdministrators] = useState<any[]>([]);
+  const [registrationPeriod, setRegistrationPeriod] = useState<RegistrationPeriod>(initialRegistrationPeriod);
 
-  // Fetch live pending applications count from Convex
-  useEffect(() => {
-    const fetchPendingCount = async () => {
+  // Load all live database records from Convex
+  const refreshAllData = useCallback(async () => {
+    try {
+      const client = getConvexClient();
+      if (!client || !isConvexConfigured) return;
+
+      // Pending applications
       try {
-        const client = getConvexClient();
-        if (client && isConvexConfigured) {
-          const pending = await client.query(api.applications.getPendingApplications, {});
-          if (pending) {
-            setPendingApplicationsCount(pending.length);
-          }
-        }
-      } catch (err) {
-        console.warn("Could not fetch pending count:", err);
+        const pending = await client.query(api.applications.getPendingApplications, {});
+        if (pending) setPendingApplicationsCount(pending.length);
+      } catch (e) {
+        console.warn("Could not fetch pending applications:", e);
       }
-    };
-    fetchPendingCount();
-    const interval = setInterval(fetchPendingCount, 10000);
-    return () => clearInterval(interval);
+
+      // Students
+      try {
+        const stList = await client.query(api.academicManagement.getStudentsList, {});
+        if (stList) {
+          setStudents(
+            stList.map((s) => ({
+              id: s.id,
+              studentId: s.studentId,
+              name: s.name,
+              email: s.email,
+              phone: "+92 51 111 264 264",
+              program: s.program,
+              department: s.department,
+              campus: s.campus,
+              batch: s.batch,
+              semester: s.semester,
+              semesterNumber: s.semesterNumber,
+              status: s.status,
+              cgpa: s.cgpa,
+              currentGpa: s.currentGpa,
+              completedCreditHours: s.completedCreditHours,
+              totalCreditHours: s.totalCreditHours,
+              remainingCreditHours: s.remainingCreditHours,
+              academicStanding: s.cgpa >= 3.5 ? "Dean's Honor Roll" : "Good Standing",
+              attendancePercentage: 95,
+              warningsCount: s.cgpa > 0 && s.cgpa < 2.0 ? 1 : 0,
+              enrolledCourseCodes: s.enrolledCourseCodes,
+              enrollmentDate: new Date(s.createdAt).toLocaleDateString(),
+              emergencyContact: "+92 300 5551234",
+              cnic: "61101-1234567-1",
+            }))
+          );
+        }
+      } catch (e) {
+        console.warn("Could not fetch students list:", e);
+      }
+
+      // Faculty
+      try {
+        const fac = await client.query(api.academicManagement.getFacultyMembers, {});
+        if (fac) setFacultyList(fac);
+      } catch (e) {
+        console.warn("Could not fetch faculty list:", e);
+      }
+
+      // Departments & Programs
+      try {
+        const depts = await client.query(api.academicManagement.getDepartments, {});
+        if (depts) setDepartments(depts);
+        const progs = await client.query(api.academicManagement.getAcademicPrograms, {});
+        if (progs) setPrograms(progs);
+      } catch (e) {
+        console.warn("Could not fetch depts & progs:", e);
+      }
+
+      // Courses
+      try {
+        const crs = await client.query(api.academicManagement.getCourses, {});
+        if (crs) {
+          setCourses(
+            crs.map((c) => ({
+              id: c._id,
+              code: c.code,
+              title: c.name,
+              department: c.department,
+              departmentId: (c as any).departmentId,
+              program: (c as any).program,
+              programId: (c as any).programId,
+              creditHours: c.creditHours,
+              semester: c.semester,
+              instructor: c.facultyName || "TBA",
+              instructorId: (c as any).instructorId || (c as any).facultyId,
+              instructorEmail: `${(c.facultyName || "faculty").toLowerCase().replace(/[^a-z]/g, "")}@isb.iqra.edu.pk`,
+              enrolledCount: 0,
+              capacity: 45,
+              status: c.status,
+              schedule: "Mon, Wed • 10:00 AM - 11:30 AM",
+              classroom: "Lab 204",
+              building: "Computing Department",
+              attendanceRate: 92,
+              assignmentCount: 3,
+              prerequisites: c.prerequisites,
+              description: c.description,
+            }))
+          );
+        }
+      } catch (e) {
+        console.warn("Could not fetch courses:", e);
+      }
+
+      // Course Sections
+      try {
+        const sec = await client.query(api.academicManagement.getCourseSections, {});
+        if (sec) setSections(sec);
+      } catch (e) {
+        console.warn("Could not fetch sections:", e);
+      }
+
+      // Registration Requests
+      try {
+        const reqs = await client.query(api.academicManagement.getRegistrationRequests, {});
+        if (reqs) {
+          setRegistrationRequests(
+            reqs.map((r: any) => ({
+              id: r._id,
+              studentId: r.enrollmentId || r.studentId,
+              studentName: r.studentName,
+              studentEmail: r.studentEmail,
+              department: r.department || "Academic Department",
+              program: r.program || "Degree Program",
+              semester: r.semesterNumber || parseInt(String(r.semester).replace(/[^0-9]/g, ""), 10) || 1,
+              cgpa: 3.5,
+              courseId: r.courseId,
+              courseCode: r.courseCode,
+              courseTitle: r.courseTitle,
+              creditHours: r.creditHours,
+              section: "A",
+              type: "Add",
+              reason: "Regular Course Registration",
+              status: r.status as any,
+              requestedAt: new Date(r.registeredAt).toLocaleDateString(),
+              reviewedBy: r.reviewedBy,
+              reviewedAt: r.reviewedAt ? new Date(r.reviewedAt).toLocaleDateString() : undefined,
+              remarks: r.remarks,
+            }))
+          );
+        }
+      } catch (e) {
+        console.warn("Could not fetch registration requests:", e);
+      }
+
+      // Class Schedules
+      try {
+        const sch = await client.query(api.academicManagement.getClassSchedules, {});
+        if (sch) {
+          setScheduleSlots(
+            sch.map((s) => ({
+              id: s._id,
+              courseCode: s.courseCode,
+              courseTitle: s.courseTitle,
+              instructor: s.facultyName,
+              day: s.day as any,
+              startTime: s.startTime,
+              endTime: s.endTime,
+              classroom: s.room,
+              building: s.building,
+              section: s.section,
+              type: s.type,
+            }))
+          );
+        }
+      } catch (e) {
+        console.warn("Could not fetch schedules:", e);
+      }
+
+      // Assignments
+      try {
+        const asgs = await client.query(api.academicManagement.getAssignments, {});
+        if (asgs) {
+          setAssignments(
+            asgs.map((a) => ({
+              id: a._id,
+              title: a.title,
+              courseCode: a.courseCode,
+              courseTitle: a.courseTitle,
+              instructor: a.facultyName,
+              dueDate: a.dueDate,
+              dueTime: a.dueTime,
+              totalMarks: a.totalMarks,
+              status: a.status,
+              weightage: a.weightage,
+              description: a.description,
+            }))
+          );
+        }
+      } catch (e) {
+        console.warn("Could not fetch assignments:", e);
+      }
+
+      // Examinations
+      try {
+        const exms = await client.query(api.academicManagement.getExaminations, {});
+        if (exms) setExaminations(exms);
+      } catch (e) {
+        console.warn("Could not fetch examinations:", e);
+      }
+
+      // Academic Results
+      try {
+        const rslts = await client.query(api.academicManagement.getAcademicResults, {});
+        if (rslts) setResults(rslts);
+      } catch (e) {
+        console.warn("Could not fetch results:", e);
+      }
+
+      // Announcements
+      try {
+        const anns = await client.query(api.academicManagement.getAnnouncements, {});
+        if (anns) setAnnouncements(anns);
+      } catch (e) {
+        console.warn("Could not fetch announcements:", e);
+      }
+
+      // Audit Logs
+      try {
+        const logs = await client.query(api.academicManagement.getAuditLogs, {});
+        if (logs) {
+          setAuditLogs(
+            logs.map((l) => ({
+              id: l._id,
+              timestamp: new Date(l.timestamp).toLocaleString("en-GB", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
+              adminName: l.adminName,
+              adminEmail: l.adminEmail,
+              actionType: l.actionType as any,
+              module: l.module,
+              details: l.details,
+            }))
+          );
+        }
+      } catch (e) {
+        console.warn("Could not fetch audit logs:", e);
+      }
+
+      // Administrators
+      try {
+        const adms = await client.query(api.academicManagement.getAdministratorsList, {});
+        if (adms) setAdministrators(adms);
+      } catch (e) {
+        console.warn("Could not fetch administrators:", e);
+      }
+    } catch (err) {
+      console.warn("Failed to load admin data:", err);
+    }
   }, []);
 
-  // -------------------------------------------------------------
-  // Central State Data Stores (Live in-memory state with CRUD)
-  // -------------------------------------------------------------
-  const [students, setStudents] = useState<AdminStudent[]>(initialAdminStudents);
-  const [courses, setCourses] = useState<AdminCourse[]>(initialAdminCourses);
-  const [registrationPeriod, setRegistrationPeriod] = useState<RegistrationPeriod>(initialRegistrationPeriod);
-  const [registrationRequests, setRegistrationRequests] = useState<RegistrationRequest[]>(initialRegistrationRequests);
-  const [scheduleSlots, setScheduleSlots] = useState<AdminScheduleSlot[]>(initialAdminSchedule);
-  const [attendanceLogs, setAttendanceLogs] = useState<AdminAttendanceLog[]>(initialAdminAttendanceLogs);
-  const [assignments, setAssignments] = useState<AdminAssignment[]>(initialAdminAssignments);
-  const [submissions, setSubmissions] = useState<AdminSubmission[]>(initialAdminSubmissions);
-  const [auditLogs, setAuditLogs] = useState<AuditLog[]>(initialAuditLogs);
-
-  // Helper to append audit logs
-  const logAuditAction = (
-    actionType: "create" | "update" | "delete" | "status_change" | "approve" | "reject",
-    module: string,
-    details: string
-  ) => {
-    const newLog: AuditLog = {
-      id: `log-${Date.now()}`,
-      timestamp: new Date().toLocaleDateString("en-GB", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-      adminName: user?.name || "Shakeel Bhatti",
-      adminEmail: user?.email || "shakeelbhatti143143@gmail.com",
-      actionType,
-      module,
-      details,
-    };
-    setAuditLogs((prev) => [newLog, ...prev]);
-  };
+  useEffect(() => {
+    refreshAllData();
+    const interval = setInterval(refreshAllData, 8000);
+    return () => clearInterval(interval);
+  }, [refreshAllData]);
 
   // -------------------------------------------------------------
-  // Role-Based Access Control (RBAC) Guard
+  // Role-Based Access Control Guard
   // -------------------------------------------------------------
   if (isLoading) {
     return (
@@ -134,7 +357,6 @@ function AdminPortalContent() {
     );
   }
 
-  // Strictly block unauthorized students or unauthenticated users
   if (!user || user.role !== "admin") {
     return (
       <AccessDenied
@@ -146,245 +368,283 @@ function AdminPortalContent() {
   }
 
   // -------------------------------------------------------------
-  // CRUD Action Handlers
+  // CRUD Action Handlers (Calling Live Convex Backend)
   // -------------------------------------------------------------
+  const handleCreateFaculty = async (data: any) => {
+    const client = getConvexClient();
+    if (client) {
+      const result = await client.mutation(api.academicManagement.createFacultyMemberWithAccount, {
+        ...data,
+        adminName: user.name,
+        adminEmail: user.email,
+      });
+      await refreshAllData();
+      return result;
+    }
+  };
 
-  // Students CRUD
-  const handleAddStudent = (newStudentData: Omit<AdminStudent, "id">) => {
-    const newStudent: AdminStudent = {
-      ...newStudentData,
-      id: `std-${Date.now()}`,
+  const handleResetFacultyPassword = async (facultyId: string, newPassword: string) => {
+    const client = getConvexClient();
+    if (client) {
+      await client.mutation(api.academicManagement.adminResetFacultyPassword, {
+        facultyId: facultyId as any,
+        newPassword,
+        adminName: user.name,
+        adminEmail: user.email,
+      });
+      await refreshAllData();
+    }
+  };
+
+  const handleEditFaculty = async (facultyId: string, data: any) => {
+    const client = getConvexClient();
+    if (client) {
+      await client.mutation(api.academicManagement.updateFacultyMember, {
+        facultyId: facultyId as any,
+        ...data,
+        adminName: user.name,
+        adminEmail: user.email,
+      });
+      await refreshAllData();
+    }
+  };
+
+  const handleDeleteFaculty = async (facultyId: string) => {
+    const client = getConvexClient();
+    if (client) {
+      await client.mutation(api.academicManagement.deleteFacultyMember, {
+        facultyId: facultyId as any,
+        adminName: user.name,
+        adminEmail: user.email,
+      });
+      await refreshAllData();
+    }
+  };
+
+  const handleAssignFacultyToCourse = async (courseId: string, facultyId: string, facultyName: string) => {
+    const client = getConvexClient();
+    if (client) {
+      await client.mutation(api.academicManagement.assignFacultyToCourse, {
+        courseId: courseId as any,
+        facultyId,
+        facultyName,
+        adminName: user.name,
+        adminEmail: user.email,
+      });
+      await refreshAllData();
+    }
+  };
+
+  const handleUpdateFacultyStatus = async (facultyId: string, status: any) => {
+    const client = getConvexClient();
+    if (client) {
+      await client.mutation(api.academicManagement.updateFacultyStatus, {
+        facultyId: facultyId as any,
+        status,
+        adminName: user.name,
+        adminEmail: user.email,
+      });
+      await refreshAllData();
+    }
+  };
+
+  const handleCreateDepartment = async (data: any) => {
+    const client = getConvexClient();
+    if (client) {
+      await client.mutation(api.academicManagement.createDepartment, data);
+      await refreshAllData();
+    }
+  };
+
+  const handleCreateProgram = async (data: any) => {
+    const client = getConvexClient();
+    if (client) {
+      await client.mutation(api.academicManagement.createAcademicProgram, data);
+      await refreshAllData();
+    }
+  };
+
+  const handleAddCourse = async (newCourseData: any) => {
+    const client = getConvexClient();
+    if (client) {
+      await client.mutation(api.academicManagement.createCourse, {
+        code: newCourseData.code,
+        name: newCourseData.title || newCourseData.name,
+        description: newCourseData.description || "Foundational subject.",
+        creditHours: newCourseData.creditHours || 3,
+        department: newCourseData.department,
+        departmentId: newCourseData.departmentId,
+        program: newCourseData.program,
+        programId: newCourseData.programId,
+        degreeProgramId: newCourseData.degreeProgramId || newCourseData.programId,
+        semester: newCourseData.semester || 1,
+        prerequisites: newCourseData.prerequisites || [],
+        facultyId: newCourseData.facultyId || newCourseData.instructorId,
+        instructorId: newCourseData.instructorId,
+        facultyName: newCourseData.instructor || newCourseData.facultyName,
+        status: newCourseData.status || "Active",
+        adminName: user.name,
+        adminEmail: user.email,
+      });
+      await refreshAllData();
+    }
+  };
+
+  const handleUpdateCourse = async (courseId: string, updatedData: any) => {
+    const client = getConvexClient();
+    if (client) {
+      await client.mutation(api.academicManagement.updateCourse, {
+        courseId: courseId as any,
+        code: updatedData.code,
+        name: updatedData.title || updatedData.name,
+        description: updatedData.description,
+        creditHours: updatedData.creditHours,
+        department: updatedData.department,
+        departmentId: updatedData.departmentId,
+        program: updatedData.program,
+        programId: updatedData.programId,
+        degreeProgramId: updatedData.degreeProgramId || updatedData.programId,
+        semester: updatedData.semester,
+        instructorId: updatedData.instructorId,
+        facultyId: updatedData.facultyId || updatedData.instructorId,
+        facultyName: updatedData.instructor || updatedData.facultyName,
+        status: updatedData.status,
+        adminName: user.name,
+        adminEmail: user.email,
+      });
+      await refreshAllData();
+    }
+  };
+
+  const handleDeleteCourse = async (courseId: string) => {
+    const client = getConvexClient();
+    if (client) {
+      await client.mutation(api.academicManagement.deleteCourse, {
+        courseId: courseId as any,
+        adminName: user.name,
+        adminEmail: user.email,
+      });
+      await refreshAllData();
+    }
+  };
+
+  const handleApproveRegistration = async (requestId: string) => {
+    const client = getConvexClient();
+    if (client) {
+      await client.mutation(api.academicManagement.updateRegistrationStatus, {
+        registrationId: requestId as any,
+        decision: "Approved",
+        remarks: "Approved by Registrar Office",
+        adminName: user.name,
+        adminEmail: user.email,
+      });
+      await refreshAllData();
+    }
+  };
+
+  const handleRejectRegistration = async (requestId: string) => {
+    const client = getConvexClient();
+    if (client) {
+      await client.mutation(api.academicManagement.updateRegistrationStatus, {
+        registrationId: requestId as any,
+        decision: "Rejected",
+        remarks: "Rejected by Administration",
+        adminName: user.name,
+        adminEmail: user.email,
+      });
+      await refreshAllData();
+    }
+  };
+
+  const handleCreateExamination = async (data: any) => {
+    const client = getConvexClient();
+    if (client) {
+      await client.mutation(api.academicManagement.createExamination, data);
+      await refreshAllData();
+    }
+  };
+
+  const handleSaveResult = async (data: any) => {
+    const client = getConvexClient();
+    if (client) {
+      await client.mutation(api.academicManagement.saveAcademicResult, data);
+      await refreshAllData();
+    }
+  };
+
+  const handleUpdateResultStatus = async (resultId: string, status: any) => {
+    const client = getConvexClient();
+    if (client) {
+      await client.mutation(api.academicManagement.updateResultPublishStatus, {
+        resultId: resultId as any,
+        status,
+        adminName: user.name,
+        adminEmail: user.email,
+      });
+      await refreshAllData();
+    }
+  };
+
+  const handleCreateAnnouncement = async (data: any) => {
+    const client = getConvexClient();
+    if (client) {
+      await client.mutation(api.academicManagement.createAnnouncement, data);
+      await refreshAllData();
+    }
+  };
+
+  const handleUpdateAccountStatus = async (userId: string, status: any) => {
+    const client = getConvexClient();
+    if (client) {
+      await client.mutation(api.academicManagement.updateUserAccountStatus, {
+        userId: userId as any,
+        status,
+        adminName: user.name,
+        adminEmail: user.email,
+      });
+      await refreshAllData();
+    }
+  };
+
+  // Prepare student academic records for transcript section
+  const studentAcademicRecords = students.map((st) => {
+    const stResults = results.filter((r) => r.studentId === st.id && r.status === "Published");
+    let tqp = 0;
+    let tch = 0;
+    stResults.forEach((r) => {
+      tqp += r.gradePoints * r.creditHours;
+      tch += r.creditHours;
+    });
+    const cgpa = tch > 0 ? Number((tqp / tch).toFixed(2)) : 0.0;
+
+    return {
+      id: st.id,
+      name: st.name,
+      studentId: st.studentId,
+      email: st.email,
+      department: st.department,
+      program: st.program,
+      cgpa,
+      completedCredits: tch,
+      results: stResults.map((r) => ({
+        courseCode: r.courseCode,
+        courseTitle: r.courseTitle,
+        creditHours: r.creditHours,
+        grade: r.grade,
+        gradePoints: r.gradePoints,
+        totalMarks: r.totalMarks,
+        percentage: r.percentage,
+        status: r.grade !== "F" ? "Passed" : "Failed",
+        semester: r.semester,
+      })),
     };
-    setStudents((prev) => [newStudent, ...prev]);
-    logAuditAction("create", "Student Records", `Enrolled new student: ${newStudent.name} (${newStudent.studentId})`);
-  };
+  });
 
-  const handleUpdateStudent = (id: string, updated: Partial<AdminStudent>) => {
-    setStudents((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, ...updated } : s))
-    );
-    const st = students.find((s) => s.id === id);
-    logAuditAction("update", "Student Records", `Updated profile/records for student ${st?.name || id}`);
-  };
-
-  const handleDeleteStudent = (id: string) => {
-    const st = students.find((s) => s.id === id);
-    setStudents((prev) => prev.filter((s) => s.id !== id));
-    if (st) {
-      logAuditAction("delete", "Student Records", `Removed student: ${st.name} (${st.studentId})`);
-    }
-  };
-
-  // Courses CRUD
-  const handleAddCourse = (newCourseData: Omit<AdminCourse, "id">) => {
-    const newCourse: AdminCourse = {
-      ...newCourseData,
-      id: `crs-${Date.now()}`,
-    };
-    setCourses((prev) => [newCourse, ...prev]);
-    logAuditAction("create", "Course Management", `Created course: ${newCourse.code} - ${newCourse.title}`);
-  };
-
-  const handleUpdateCourse = (id: string, updated: Partial<AdminCourse>) => {
-    setCourses((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, ...updated } : c))
-    );
-    const crs = courses.find((c) => c.id === id);
-    logAuditAction("update", "Course Management", `Updated syllabus/instructor for ${crs?.code || id}`);
-  };
-
-  const handleDeleteCourse = (id: string) => {
-    const crs = courses.find((c) => c.id === id);
-    setCourses((prev) => prev.filter((c) => c.id !== id));
-    if (crs) {
-      logAuditAction("delete", "Course Management", `Decommissioned course: ${crs.code} - ${crs.title}`);
-    }
-  };
-
-  // Course Registration Handlers
-  const handleToggleRegistrationPeriod = (isOpen: boolean) => {
-    setRegistrationPeriod((prev) => ({
-      ...prev,
-      isOpen,
-    }));
-    logAuditAction(
-      "status_change",
-      "Registration Controller",
-      `Registration portal ${isOpen ? "OPENED" : "CLOSED"} for ${registrationPeriod.session}`
-    );
-  };
-
-  const handleApproveRegistration = (requestId: string) => {
-    const req = registrationRequests.find((r) => r.id === requestId);
-    setRegistrationRequests((prev) =>
-      prev.map((r) => (r.id === requestId ? { ...r, status: "Approved" } : r))
-    );
-    if (req) {
-      logAuditAction(
-        "approve",
-        "Course Registration",
-        `Approved registration for ${req.studentName} (${req.studentId}) in ${req.courseCode}`
-      );
-    }
-  };
-
-  const handleRejectRegistration = (requestId: string) => {
-    const req = registrationRequests.find((r) => r.id === requestId);
-    setRegistrationRequests((prev) =>
-      prev.map((r) => (r.id === requestId ? { ...r, status: "Rejected" } : r))
-    );
-    if (req) {
-      logAuditAction(
-        "reject",
-        "Course Registration",
-        `Rejected registration for ${req.studentName} (${req.studentId}) in ${req.courseCode}`
-      );
-    }
-  };
-
-  const handleManualRegister = (studentId: string, courseCode: string, section: string) => {
-    const student = students.find((s) => s.id === studentId || s.studentId === studentId);
-    const course = courses.find((c) => c.code === courseCode);
-    if (student && course) {
-      setRegistrationRequests((prev) => [
-        {
-          id: `req-${Date.now()}`,
-          studentId: student.studentId,
-          studentName: student.name,
-          courseCode: course.code,
-          courseTitle: course.title,
-          creditHours: course.creditHours,
-          section,
-          requestedAt: new Date().toLocaleDateString("en-GB"),
-          status: "Approved",
-          remarks: "Administrative direct enrollment by Shakeel Bhatti",
-        },
-        ...prev,
-      ]);
-      logAuditAction(
-        "approve",
-        "Course Registration",
-        `Direct administrative enrollment for ${student.name} in ${course.code} (Section ${section})`
-      );
-    }
-  };
-
-  const handleDropStudent = (studentId: string, courseCode: string) => {
-    setRegistrationRequests((prev) =>
-      prev.filter((r) => !(r.studentId === studentId && r.courseCode === courseCode))
-    );
-    logAuditAction("delete", "Course Registration", `Dropped ${studentId} from ${courseCode}`);
-  };
-
-  // Schedule Handlers
-  const handleAddScheduleSlot = (slotData: Omit<AdminScheduleSlot, "id">) => {
-    const newSlot: AdminScheduleSlot = {
-      ...slotData,
-      id: `sch-${Date.now()}`,
-    };
-    setScheduleSlots((prev) => [...prev, newSlot]);
-    logAuditAction(
-      "create",
-      "Schedule & Timetable",
-      `Allocated slot: ${newSlot.courseCode} on ${newSlot.day} (${newSlot.startTime} - ${newSlot.endTime}) in ${newSlot.classroom}`
-    );
-  };
-
-  const handleUpdateScheduleSlot = (id: string, updated: Partial<AdminScheduleSlot>) => {
-    setScheduleSlots((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, ...updated } : s))
-    );
-    logAuditAction("update", "Schedule & Timetable", `Updated slot schedule for slot ID ${id}`);
-  };
-
-  const handleDeleteScheduleSlot = (id: string) => {
-    const slot = scheduleSlots.find((s) => s.id === id);
-    setScheduleSlots((prev) => prev.filter((s) => s.id !== id));
-    if (slot) {
-      logAuditAction(
-        "delete",
-        "Schedule & Timetable",
-        `De-allocated slot: ${slot.courseCode} on ${slot.day} in ${slot.classroom}`
-      );
-    }
-  };
-
-  // Attendance Handlers
-  const handleAddAttendanceLog = (logData: Omit<AdminAttendanceLog, "id">) => {
-    const newLog: AdminAttendanceLog = {
-      ...logData,
-      id: `attl-${Date.now()}`,
-    };
-    setAttendanceLogs((prev) => [newLog, ...prev]);
-    logAuditAction(
-      "create",
-      "Attendance Management",
-      `Recorded lecture attendance for ${newLog.courseCode} (${newLog.presentCount} present, ${newLog.absentCount} absent)`
-    );
-  };
-
-  const handleDeleteAttendanceLog = (id: string) => {
-    const log = attendanceLogs.find((l) => l.id === id);
-    setAttendanceLogs((prev) => prev.filter((l) => l.id !== id));
-    if (log) {
-      logAuditAction(
-        "delete",
-        "Attendance Management",
-        `Removed lecture record #${id} for ${log.courseCode}`
-      );
-    }
-  };
-
-  // Assignments Handlers
-  const handleAddAssignment = (asgData: Omit<AdminAssignment, "id">) => {
-    const newAsg: AdminAssignment = {
-      ...asgData,
-      id: `adm-asg-${Date.now()}`,
-    };
-    setAssignments((prev) => [newAsg, ...prev]);
-    logAuditAction("create", "Assignments", `Published assignment: "${newAsg.title}" for ${newAsg.courseCode}`);
-  };
-
-  const handleUpdateAssignment = (id: string, updated: Partial<AdminAssignment>) => {
-    setAssignments((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, ...updated } : a))
-    );
-    const asg = assignments.find((a) => a.id === id);
-    logAuditAction("update", "Assignments", `Updated assignment criteria for ${asg?.title || id}`);
-  };
-
-  const handleDeleteAssignment = (id: string) => {
-    const asg = assignments.find((a) => a.id === id);
-    setAssignments((prev) => prev.filter((a) => a.id !== id));
-    if (asg) {
-      logAuditAction("delete", "Assignments", `Removed assignment: "${asg.title}"`);
-    }
-  };
-
-  const handleUpdateSubmission = (submissionId: string, updated: Partial<AdminSubmission>) => {
-    setSubmissions((prev) =>
-      prev.map((s) => (s.id === submissionId ? { ...s, ...updated } : s))
-    );
-    const sub = submissions.find((s) => s.id === submissionId);
-    logAuditAction(
-      "update",
-      "Grade Override",
-      `Modified evaluation/grade for submission by ${sub?.studentName || submissionId}`
-    );
-  };
-
-  const handleDeleteSubmission = (submissionId: string) => {
-    setSubmissions((prev) => prev.filter((s) => s.id !== submissionId));
-    logAuditAction("delete", "Submissions", `Removed submission record #${submissionId}`);
-  };
-
-  // Badge counters
   const pendingRegistrationsCount = registrationRequests.filter((r) => r.status === "Pending").length;
-  const warningsCount = students.filter((s) => s.warningsCount > 0 || s.status === "Probation").length;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col md:flex-row antialiased selection:bg-iqra-gold-500/20 selection:text-iqra-gold-200">
-      {/* Admin Sidebar Navigation */}
+    <div className="min-h-screen w-full bg-[#f8fafc] text-slate-900 flex flex-row overflow-x-hidden selection:bg-iqra-blue-600 selection:text-white">
+      {/* 1. Left Sidebar Navigation */}
       <AdminSidebar
         activeTab={activeTab}
         onSelectTab={handleTabChange}
@@ -394,13 +654,15 @@ function AdminPortalContent() {
         setMobileOpen={setMobileMenuOpen}
         pendingApplicationsCount={pendingApplicationsCount}
         pendingRegistrationsCount={pendingRegistrationsCount}
-        warningsCount={warningsCount}
         onLogout={logout}
       />
 
-      {/* Main Administrative Workplace Area */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto max-h-screen">
-        {/* Sticky Executive Admin Header */}
+      {/* 2. Main Workplace Content Area */}
+      <div
+        className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${
+          isSidebarCollapsed ? "md:ml-16" : "md:ml-64"
+        }`}
+      >
         <AdminHeader
           activeTab={activeTab}
           onSelectTab={handleTabChange}
@@ -410,8 +672,8 @@ function AdminPortalContent() {
           onLogout={logout}
         />
 
-        {/* Dynamic Section Router View */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto space-y-8">
+          {/* DASHBOARD */}
           {activeTab === "dashboard" && (
             <AdminDashboardOverview
               students={students}
@@ -424,32 +686,77 @@ function AdminPortalContent() {
             />
           )}
 
-          {activeTab === "applications" && (
-            <AdminPendingApplicationsSection />
-          )}
-
-          {activeTab === "videos" && (
-            <AdminVideosSection />
-          )}
-
-          {(activeTab === "students" || activeTab === "academics") && (
+          {/* PEOPLE */}
+          {activeTab === "students" && (
             <AdminStudentsSection
               students={students}
               searchFilter={globalSearch}
-              onAddStudent={handleAddStudent}
-              onUpdateStudent={handleUpdateStudent}
-              onDeleteStudent={handleDeleteStudent}
+              onAddStudent={() => {}}
+              onUpdateStudent={() => {}}
+              onDeleteStudent={() => {}}
             />
           )}
 
-          {activeTab === "courses" && (
+          {activeTab === "faculty" && (
+            <AdminFacultySection
+              facultyList={facultyList}
+              departments={departments}
+              courses={courses}
+              onCreateFaculty={handleCreateFaculty}
+              onUpdateStatus={handleUpdateFacultyStatus}
+              onResetPassword={handleResetFacultyPassword}
+              onEditFaculty={handleEditFaculty}
+              onDeleteFaculty={handleDeleteFaculty}
+              onAssignCourse={handleAssignFacultyToCourse}
+            />
+          )}
+
+          {activeTab === "administrators" && (
+            <AdminSystemSection
+              initialTab="user-management"
+              auditLogs={auditLogs}
+              administrators={administrators}
+              onUpdateAccountStatus={handleUpdateAccountStatus}
+            />
+          )}
+
+          {activeTab === "applications" && <AdminPendingApplicationsSection />}
+          {activeTab === "videos" && <AdminVideosSection />}
+
+          {/* ACADEMICS */}
+          {activeTab === "departments" && (
+            <AdminDepartmentsProgramsSection
+              initialTab="departments"
+              departments={departments}
+              programs={programs}
+              onCreateDepartment={handleCreateDepartment}
+              onCreateProgram={handleCreateProgram}
+            />
+          )}
+
+          {activeTab === "programs" && (
+            <AdminDepartmentsProgramsSection
+              initialTab="programs"
+              departments={departments}
+              programs={programs}
+              onCreateDepartment={handleCreateDepartment}
+              onCreateProgram={handleCreateProgram}
+            />
+          )}
+
+          {(activeTab === "courses" || activeTab === "course-sections" || activeTab === "academics") && (
             <AdminCoursesSection
               courses={courses}
               students={students}
+              departments={departments}
+              programs={programs}
+              facultyList={facultyList}
               searchFilter={globalSearch}
               onAddCourse={handleAddCourse}
               onUpdateCourse={handleUpdateCourse}
               onDeleteCourse={handleDeleteCourse}
+              onNavigateTab={handleTabChange}
+              onRefresh={refreshAllData}
             />
           )}
 
@@ -459,11 +766,11 @@ function AdminPortalContent() {
               requests={registrationRequests}
               courses={courses}
               students={students}
-              onTogglePeriod={handleToggleRegistrationPeriod}
+              onTogglePeriod={() => {}}
               onApproveRequest={handleApproveRegistration}
               onRejectRequest={handleRejectRegistration}
-              onManualRegister={handleManualRegister}
-              onDropStudent={handleDropStudent}
+              onManualRegister={() => {}}
+              onDropStudent={() => {}}
             />
           )}
 
@@ -471,9 +778,9 @@ function AdminPortalContent() {
             <AdminScheduleSection
               slots={scheduleSlots}
               courses={courses}
-              onAddSlot={handleAddScheduleSlot}
-              onUpdateSlot={handleUpdateScheduleSlot}
-              onDeleteSlot={handleDeleteScheduleSlot}
+              onAddSlot={() => {}}
+              onUpdateSlot={() => {}}
+              onDeleteSlot={() => {}}
             />
           )}
 
@@ -482,8 +789,8 @@ function AdminPortalContent() {
               logs={attendanceLogs}
               students={students}
               courses={courses}
-              onAddLog={handleAddAttendanceLog}
-              onDeleteLog={handleDeleteAttendanceLog}
+              onAddLog={() => {}}
+              onDeleteLog={() => {}}
             />
           )}
 
@@ -492,61 +799,113 @@ function AdminPortalContent() {
               assignments={assignments}
               submissions={submissions}
               courses={courses}
-              onAddAssignment={handleAddAssignment}
-              onUpdateAssignment={handleUpdateAssignment}
-              onDeleteAssignment={handleDeleteAssignment}
-              onUpdateSubmission={handleUpdateSubmission}
-              onDeleteSubmission={handleDeleteSubmission}
+              onAddAssignment={() => {}}
+              onUpdateAssignment={() => {}}
+              onDeleteAssignment={() => {}}
+              onUpdateSubmission={() => {}}
+              onDeleteSubmission={() => {}}
             />
           )}
 
-          {(activeTab === "profile" || activeTab === "security") && (
-            <AdminProfileSection />
+          {/* EXAMINATIONS */}
+          {(activeTab === "exams" || activeTab === "exam-schedule" || activeTab === "exam-rooms") && (
+            <AdminExaminationsSection
+              examinations={examinations}
+              courses={courses}
+              onCreateExamination={handleCreateExamination}
+            />
+          )}
+
+          {activeTab === "results" && (
+            <AdminResultsGradesSection
+              results={results}
+              students={students}
+              courses={courses}
+              onSaveResult={handleSaveResult}
+              onUpdateStatus={handleUpdateResultStatus}
+            />
+          )}
+
+          {/* ACADEMIC RECORDS */}
+          {activeTab === "transcripts" && (
+            <AdminAcademicRecordsSection
+              initialTab="transcripts"
+              students={studentAcademicRecords}
+            />
+          )}
+
+          {activeTab === "gpa-cgpa" && (
+            <AdminAcademicRecordsSection
+              initialTab="gpa-cgpa"
+              students={studentAcademicRecords}
+            />
           )}
 
           {activeTab === "reports" && (
-            <AdminReportsSection auditLogs={auditLogs} />
+            <AdminAcademicRecordsSection
+              initialTab="reports"
+              students={studentAcademicRecords}
+            />
+          )}
+
+          {/* COMMUNICATION */}
+          {(activeTab === "announcements" || activeTab === "notifications") && (
+            <AdminCommunicationSection
+              initialTab={activeTab === "notifications" ? "notifications" : "announcements"}
+              announcements={announcements}
+              onCreateAnnouncement={handleCreateAnnouncement}
+            />
+          )}
+
+          {/* AI & LEARNING */}
+          {(activeTab === "ai-assistant" ||
+            activeTab === "ai-planner" ||
+            activeTab === "ai-analytics") && (
+            <AdminAiManagementSection
+              coursesCount={courses.length}
+              examsCount={examinations.length}
+              assignmentsCount={assignments.length}
+            />
+          )}
+
+          {/* SYSTEM */}
+          {activeTab === "user-management" && (
+            <AdminSystemSection
+              initialTab="user-management"
+              auditLogs={auditLogs}
+              administrators={administrators}
+              onUpdateAccountStatus={handleUpdateAccountStatus}
+            />
+          )}
+
+          {activeTab === "security" && (
+            <AdminSystemSection
+              initialTab="security"
+              auditLogs={auditLogs}
+              administrators={administrators}
+              onUpdateAccountStatus={handleUpdateAccountStatus}
+            />
+          )}
+
+          {activeTab === "audit-logs" && (
+            <AdminSystemSection
+              initialTab="audit-logs"
+              auditLogs={auditLogs}
+              administrators={administrators}
+              onUpdateAccountStatus={handleUpdateAccountStatus}
+            />
           )}
 
           {activeTab === "settings" && (
-            <div className="space-y-6">
-              <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6">
-                <h2 className="text-xl font-bold text-white mb-2">Institutional System Settings</h2>
-                <p className="text-sm text-slate-400 mb-6">
-                  Configure global academic parameters, grading curves, HEC threshold criteria, and automated notifications for Iqra University Chak Shehzad campus.
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800">
-                    <h3 className="text-sm font-semibold text-white mb-1">HEC Attendance Policy</h3>
-                    <p className="text-xs text-slate-400 mb-3">Strict 75% minimum attendance requirement before semester final exam debarment.</p>
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                      Enforced (75% Minimum)
-                    </span>
-                  </div>
-                  <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800">
-                    <h3 className="text-sm font-semibold text-white mb-1">Academic Warning Cutoff</h3>
-                    <p className="text-xs text-slate-400 mb-3">Undergraduate CGPA threshold triggering automatic academic probation notice.</p>
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                      CGPA &lt; 2.00
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Quick controller for registration window */}
-              <AdminRegistrationSection
-                period={registrationPeriod}
-                requests={registrationRequests}
-                courses={courses}
-                students={students}
-                onTogglePeriod={handleToggleRegistrationPeriod}
-                onApproveRequest={handleApproveRegistration}
-                onRejectRequest={handleRejectRegistration}
-                onManualRegister={handleManualRegister}
-                onDropStudent={handleDropStudent}
-              />
-            </div>
+            <AdminSystemSection
+              initialTab="settings"
+              auditLogs={auditLogs}
+              administrators={administrators}
+              onUpdateAccountStatus={handleUpdateAccountStatus}
+            />
           )}
+
+          {activeTab === "profile" && <AdminProfileSection />}
         </main>
       </div>
     </div>

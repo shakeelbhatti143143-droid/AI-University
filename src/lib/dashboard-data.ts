@@ -65,8 +65,14 @@ export interface AvailableCourse {
   code: string;
   title: string;
   department: string;
+  departmentId?: string;
+  program?: string;
+  programId?: string;
+  degreeProgramId?: string;
   creditHours: number;
+  semester?: number;
   instructor: string;
+  instructorDesignation?: string;
   prerequisites: string[];
   description: string;
   availableSeats: number;
@@ -74,6 +80,13 @@ export interface AvailableCourse {
   schedule: string;
   classroom: string;
   category: "Core" | "Elective" | "General";
+  registrationStatus?: "None" | "Pending" | "Approved" | "Rejected" | "Dropped";
+  registrationId?: string;
+  registrationRemarks?: string;
+  registeredAt?: number;
+  isEnrolled?: boolean;
+  isPending?: boolean;
+  isRejected?: boolean;
 }
 
 export interface ScheduleSlot {
@@ -102,6 +115,7 @@ export interface AttendanceRecord {
 export interface Assignment {
   id: string;
   title: string;
+  courseId?: string;
   courseCode: string;
   courseTitle: string;
   dueDate: string;
@@ -115,6 +129,9 @@ export interface Assignment {
   submittedAt?: string;
   fileName?: string;
   rubricNotes?: string;
+  teacher?: string;
+  facultyName?: string;
+  createdAt?: number;
 }
 
 export interface Announcement {
@@ -127,16 +144,122 @@ export interface Announcement {
   isUrgent?: boolean;
 }
 
+export type ExamType = "Midterm" | "Final" | "Quiz" | "Practical" | "Presentation";
+export type ExamStatus = "Upcoming" | "Completed" | "In Progress" | "Cancelled";
+
 export interface Examination {
   id: string;
   courseCode: string;
   courseTitle: string;
-  date: string;
-  time: string;
+  examType: ExamType;
+  date: string; // YYYY-MM-DD
+  day: string; // e.g. "Tuesday"
+  startTime: string; // e.g. "10:00 AM"
+  endTime: string; // e.g. "12:00 PM"
+  time: string; // "10:00 AM – 12:00 PM"
   room: string;
+  roomNumber: string;
   building: string;
-  seatNumber: string;
-  invigilator: string;
+  campus: string;
+  instructor: string;
+  seatNumber?: string;
+  invigilator?: string;
+  status: ExamStatus;
+  instructions: string[];
+  requiredMaterials: string[];
+  duration: string;
+  importantNotes: string;
+}
+
+export interface MarksBreakdown {
+  assignments: { obtained: number; total: number; weightage: number };
+  quizzes: { obtained: number; total: number; weightage: number };
+  midterm: { obtained: number; total: number; weightage: number };
+  final: { obtained: number; total: number; weightage: number };
+  attendance: { obtained: number; total: number; weightage: number };
+}
+
+export interface CourseResult {
+  code: string;
+  title: string;
+  creditHours: number;
+  marks: number;
+  percentage: number;
+  grade: string;
+  gradePoints: number;
+  status: "Passed" | "Failed" | "In Progress";
+  breakdown: MarksBreakdown;
+  instructor?: string;
+}
+
+export interface SemesterResultRecord {
+  semesterNumber: number;
+  semesterName: string;
+  session: string;
+  gpa: number;
+  cgpa: number;
+  creditHours: number;
+  totalMarks: number;
+  averagePercentage: number;
+  coursesCompleted: number;
+  coursesFailed: number;
+  academicStanding: string;
+  courses: CourseResult[];
+}
+
+export type SemesterRecord = SemesterResultRecord;
+
+export type StudyTaskType =
+  | "Read Topic"
+  | "Watch Learning Material"
+  | "Practice Problems"
+  | "Review Notes"
+  | "Take Quiz"
+  | "Revise Weak Areas"
+  | "Mock Examination";
+
+export interface StudyTask {
+  id: string;
+  planId: string;
+  dayNumber: number;
+  dayLabel: string;
+  title: string;
+  topic: string;
+  taskType: StudyTaskType;
+  durationMinutes: number;
+  completed: boolean;
+  notes?: string;
+  scheduledDate: string;
+}
+
+export interface StudyPlan {
+  id: string;
+  courseCode: string;
+  courseTitle: string;
+  examDate: string;
+  availableHoursPerDay: number;
+  preferredDurationMinutes: number;
+  difficulty: "Easy" | "Medium" | "Hard" | "Very Hard";
+  topics: string[];
+  createdAt: string;
+  totalHours: number;
+  tasks: StudyTask[];
+}
+
+export interface ChatMessage {
+  id: string;
+  sender: "user" | "assistant";
+  text: string;
+  timestamp: string;
+  suggestions?: string[];
+}
+
+export interface AcademicActivity {
+  id: string;
+  title: string;
+  timestamp: string;
+  details: string;
+  type?: string;
 }
 
 export function getBlankStudentProfile(user?: any): StudentProfile {
@@ -146,12 +269,12 @@ export function getBlankStudentProfile(user?: any): StudentProfile {
     avatarUrl: "",
     studentId: user?.enrollmentId || "Pending",
     enrollmentNo: user?.enrollmentId || "Pending",
-    program: "BS Computer Science",
+    program: "Bachelor of Science in Computer Science (BSCS)",
     degreeLevel: "Undergraduate",
-    department: user?.department || "Computing & Artificial Intelligence",
+    department: user?.department || "Department of Computing & Artificial Intelligence",
     faculty: "Faculty of Computing & Information Technology",
-    campus: "Chak Shezad Campus, Islamabad",
-    batch: "2026",
+    campus: "Chak Shehzad Campus, Islamabad",
+    batch: "Fall 2024",
     currentSemester: "Semester 1",
     academicSession: "Fall 2026",
     section: "A",
@@ -163,58 +286,32 @@ export function getBlankStudentProfile(user?: any): StudentProfile {
     emergencyContact: "",
     cnic: "",
     dateOfBirth: "",
-    bloodGroup: "",
+    bloodGroup: "N/A",
     address: "Islamabad, Pakistan",
-    advisorName: "Academic Advisory Office",
-    advisorEmail: "advising@isb.iqra.edu.pk",
-    hecRegistrationNo: "HEC-Pending",
+    advisorName: "Department Chair",
+    advisorEmail: "advisor@isb.iqra.edu.pk",
+    hecRegistrationNo: "HEC-IU-Pending",
     cgpa: 0.0,
     currentGpa: 0.0,
     totalCreditHours: 134,
     completedCreditHours: 0,
     remainingCreditHours: 134,
-    academicStanding: "Good Standing",
+    academicStanding: "Enrolled",
   };
 }
 
 export const initialStudentProfile: StudentProfile = getBlankStudentProfile();
 
-// Completely empty collections - NO DUMMY/SAMPLE DATA
+// Clean database-backed initial arrays — ZERO HARDCODED DUMMY DATA
 export const initialEnrolledCourses: EnrolledCourse[] = [];
 export const initialAvailableCourses: AvailableCourse[] = [];
 export const initialAssignments: Assignment[] = [];
 export const upcomingExaminations: Examination[] = [];
 export const recentAnnouncements: Announcement[] = [];
-export interface AcademicActivity {
-  id: string;
-  title: string;
-  category: string;
-  date: string;
-  timestamp: string;
-  description: string;
-  details?: string;
-  status: string;
-}
-
-export interface SemesterRecord {
-  semesterNumber: number;
-  semesterName: string;
-  session: string;
-  semester?: string | number;
-  status?: string;
-  gpa: number;
-  cgpa: number;
-  creditHours: number;
-  courses: Array<{
-    code: string;
-    title: string;
-    creditHours: number;
-    grade: string;
-    gradePoints: number;
-  }>;
-}
-
 export const semesterHistory: SemesterRecord[] = [];
+export const semesterResultsData: SemesterResultRecord[] = [];
+export const initialStudyPlans: StudyPlan[] = [];
 export const attendanceHistory: any[] = [];
 export const weeklySchedule: ScheduleSlot[] = [];
 export const recentAcademicActivities: AcademicActivity[] = [];
+

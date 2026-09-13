@@ -16,22 +16,26 @@ import { EnrolledCourse, attendanceHistory, AttendanceRecord } from "@/lib/dashb
 
 interface AttendanceSectionProps {
   courses: EnrolledCourse[];
+  attendanceRecords?: AttendanceRecord[];
 }
 
-export const AttendanceSection: React.FC<AttendanceSectionProps> = ({ courses }) => {
+export const AttendanceSection: React.FC<AttendanceSectionProps> = ({
+  courses,
+  attendanceRecords = attendanceHistory,
+}) => {
   const [selectedCourseFilter, setSelectedCourseFilter] = useState("All");
 
   // Statistics calculation across enrolled courses
   const totalAttended = courses.reduce((acc, c) => acc + c.attendedLectures, 0);
   const totalConducted = courses.reduce((acc, c) => acc + c.totalLectures, 0);
-  const overallPercentage = ((totalAttended / (totalConducted || 1)) * 100).toFixed(1);
+  const overallPercentage = totalConducted > 0 ? ((totalAttended / totalConducted) * 100).toFixed(1) : "100.0";
 
-  // Mock breakdown: 102 Present, 7 Absent, 3 Late
-  const presentCount = 102;
-  const absentCount = 7;
-  const lateCount = 3;
+  // Dynamic breakdown from real attendance logs
+  const presentCount = attendanceRecords.filter((r) => r.status === "Present").length;
+  const absentCount = attendanceRecords.filter((r) => r.status === "Absent").length;
+  const lateCount = attendanceRecords.filter((r) => r.status === "Late").length;
 
-  const filteredHistory = attendanceHistory.filter((rec) => {
+  const filteredHistory = attendanceRecords.filter((rec) => {
     if (selectedCourseFilter === "All") return true;
     return rec.courseCode === selectedCourseFilter;
   });
@@ -240,8 +244,15 @@ export const AttendanceSection: React.FC<AttendanceSectionProps> = ({ courses })
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredHistory.map((rec) => (
-                <tr key={rec.id} className="hover:bg-slate-50/70 transition-colors">
+              {filteredHistory.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="py-8 text-center text-xs text-slate-400">
+                    No individual lecture attendance logs recorded yet.
+                  </td>
+                </tr>
+              ) : (
+                filteredHistory.map((rec) => (
+                  <tr key={rec.id} className="hover:bg-slate-50/70 transition-colors">
                   <td className="py-3">
                     <span className="font-bold text-slate-800 block">{rec.date}</span>
                     <span className="text-[10px] text-slate-400">{rec.time}</span>
@@ -271,7 +282,8 @@ export const AttendanceSection: React.FC<AttendanceSectionProps> = ({ courses })
                     </span>
                   </td>
                 </tr>
-              ))}
+              )))
+            }
             </tbody>
           </table>
         </div>

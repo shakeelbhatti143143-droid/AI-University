@@ -1,4 +1,4 @@
-import { query } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
 /**
@@ -22,9 +22,38 @@ export const getUserById = query({
       accountStatus: user.accountStatus,
       enrollmentId: user.enrollmentId,
       department: user.department,
+      profilePhoto: user.profilePhoto,
       passwordSetupToken: user.passwordSetupToken,
       passwordSetupTokenExpiresAt: user.passwordSetupTokenExpiresAt,
       createdAt: user.createdAt,
+    };
+  },
+});
+
+/**
+ * Update user's profile photo
+ */
+export const updateProfilePhoto = mutation({
+  args: {
+    userId: v.id("users"),
+    storageId: v.optional(v.string()),
+    photoUrl: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await ctx.db.get(args.userId);
+    if (!user) {
+      throw new Error("User record not found.");
+    }
+
+    await ctx.db.patch(args.userId, {
+      profilePhoto: args.photoUrl,
+      profilePhotoStorageId: args.storageId,
+      updatedAt: Date.now(),
+    });
+
+    return {
+      success: true,
+      photoUrl: args.photoUrl,
     };
   },
 });

@@ -216,7 +216,22 @@ export const AdminRegistrationSection: React.FC<AdminRegistrationSectionProps> =
                 <tr key={req.id} className="hover:bg-slate-50/70 transition-colors">
                   <td className="py-3">
                     <span className="font-bold text-slate-900 block">{req.studentName}</span>
-                    <span className="font-mono text-[10px] text-slate-500">{req.studentId}</span>
+                    <span className="font-mono text-[10px] text-slate-500 block">{req.studentId}</span>
+                    <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                      {req.department && (
+                        <span className="text-[10px] text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded font-medium">
+                          {req.department}
+                        </span>
+                      )}
+                      {req.program && (
+                        <span className="text-[10px] text-iqra-blue-700 bg-blue-50 px-1.5 py-0.5 rounded font-medium">
+                          {req.program}
+                        </span>
+                      )}
+                      <span className="text-[10px] font-bold text-slate-700 bg-slate-200/70 px-1.5 py-0.5 rounded">
+                        Sem {req.semester || 1}
+                      </span>
+                    </div>
                   </td>
 
                   <td className="py-3">

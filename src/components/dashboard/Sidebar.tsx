@@ -18,6 +18,12 @@ import {
   Sparkles,
   ShieldCheck,
   X,
+  CalendarClock,
+  Award,
+  ScrollText,
+  LineChart,
+  Bot,
+  BrainCircuit,
 } from "lucide-react";
 import { StudentProfile } from "@/lib/dashboard-data";
 import { cn } from "@/lib/utils";
@@ -30,7 +36,13 @@ export type DashboardTab =
   | "registration"
   | "schedule"
   | "attendance"
-  | "assignments";
+  | "assignments"
+  | "examinations"
+  | "results"
+  | "transcript"
+  | "analytics"
+  | "ai-assistant"
+  | "study-planner";
 
 interface SidebarProps {
   activeTab: DashboardTab;
@@ -57,7 +69,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   registeredCoursesCount,
   onLogout,
 }) => {
-  // STRICTLY THE EXACT 8 REQUESTED SECTIONS IN ORDER
+  // STRICTLY ALL 14 SECTIONS IN SYSTEMATIC ORDER
   const navItems: Array<{
     id: DashboardTab;
     label: string;
@@ -121,6 +133,50 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: FileText,
       badge: pendingAssignmentsCount,
       badgeColor: "bg-amber-100 text-amber-800 font-bold",
+    },
+    {
+      id: "examinations",
+      label: "Examinations",
+      sublabel: "Timetable & Admit Slips",
+      icon: CalendarClock,
+      badge: "Upcoming",
+      badgeColor: "bg-purple-100 text-purple-800 font-bold",
+    },
+    {
+      id: "results",
+      label: "Results & Grades",
+      sublabel: "Term Performance & GPA",
+      icon: Award,
+    },
+    {
+      id: "transcript",
+      label: "Academic Transcript",
+      sublabel: "Official Academic Record",
+      icon: ScrollText,
+    },
+    {
+      id: "analytics",
+      label: "GPA & CGPA Analytics",
+      sublabel: "Trajectory & Metrics",
+      icon: LineChart,
+      badge: "Analytics",
+      badgeColor: "bg-cyan-100 text-cyan-800 font-bold",
+    },
+    {
+      id: "ai-assistant",
+      label: "AI University Assistant",
+      sublabel: "Campus AI Intelligence",
+      icon: Bot,
+      badge: "AI",
+      badgeColor: "bg-gradient-to-r from-purple-600 to-cyan-600 text-white font-bold",
+    },
+    {
+      id: "study-planner",
+      label: "AI Study Planner",
+      sublabel: "Personalized Study Roadmap",
+      icon: BrainCircuit,
+      badge: "Smart",
+      badgeColor: "bg-emerald-100 text-emerald-800 font-bold",
     },
   ];
 
@@ -268,12 +324,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
               onClick={() => handleItemClick("profile")}
               className="p-2 rounded-xl bg-white border border-slate-200/80 shadow-xs hover:border-iqra-blue-400/50 transition-colors cursor-pointer flex items-center gap-3"
             >
-              <div className="w-9 h-9 rounded-lg bg-iqra-navy-900 text-white font-bold flex items-center justify-center text-xs shrink-0 ring-2 ring-iqra-blue-500/20">
-                {profile.name
-                  .split(" ")
-                  .map((n) => n[0])
-                  .slice(0, 2)
-                  .join("")}
+              <div className="w-9 h-9 rounded-lg bg-iqra-navy-900 text-white font-bold flex items-center justify-center text-xs shrink-0 ring-2 ring-iqra-blue-500/20 overflow-hidden">
+                {profile.avatarUrl ? (
+                  <img
+                    src={profile.avatarUrl}
+                    alt={profile.name}
+                    className="w-full h-full object-cover rounded-lg"
+                  />
+                ) : (
+                  profile.name
+                    .split(" ")
+                    .map((n) => n[0])
+                    .slice(0, 2)
+                    .join("")
+                )}
               </div>
 
               <div className="min-w-0 flex-1">
@@ -308,14 +372,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="flex flex-col items-center space-y-3 py-1">
             <div
               onClick={() => handleItemClick("profile")}
-              className="w-9 h-9 rounded-lg bg-iqra-navy-900 text-white font-bold flex items-center justify-center text-xs cursor-pointer ring-2 ring-iqra-blue-500/20"
+              className="w-9 h-9 rounded-lg bg-iqra-navy-900 text-white font-bold flex items-center justify-center text-xs cursor-pointer ring-2 ring-iqra-blue-500/20 overflow-hidden"
               title={`${profile.name} (${profile.studentId})`}
             >
-              {profile.name
-                .split(" ")
-                .map((n) => n[0])
-                .slice(0, 2)
-                .join("")}
+              {profile.avatarUrl ? (
+                <img
+                  src={profile.avatarUrl}
+                  alt={profile.name}
+                  className="w-full h-full object-cover rounded-lg"
+                />
+              ) : (
+                profile.name
+                  .split(" ")
+                  .map((n) => n[0])
+                  .slice(0, 2)
+                  .join("")
+              )}
             </div>
             <button
               onClick={onLogout}

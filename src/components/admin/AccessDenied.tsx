@@ -47,16 +47,29 @@ export const AccessDenied: React.FC<AccessDeniedProps> = ({
         </div>
 
         <div className="space-y-2 pt-2">
-          <Link href="/dashboard" className="block w-full">
-            <Button
-              variant="gold"
-              size="md"
-              leftIcon={<ArrowLeft className="w-4 h-4" />}
-              className="w-full text-xs font-bold rounded-xl"
-            >
-              Return to Student Portal
-            </Button>
-          </Link>
+          {userRole?.toLowerCase() === "faculty" || userRole?.toLowerCase() === "teacher" ? (
+            <Link href="/faculty/dashboard" className="block w-full">
+              <Button
+                variant="gold"
+                size="md"
+                leftIcon={<ArrowLeft className="w-4 h-4" />}
+                className="w-full text-xs font-bold rounded-xl"
+              >
+                Return to Faculty Portal
+              </Button>
+            </Link>
+          ) : (
+            <Link href="/dashboard" className="block w-full">
+              <Button
+                variant="gold"
+                size="md"
+                leftIcon={<ArrowLeft className="w-4 h-4" />}
+                className="w-full text-xs font-bold rounded-xl"
+              >
+                Return to Student Portal
+              </Button>
+            </Link>
+          )}
 
           <Link href="/login" className="block w-full">
             <Button

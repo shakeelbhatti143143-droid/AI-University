@@ -183,6 +183,24 @@ export const AssignmentsSection: React.FC<AssignmentsSectionProps> = ({
 
                     <span>Total Marks: <strong>{asg.totalMarks}</strong></span>
 
+                    {(asg.teacher || asg.facultyName) && (
+                      <>
+                        <span>•</span>
+                        <span className="font-semibold text-slate-700">
+                          Instructor: {asg.teacher || asg.facultyName}
+                        </span>
+                      </>
+                    )}
+
+                    {asg.createdAt && (
+                      <>
+                        <span>•</span>
+                        <span className="text-slate-500">
+                          Assigned: {new Date(asg.createdAt).toLocaleDateString()}
+                        </span>
+                      </>
+                    )}
+
                     {asg.obtainedMarks !== undefined && (
                       <>
                         <span>•</span>
@@ -247,6 +265,14 @@ export const AssignmentsSection: React.FC<AssignmentsSectionProps> = ({
               </div>
             );
           })
+        ) : assignments.length === 0 ? (
+          <div className="p-12 rounded-3xl bg-white border border-slate-200/90 text-center space-y-2">
+            <CheckCircle2 className="w-10 h-10 text-slate-400 mx-auto" />
+            <h4 className="text-base font-bold text-slate-900">No assignments available</h4>
+            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+              There are currently no assignments assigned for your enrolled courses.
+            </p>
+          </div>
         ) : (
           <div className="p-12 rounded-3xl bg-white border border-slate-200/90 text-center space-y-2">
             <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto" />
