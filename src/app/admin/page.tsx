@@ -34,10 +34,12 @@ import { AdminResultsGradesSection } from "@/components/admin/sections/AdminResu
 import { AdminAcademicRecordsSection } from "@/components/admin/sections/AdminAcademicRecordsSection";
 import { AdminCommunicationSection } from "@/components/admin/sections/AdminCommunicationSection";
 import { AdminAiManagementSection } from "@/components/admin/sections/AdminAiManagementSection";
+import { AdminAiAcademicAssistantSection } from "@/components/admin/sections/AdminAiAcademicAssistantSection";
 import { AdminSystemSection } from "@/components/admin/sections/AdminSystemSection";
 import { AdminProfileSection } from "@/components/admin/sections/AdminProfileSection";
 import { AdminPendingApplicationsSection } from "@/components/admin/sections/AdminPendingApplicationsSection";
 import { AdminVideosSection } from "@/components/admin/sections/AdminVideosSection";
+import { AdminWebsiteManagementSection } from "@/components/admin/sections/AdminWebsiteManagementSection";
 
 import { getConvexClient, isConvexConfigured } from "@/lib/convex";
 import { api } from "../../../convex/_generated/api";
@@ -593,6 +595,71 @@ function AdminPortalContent() {
     }
   };
 
+  const handleUpdateAnnouncement = async (data: any) => {
+    const client = getConvexClient();
+    if (client) {
+      await client.mutation(api.academicManagement.updateAnnouncement, data);
+      await refreshAllData();
+    }
+  };
+
+  const handleUpdateAnnouncementStatus = async (
+    id: string,
+    status: "Published" | "Draft" | "Archived"
+  ) => {
+    const client = getConvexClient();
+    if (client) {
+      await client.mutation(api.academicManagement.updateAnnouncementStatus, {
+        id: id as any,
+        status,
+        adminName: user.name,
+        adminEmail: user.email,
+      });
+      await refreshAllData();
+    }
+  };
+
+  const handleUpdateAnnouncementVisibility = async (
+    id: string,
+    visibility: "PUBLIC" | "INTERNAL"
+  ) => {
+    const client = getConvexClient();
+    if (client) {
+      await client.mutation(api.academicManagement.updateAnnouncementVisibility, {
+        id: id as any,
+        visibility,
+        adminName: user.name,
+        adminEmail: user.email,
+      });
+      await refreshAllData();
+    }
+  };
+
+  const handleToggleAnnouncementFeatured = async (id: string, isFeatured: boolean) => {
+    const client = getConvexClient();
+    if (client) {
+      await client.mutation(api.academicManagement.toggleAnnouncementFeatured, {
+        id: id as any,
+        isFeatured,
+        adminName: user.name,
+        adminEmail: user.email,
+      });
+      await refreshAllData();
+    }
+  };
+
+  const handleDeleteAnnouncement = async (id: string) => {
+    const client = getConvexClient();
+    if (client) {
+      await client.mutation(api.academicManagement.deleteAnnouncement, {
+        id: id as any,
+        adminName: user.name,
+        adminEmail: user.email,
+      });
+      await refreshAllData();
+    }
+  };
+
   const handleUpdateAccountStatus = async (userId: string, status: any) => {
     const client = getConvexClient();
     if (client) {
@@ -827,6 +894,13 @@ function AdminPortalContent() {
           )}
 
           {/* ACADEMIC RECORDS */}
+          {activeTab === "progression" && (
+            <AdminAcademicRecordsSection
+              initialTab="progression"
+              students={studentAcademicRecords}
+            />
+          )}
+
           {activeTab === "transcripts" && (
             <AdminAcademicRecordsSection
               initialTab="transcripts"
@@ -854,10 +928,25 @@ function AdminPortalContent() {
               initialTab={activeTab === "notifications" ? "notifications" : "announcements"}
               announcements={announcements}
               onCreateAnnouncement={handleCreateAnnouncement}
+              onUpdateAnnouncement={handleUpdateAnnouncement}
+              onUpdateStatus={handleUpdateAnnouncementStatus}
+              onUpdateVisibility={handleUpdateAnnouncementVisibility}
+              onToggleFeatured={handleToggleAnnouncementFeatured}
+              onDeleteAnnouncement={handleDeleteAnnouncement}
             />
           )}
 
           {/* AI & LEARNING */}
+          {activeTab === "ai-academic-assistant" && (
+            <AdminAiAcademicAssistantSection
+              existingDepartments={departments}
+              existingPrograms={programs}
+              existingCourses={courses}
+              onRefreshData={refreshAllData}
+              onNavigateTab={handleTabChange}
+            />
+          )}
+
           {(activeTab === "ai-assistant" ||
             activeTab === "ai-planner" ||
             activeTab === "ai-analytics") && (
@@ -906,6 +995,37 @@ function AdminPortalContent() {
           )}
 
           {activeTab === "profile" && <AdminProfileSection />}
+
+          {/* UNIVERSITY WEBSITE MANAGEMENT */}
+          {activeTab === "website-posts" && (
+            <AdminWebsiteManagementSection initialTab="posts" />
+          )}
+
+          {activeTab === "website-events" && (
+            <AdminWebsiteManagementSection initialTab="events" />
+          )}
+
+          {activeTab === "website-gallery" && (
+            <AdminWebsiteManagementSection initialTab="gallery" />
+          )}
+
+          {activeTab === "website-fees" && (
+            <AdminWebsiteManagementSection initialTab="fees" />
+          )}
+
+          {activeTab === "website-facilities" && (
+            <AdminWebsiteManagementSection initialTab="facilities" />
+          )}
+
+          {activeTab === "website-location" && (
+            <AdminWebsiteManagementSection initialTab="location" />
+          )}
+
+          {activeTab === "website-profile" && (
+            <AdminWebsiteManagementSection initialTab="profile" />
+          )}
+
+          {activeTab === "videos" && <AdminVideosSection />}
         </main>
       </div>
     </div>

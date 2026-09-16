@@ -5,6 +5,11 @@
 :root {
   --background: #0a192f;
   --foreground: #f8fafc;
+  --university-navy: #0b1f3a;
+  --university-navy-hover: #122b4e;
+  --university-navy-active: #071426;
+  --university-navy-tint: #f0f4fa;
+  --university-navy-border: #cbd5e1;
 }
 
 @layer base {

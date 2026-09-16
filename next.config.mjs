@@ -4,6 +4,18 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  async rewrites() {
+    return [
+      {
+        source: "/explore-university",
+        destination: "/explore",
+      },
+      {
+        source: "/explore-university/:path*",
+        destination: "/explore/:path*",
+      },
+    ];
+  },
 };
 
 export default nextConfig;

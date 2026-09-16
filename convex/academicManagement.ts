@@ -117,6 +117,403 @@ export async function resolveStudentApprovedRegistrations(
   return { studentUser, studentKeys, approvedRegistrations };
 }
 
+/**
+ * Authoritative Academic Progression Engine
+ * Calculates a student's complete academic state from database records:
+ * - Published Academic Results (grade, gradePoints, marks, percentage, status)
+ * - Approved Course Registrations
+ * - Curriculum courses for student's department and program
+ *
+ * Computes:
+ * - Semester by semester (1 through 8):
+ *   - Registered courses
+ *   - Completed/passed courses (grade !== 'F' && percentage >= 50)
+ *   - Failed courses (grade === 'F' || percentage < 50)
+ *   - Pending courses (approved registration, but result not yet published)
+ *   - Semester Quality Points & Semester Credit Hours
+ *   - Semester GPA
+ *   - Semester Pass Status:
+ *     - If no courses registered:
+ *       - Semester 1: if nothing completed yet -> "Available for Registration"
+ *       - Other semesters: if previous semester is passed -> "Available for Registration", else "Locked"
+ *     - If registered courses:
+ *       - If has failed courses -> "Failed Courses" (Semester not passed)
+ *       - If pending courses -> "In Progress" / "Results Pending"
+ *       - If all registered courses (at least 1) are passed:
+ *         -> "Successfully Passed"
+ *
+ * - Sequential Unlocking:
+ *   - Semester 1 is always unlocked.
+ *   - Semester N (2..8) is unlocked IF AND ONLY IF Semester N-1 is "Successfully Passed".
+ *
+ * - Overall:
+ *   - Highest passed semester (0..8)
+ *   - Next eligible semester = Math.min(8, highestPassedSemester + 1)
+ *   - Overall CGPA (based strictly on published results)
+ *   - Completed Credit Hours (passed courses only)
+ *   - Remaining Credit Hours
+ *   - Degree Progress Percentage
+ *   - Academic Standing (Dean's Honor Roll >= 3.5, Good Standing >= 2.0, Academic Warning < 2.0)
+ *   - Congratulations notification if a semester was passed and next semester is available
+ */
+export async function calculateStudentAcademicProgression(
+  ctx: any,
+  studentInput: any,
+  isMutation: boolean = false
+) {
+  let studentUser: any = null;
+
+  if (studentInput && typeof studentInput === "object") {
+    if (studentInput._id && (studentInput.email || studentInput.role)) {
+      studentUser = studentInput;
+    } else if (studentInput.userId) {
+      try {
+        studentUser = await ctx.db.get(studentInput.userId);
+      } catch {
+        // ignore
+      }
+    } else if (studentInput.studentId) {
+      studentUser = await ctx.db
+        .query("users")
+        .filter((q: any) =>
+          q.or(
+            q.eq(q.field("enrollmentId"), studentInput.studentId),
+            q.eq(q.field("email"), studentInput.studentId.toLowerCase()),
+            q.eq(q.field("universityEmail"), studentInput.studentId.toLowerCase())
+          )
+        )
+        .first();
+      if (!studentUser) {
+        try {
+          studentUser = await ctx.db.get(studentInput.studentId);
+        } catch {
+          // ignore
+        }
+      }
+    }
+  } else if (typeof studentInput === "string") {
+    studentUser = await ctx.db
+      .query("users")
+      .filter((q: any) =>
+        q.or(
+          q.eq(q.field("enrollmentId"), studentInput),
+          q.eq(q.field("email"), studentInput.toLowerCase()),
+          q.eq(q.field("universityEmail"), studentInput.toLowerCase())
+        )
+      )
+      .first();
+    if (!studentUser) {
+      try {
+        studentUser = await ctx.db.get(studentInput);
+      } catch {
+        // ignore
+      }
+    }
+  }
+
+  if (!studentUser) {
+    return null;
+  }
+
+  const studentKeys = new Set<string>();
+  if (studentUser._id) studentKeys.add(String(studentUser._id));
+  if (studentUser.enrollmentId) studentKeys.add(studentUser.enrollmentId);
+
+  // 1. Fetch published results for this student
+  const allResults = await ctx.db.query("academicResults").collect();
+  const publishedResults = allResults.filter(
+    (r: any) =>
+      r.status === "Published" &&
+      (studentKeys.has(r.studentId) ||
+        studentKeys.has(r.enrollmentId) ||
+        (studentUser.email && r.studentEmail === studentUser.email) ||
+        (studentUser.universityEmail && r.studentEmail === studentUser.universityEmail))
+  );
+
+  // 2. Fetch approved course registrations
+  const allRegistrations = await ctx.db.query("courseRegistrations").collect();
+  const approvedRegs = allRegistrations.filter(
+    (r: any) =>
+      r.status === "Approved" &&
+      (studentKeys.has(r.studentId) ||
+        studentKeys.has(r.enrollmentId) ||
+        (studentUser.email && r.studentEmail === studentUser.email) ||
+        (studentUser.universityEmail && r.studentEmail === studentUser.universityEmail))
+  );
+
+  // 3. Fetch courses
+  const allCourses = await ctx.db.query("courses").collect();
+
+  // Helper to resolve semester number for a course or result
+  const getCourseSemester = (courseCode: string, courseId?: string, fallbackSem?: any): number => {
+    const c = allCourses.find((x: any) => x.code === courseCode || (courseId && x._id === courseId));
+    if (c && typeof c.semester === "number") return c.semester;
+    if (fallbackSem) {
+      const num = parseInt(String(fallbackSem).replace(/[^0-9]/g, ""), 10);
+      if (!isNaN(num) && num >= 1 && num <= 8) return num;
+    }
+    return 1;
+  };
+
+  // Group by semester (1 to 8)
+  const semesterDetails: any[] = [];
+  let cumulativeQualityPoints = 0;
+  let cumulativeGradedCredits = 0;
+  let totalPassedCredits = 0;
+  let totalPassedCoursesCount = 0;
+  let totalFailedCoursesCount = 0;
+  const failedCoursesList: any[] = [];
+
+  for (let s = 1; s <= 8; s++) {
+    // Registrations and published results in this semester
+    const regsInSem = approvedRegs.filter(
+      (r: any) => getCourseSemester(r.courseCode, r.courseId, r.semester) === s
+    );
+    const resultsInSem = publishedResults.filter(
+      (r: any) => getCourseSemester(r.courseCode, r.courseId, r.semester) === s
+    );
+
+    const courseCodesSet = new Set<string>();
+    regsInSem.forEach((r: any) => courseCodesSet.add(r.courseCode));
+    resultsInSem.forEach((r: any) => courseCodesSet.add(r.courseCode));
+
+    const semesterCourses: any[] = [];
+    let semQualityPoints = 0;
+    let semGradedCredits = 0;
+    let semPassedCredits = 0;
+    let passedCount = 0;
+    let failedCount = 0;
+    let pendingCount = 0;
+
+    for (const code of Array.from(courseCodesSet)) {
+      const c = allCourses.find((x: any) => x.code === code);
+      const reg = regsInSem.find((r: any) => r.courseCode === code);
+      const res = resultsInSem.find((r: any) => r.courseCode === code);
+
+      const title = res?.courseTitle || reg?.courseTitle || c?.name || code;
+      const creditHours = res?.creditHours || reg?.creditHours || c?.creditHours || 3;
+
+      if (res) {
+        const isPassed = res.grade !== "F" && res.percentage >= 50 && res.gradePoints > 0;
+        const qp = res.gradePoints * creditHours;
+        semQualityPoints += qp;
+        semGradedCredits += creditHours;
+
+        if (isPassed) {
+          passedCount++;
+          semPassedCredits += creditHours;
+          totalPassedCredits += creditHours;
+          totalPassedCoursesCount++;
+        } else {
+          failedCount++;
+          totalFailedCoursesCount++;
+          failedCoursesList.push({
+            code,
+            title,
+            semester: s,
+            grade: res.grade,
+            gradePoints: res.gradePoints,
+            percentage: res.percentage,
+            remarks: "Course retake required under academic policy.",
+          });
+        }
+
+        semesterCourses.push({
+          code,
+          title,
+          creditHours,
+          grade: res.grade,
+          gradePoints: res.gradePoints,
+          marks: res.totalMarks,
+          percentage: res.percentage,
+          status: isPassed ? "Passed" : "Failed",
+          resultStatus: "Published",
+          isPassed,
+          isFailed: !isPassed,
+          publishedAt: res.publishedAt,
+        });
+      } else if (reg) {
+        pendingCount++;
+        semesterCourses.push({
+          code,
+          title,
+          creditHours,
+          grade: "In Progress",
+          gradePoints: 0,
+          marks: 0,
+          percentage: 0,
+          status: "In Progress",
+          resultStatus: "Pending",
+          isPassed: false,
+          isFailed: false,
+        });
+      }
+    }
+
+    cumulativeQualityPoints += semQualityPoints;
+    cumulativeGradedCredits += semGradedCredits;
+
+    const semGPA = semGradedCredits > 0 ? Number((semQualityPoints / semGradedCredits).toFixed(2)) : 0.0;
+    const totalEnrolledInSem = semesterCourses.length;
+
+    let isPassed = false;
+    let semStatus = "Locked";
+    let semStatusLabel = "🔒 Locked";
+
+    if (totalEnrolledInSem > 0) {
+      if (failedCount > 0) {
+        semStatus = "Failed Courses";
+        semStatusLabel = "⚠ Failed Courses";
+      } else if (pendingCount > 0) {
+        semStatus = "In Progress";
+        semStatusLabel = "● In Progress";
+      } else if (passedCount > 0 && passedCount === totalEnrolledInSem) {
+        isPassed = true;
+        semStatus = "Passed";
+        semStatusLabel = "✓ Successfully Passed";
+      }
+    }
+
+    semesterDetails.push({
+      semesterNumber: s,
+      semesterLabel: `Semester ${s}`,
+      status: semStatus,
+      statusLabel: semStatusLabel,
+      isPassed,
+      isUnlocked: false,
+      gpa: semGPA,
+      creditHours: semGradedCredits,
+      passedCreditHours: semPassedCredits,
+      totalCoursesCount: totalEnrolledInSem,
+      completedCoursesCount: passedCount,
+      failedCoursesCount: failedCount,
+      pendingCoursesCount: pendingCount,
+      courses: semesterCourses,
+      unlockMessage: "",
+    });
+  }
+
+  // Sequential Unlock Determination:
+  // Must pass Sem 1 to unlock Sem 2, pass Sem 2 to unlock Sem 3, etc.
+  let highestPassedSemester = 0;
+  for (let s = 1; s <= 8; s++) {
+    if (s === 1) {
+      if (semesterDetails[0].isPassed) {
+        highestPassedSemester = 1;
+      } else {
+        break;
+      }
+    } else {
+      const prev = semesterDetails[s - 2];
+      const current = semesterDetails[s - 1];
+      if (prev.isPassed && current.isPassed && highestPassedSemester === s - 1) {
+        highestPassedSemester = s;
+      } else {
+        break;
+      }
+    }
+  }
+
+  const nextEligibleSemester = Math.min(8, highestPassedSemester + 1);
+
+  // Assign isUnlocked and unlock messages
+  for (let s = 1; s <= 8; s++) {
+    const sem = semesterDetails[s - 1];
+    if (s <= highestPassedSemester) {
+      sem.isUnlocked = true;
+      sem.status = "Passed";
+      sem.statusLabel = "✓ Successfully Passed";
+    } else if (s === nextEligibleSemester) {
+      sem.isUnlocked = true;
+      if (sem.totalCoursesCount === 0) {
+        sem.status = "Available";
+        sem.statusLabel = "🔓 Available for Registration";
+      } else if (sem.failedCoursesCount > 0) {
+        sem.status = "Failed Courses";
+        sem.statusLabel = "⚠ Failed Courses";
+      } else if (sem.pendingCoursesCount > 0) {
+        sem.status = "In Progress";
+        sem.statusLabel = "● In Progress";
+      }
+    } else {
+      sem.isUnlocked = false;
+      sem.status = "Locked";
+      sem.statusLabel = "🔒 Locked";
+      sem.unlockMessage = `Complete and pass Semester ${s - 1} to unlock Semester ${s}.`;
+    }
+  }
+
+  const cgpa =
+    cumulativeGradedCredits > 0
+      ? Number((cumulativeQualityPoints / cumulativeGradedCredits).toFixed(2))
+      : 0.0;
+  const currentGpa = semesterDetails[highestPassedSemester ? highestPassedSemester - 1 : 0]?.gpa || cgpa;
+  const totalDegreeCredits = studentUser.degreeProgram === "MSCS" ? 30 : 134;
+  const remainingCreditHours = Math.max(0, totalDegreeCredits - totalPassedCredits);
+  const degreeProgress = Math.min(100, Math.round((totalPassedCredits / totalDegreeCredits) * 100));
+
+  let academicStanding = "Good Standing";
+  if (cgpa >= 3.5) academicStanding = "Dean's Honor Roll";
+  else if (cgpa < 2.0 && cumulativeGradedCredits > 0) academicStanding = "Academic Warning";
+
+  // Check if currentSemester in users table needs to be updated (mutation mode)
+  if (isMutation && studentUser._id) {
+    if (studentUser.currentSemester !== nextEligibleSemester) {
+      await ctx.db.patch(studentUser._id, {
+        currentSemester: nextEligibleSemester,
+        updatedAt: Date.now(),
+      });
+
+      await ctx.db.insert("auditLogs", {
+        adminId: "system",
+        adminName: "Academic Progression Engine",
+        adminEmail: "registrar@isb.iqra.edu.pk",
+        actionType: "status_change",
+        module: "Academic Progression",
+        details: `Updated current semester for ${studentUser.name} (${studentUser.enrollmentId || studentUser.email}) to Semester ${nextEligibleSemester}. Highest passed: Semester ${highestPassedSemester}.`,
+        previousValue: String(studentUser.currentSemester || 1),
+        newValue: String(nextEligibleSemester),
+        timestamp: Date.now(),
+      });
+    }
+  }
+
+  // Build congratulations notification if a semester was passed and next semester is available
+  let congratulationsNotification: any = null;
+  if (highestPassedSemester > 0 && nextEligibleSemester > highestPassedSemester && nextEligibleSemester <= 8) {
+    congratulationsNotification = {
+      title: `Semester ${highestPassedSemester} Successfully Completed!`,
+      message: `Congratulations! You have successfully passed all required Semester ${highestPassedSemester} courses. Semester ${nextEligibleSemester} is now available for course registration.`,
+      targetSemester: nextEligibleSemester,
+      ctaText: `Register Semester ${nextEligibleSemester} Courses`,
+    };
+  }
+
+  return {
+    studentId: studentUser.enrollmentId || String(studentUser._id),
+    name: studentUser.name,
+    email: studentUser.universityEmail || studentUser.email,
+    department: studentUser.department || "Department of Computing & Artificial Intelligence",
+    degreeProgram: studentUser.degreeProgram || "Bachelor of Science in Computer Science",
+    currentSemester: nextEligibleSemester,
+    highestPassedSemester,
+    nextEligibleSemester,
+    isGraduated: highestPassedSemester === 8,
+    cgpa,
+    currentGpa,
+    completedCreditHours: totalPassedCredits,
+    remainingCreditHours,
+    totalDegreeCredits,
+    degreeProgress,
+    academicStanding,
+    totalPassedCoursesCount,
+    totalFailedCoursesCount,
+    failedCoursesList,
+    congratulationsNotification,
+    semesters: semesterDetails,
+  };
+}
+
 // ----------------------------------------------------------------------------
 // AUDIT LOGGING
 // ----------------------------------------------------------------------------
@@ -1299,9 +1696,18 @@ export const facultySaveStudentResult = mutation({
         remarks: args.remarks,
         updatedAt: now,
       });
+
+      if (args.status === "Published" || existing.status === "Published") {
+        await calculateStudentAcademicProgression(
+          ctx,
+          { studentId: args.studentId, enrollmentId: args.enrollmentId },
+          true
+        );
+      }
+
       return existing._id;
     } else {
-      return await ctx.db.insert("academicResults", {
+      const newId = await ctx.db.insert("academicResults", {
         studentId: args.studentId,
         studentName: args.studentName,
         enrollmentId: args.enrollmentId,
@@ -1325,12 +1731,24 @@ export const facultySaveStudentResult = mutation({
         createdAt: now,
         updatedAt: now,
       });
+
+      if (args.status === "Published") {
+        await calculateStudentAcademicProgression(
+          ctx,
+          { studentId: args.studentId, enrollmentId: args.enrollmentId },
+          true
+        );
+      }
+
+      return newId;
     }
   },
 });
 
 /**
  * Faculty mutation: Post announcement for course or department
+ * SECURITY: Faculty announcements are ALWAYS INTERNAL to authenticated students/course areas.
+ * Client cannot override visibility to PUBLIC.
  */
 export const facultyPostAnnouncement = mutation({
   args: {
@@ -1347,8 +1765,22 @@ export const facultyPostAnnouncement = mutation({
     department: v.optional(v.string()),
     priority: v.union(v.literal("High"), v.literal("Normal"), v.literal("Urgent")),
     facultyName: v.string(),
+    token: v.optional(v.string()),
+    visibility: v.optional(v.string()), // Ignored/overridden for security
   },
   handler: async (ctx, args) => {
+    // Resolve faculty user ID if session token passed
+    let userId: string | undefined = undefined;
+    if (args.token) {
+      const session = await ctx.db
+        .query("sessions")
+        .withIndex("by_token", (q) => q.eq("token", args.token!))
+        .first();
+      if (session && session.expiresAt > Date.now()) {
+        userId = session.userId;
+      }
+    }
+
     return await ctx.db.insert("announcements", {
       title: args.title.trim(),
       message: args.message.trim(),
@@ -1365,6 +1797,10 @@ export const facultyPostAnnouncement = mutation({
       }),
       status: "Published",
       createdAt: Date.now(),
+      createdByRole: "FACULTY",
+      createdByUserId: userId,
+      visibility: "INTERNAL", // Strictly INTERNAL: NEVER public explore
+      isFeatured: false,      // Faculty posts can NEVER be auto-featured on public explore
     });
   },
 });
@@ -1751,6 +2187,7 @@ export const getStudentCourses = query({
     const allAttendance = await ctx.db.query("attendanceRecords").collect();
     const allAssignments = await ctx.db.query("assignments").collect();
     const allSubmissions = await ctx.db.query("assignmentSubmissions").collect();
+    const allResults = await ctx.db.query("academicResults").collect();
 
     return approvedRegistrations.map((reg) => {
       const course = allCourses.find((c) => c._id === reg.courseId || c.code === reg.courseCode);
@@ -1802,6 +2239,35 @@ export const getStudentCourses = query({
         progress = Math.min(100, Math.round(attProgress * attendanceWeight + asgProgress * assignmentWeight));
       }
 
+      // Check for published result
+      const courseResult = allResults.find(
+        (r) =>
+          (r.courseCode === reg.courseCode || (course && r.courseId === course._id)) &&
+          r.status === "Published" &&
+          (studentKeys.has(r.studentId) ||
+            studentKeys.has(r.enrollmentId) ||
+            (studentUser && (r.studentId === String(studentUser._id) || r.enrollmentId === studentUser.enrollmentId)))
+      );
+
+      const hasPublishedResult = Boolean(courseResult);
+      const isPassed = hasPublishedResult && courseResult!.grade !== "F" && courseResult!.percentage >= 50 && courseResult!.gradePoints > 0;
+      const isFailed = hasPublishedResult && !isPassed;
+
+      const finalGrade = hasPublishedResult ? courseResult!.grade : "In Progress";
+      const finalGradePoints = hasPublishedResult ? courseResult!.gradePoints : 0;
+      const courseStatus = hasPublishedResult
+        ? isPassed
+          ? "Completed / Passed"
+          : "Failed"
+        : "In Progress";
+      const resultStatus = hasPublishedResult ? "Published" : "Pending";
+      const curriculumProgress = hasPublishedResult
+        ? isPassed
+          ? "Completed"
+          : "Failed"
+        : "In Progress";
+      const finalProgress = isPassed ? 100 : hasPublishedResult ? 100 : progress;
+
       const semNumber = course?.semester || parseInt(reg.semester.replace(/[^0-9]/g, ""), 10) || 1;
 
       return {
@@ -1841,10 +2307,25 @@ export const getStudentCourses = query({
         totalLectures,
         pendingAssignments,
         totalAssignments: courseAssignments.length,
-        currentGrade: "In Progress",
-        gradeStatus: attendancePercentage < 75 && totalLectures > 4 ? ("At Risk" as const) : ("Good" as const),
-        progress,
-        status: (course?.status || "Active") as any,
+        currentGrade: finalGrade,
+        gradePoints: finalGradePoints,
+        gradeStatus: isFailed
+          ? ("At Risk" as const)
+          : isPassed
+          ? ("Good" as const)
+          : attendancePercentage < 75 && totalLectures > 4
+          ? ("At Risk" as const)
+          : ("Good" as const),
+        progress: finalProgress,
+        status: courseStatus as any,
+        resultStatus,
+        curriculumProgress,
+        isCompleted: isPassed,
+        isPassed,
+        isFailed,
+        marks: courseResult?.totalMarks,
+        percentage: courseResult?.percentage,
+        publishedAt: courseResult?.publishedAt,
         syllabus: [
           "Course Overview, Learning Outcomes & Evaluation Policy",
           "Foundational Methodologies & Applied Theory",
@@ -1936,7 +2417,13 @@ export const getStudentAvailableCourses = query({
       return [];
     }
 
-    const targetSemester = args.semester ?? (studentUser.currentSemester || 1);
+    const progression = await calculateStudentAcademicProgression(ctx, studentUser, false);
+    const targetSemester = args.semester ?? (progression?.nextEligibleSemester || studentUser.currentSemester || 1);
+    const isUnlocked = progression ? targetSemester <= progression.nextEligibleSemester : true;
+    const isPassed = progression ? targetSemester <= progression.highestPassedSemester : false;
+    const lockedMessage = isUnlocked
+      ? ""
+      : `Semester ${targetSemester} is currently locked. Successfully complete Semester ${targetSemester - 1} before registering for Semester ${targetSemester}.`;
 
     const allCourses = await ctx.db
       .query("courses")
@@ -2020,6 +2507,10 @@ export const getStudentAvailableCourses = query({
         isEnrolled: registrationStatus === "Approved",
         isPending: registrationStatus === "Pending",
         isRejected: registrationStatus === "Rejected",
+        isSemesterUnlocked: isUnlocked,
+        isSemesterPassed: isPassed,
+        lockedMessage,
+        canRegister: isUnlocked && !isPassed && registrationStatus === "None",
       };
     });
   },
@@ -2206,6 +2697,15 @@ export const submitCourseRegistration = mutation({
           `Security violation: Course "${course.name}" belongs to ${course.program}, which does not match your degree program.`
         );
       }
+    }
+
+    // 3b. Strict Backend Authorization: Semester Eligibility Enforcement
+    const progression = await calculateStudentAcademicProgression(ctx, studentUser, false);
+    const courseSemester = course.semester || 1;
+    if (progression && courseSemester > progression.nextEligibleSemester) {
+      throw new Error(
+        `Semester ${courseSemester} is currently locked. Successfully complete Semester ${courseSemester - 1} before registering for Semester ${courseSemester}.`
+      );
     }
 
     // 4. Duplicate Registration Prevention
@@ -2930,6 +3430,13 @@ export const saveAcademicResult = mutation({
         timestamp: now,
       });
 
+      // Trigger automatic academic progression calculation and semester advancement
+      await calculateStudentAcademicProgression(
+        ctx,
+        { studentId: args.studentId, enrollmentId: args.enrollmentId },
+        true
+      );
+
       return existing._id;
     } else {
       const id = await ctx.db.insert("academicResults", {
@@ -2969,6 +3476,13 @@ export const saveAcademicResult = mutation({
         newValue: args.status,
         timestamp: now,
       });
+
+      // Trigger automatic academic progression calculation and semester advancement
+      await calculateStudentAcademicProgression(
+        ctx,
+        { studentId: args.studentId, enrollmentId: args.enrollmentId },
+        true
+      );
 
       return id;
     }
@@ -3011,6 +3525,13 @@ export const updateResultPublishStatus = mutation({
       newValue: args.status,
       timestamp: Date.now(),
     });
+
+    // Trigger automatic academic progression calculation and semester advancement
+    await calculateStudentAcademicProgression(
+      ctx,
+      { studentId: res.studentId, enrollmentId: res.enrollmentId },
+      true
+    );
   },
 });
 
@@ -3103,9 +3624,351 @@ export const getStudentPublishedResults = query({
   },
 });
 
+/**
+ * Real-time Student Academic Progression Query
+ * Dynamic database-driven source of truth for:
+ * - Current and next eligible semesters
+ * - Semesters 1-8 status (Passed, In Progress, Available, Locked, Failed)
+ * - True GPA & CGPA strictly from published results
+ * - Completed credit hours and degree progress
+ * - Congratulations notification and CTA for next semester registration
+ */
+export const getStudentAcademicProgression = query({
+  args: {
+    userId: v.optional(v.id("users")),
+    studentId: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    return await calculateStudentAcademicProgression(ctx, args, false);
+  },
+});
+
+/**
+ * Explicit mutation to sync academic progression and advance users.currentSemester
+ */
+export const syncStudentAcademicProgression = mutation({
+  args: {
+    userId: v.optional(v.id("users")),
+    studentId: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    return await calculateStudentAcademicProgression(ctx, args, true);
+  },
+});
+
+/**
+ * Institutional Admin Academic Progression Overview
+ * Provides the Registrar with real-time academic progression across all registered students
+ */
+export const getAdminAcademicProgressionOverview = query({
+  args: {},
+  handler: async (ctx) => {
+    const students = await ctx.db
+      .query("users")
+      .withIndex("by_role", (q) => q.eq("role", "student"))
+      .collect();
+
+    const overviewList = await Promise.all(
+      students.map(async (s) => {
+        const prog = await calculateStudentAcademicProgression(ctx, s, false);
+        const highestPassed = prog?.highestPassedSemester || 0;
+        const currentSem = prog?.currentSemester || s.currentSemester || 1;
+        const nextEligible = prog?.nextEligibleSemester || (highestPassed + 1);
+
+        let semStatus = "● In Progress";
+        if (highestPassed >= 1 && highestPassed === currentSem) {
+          semStatus = "✓ Successfully Passed";
+        } else if (prog?.totalFailedCoursesCount && prog.totalFailedCoursesCount > 0) {
+          semStatus = "⚠ Failed Courses";
+        } else if (highestPassed === 0 && (!prog?.completedCreditHours || prog.completedCreditHours === 0)) {
+          semStatus = "🔓 Available for Registration";
+        }
+
+        return {
+          id: s._id,
+          name: s.name,
+          studentId: s.enrollmentId || String(s._id).slice(-8).toUpperCase(),
+          email: s.universityEmail || s.email,
+          department: s.department || "Computing & Artificial Intelligence",
+          program: s.degreeProgram || "BS Computer Science",
+          currentSemester: currentSem,
+          completedSemester: highestPassed > 0 ? `Semester ${highestPassed}` : "None",
+          currentGpa: prog?.currentGpa || 0.0,
+          cgpa: prog?.cgpa || 0.0,
+          completedCreditHours: prog?.completedCreditHours || 0,
+          remainingCreditHours: prog?.remainingCreditHours || (s.degreeProgram === "MSCS" ? 30 : 134),
+          totalDegreeCredits: prog?.totalDegreeCredits || (s.degreeProgram === "MSCS" ? 30 : 134),
+          academicProgress: prog?.degreeProgress || 0,
+          semesterStatus: semStatus,
+          nextEligibleSemester: nextEligible,
+          registrationStatus:
+            highestPassed >= 1 && nextEligible > highestPassed
+              ? "Available for Registration"
+              : "Registered / In Progress",
+          academicStanding: prog?.academicStanding || "Good Standing",
+          failedCoursesCount: prog?.totalFailedCoursesCount || 0,
+          passedCoursesCount: prog?.totalPassedCoursesCount || 0,
+          failedCoursesList: prog?.failedCoursesList || [],
+          semesters: prog?.semesters || [],
+        };
+      })
+    );
+
+    return overviewList;
+  },
+});
+
+/**
+ * Bulk Publish Results & Recalculate Progression
+ */
+export const bulkUpdateResultPublishStatus = mutation({
+  args: {
+    resultIds: v.array(v.id("academicResults")),
+    status: v.union(
+      v.literal("Draft"),
+      v.literal("Submitted"),
+      v.literal("Reviewed"),
+      v.literal("Approved"),
+      v.literal("Published")
+    ),
+    adminName: v.string(),
+    adminEmail: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const studentKeys = new Set<string>();
+    const now = Date.now();
+    for (const rId of args.resultIds) {
+      const res = await ctx.db.get(rId);
+      if (res) {
+        if (res.studentId) studentKeys.add(res.studentId);
+        if (res.enrollmentId) studentKeys.add(res.enrollmentId);
+        await ctx.db.patch(rId, {
+          status: args.status,
+          publishedAt: args.status === "Published" ? now : res.publishedAt,
+          publishedBy: args.status === "Published" ? args.adminName : res.publishedBy,
+          updatedAt: now,
+        });
+
+        await ctx.db.insert("auditLogs", {
+          adminId: "admin",
+          adminName: args.adminName,
+          adminEmail: args.adminEmail,
+          actionType: args.status === "Published" ? "publish" : "update",
+          module: "Results & Grades",
+          details: `Bulk updated result publication for ${res.studentName} (${res.courseCode}) to ${args.status}`,
+          newValue: args.status,
+          timestamp: now,
+        });
+      }
+    }
+
+    for (const sKey of Array.from(studentKeys)) {
+      await calculateStudentAcademicProgression(ctx, sKey, true);
+    }
+
+    return { updatedCount: args.resultIds.length };
+  },
+});
+
+/**
+ * Ensure foundational Semester 1 and Semester 2 courses exist in database for seamless progression testing
+ */
+export const ensureFoundationalSemesterCourses = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const existingCourses = await ctx.db.query("courses").collect();
+    const existingCodes = new Set(existingCourses.map((c) => c.code.trim().toUpperCase()));
+    const now = Date.now();
+
+    const baselineFoundational = [
+      // Semester 1
+      {
+        code: "CS-101",
+        name: "Programming Fundamentals",
+        creditHours: 4,
+        semester: 1,
+        department: "Department of Computing & Artificial Intelligence",
+        program: "BSCS",
+        faculty: "Dr. Arshad Mehmood",
+        description:
+          "Problem-solving techniques, procedural programming in C++/Python, control flow, functions, memory arrays, and file streams.",
+      },
+      {
+        code: "CS-102",
+        name: "Introduction to Information & Communication Technologies",
+        creditHours: 3,
+        semester: 1,
+        department: "Department of Computing & Artificial Intelligence",
+        program: "BSCS",
+        faculty: "Engr. Fatima Tariq",
+        description:
+          "Computer architectures, operating system fundamentals, Internet protocols, database fundamentals, and digital transformation.",
+      },
+      {
+        code: "MT-101",
+        name: "Calculus & Analytical Geometry",
+        creditHours: 3,
+        semester: 1,
+        department: "Department of Computing & Artificial Intelligence",
+        program: "BSCS",
+        faculty: "Dr. Kamran Qureshi",
+        description:
+          "Limits, derivatives, definite integrals, transcendental functions, vector calculus, and multivariable analytical geometry.",
+      },
+      {
+        code: "EN-101",
+        name: "English Composition & Comprehension",
+        creditHours: 3,
+        semester: 1,
+        department: "Department of Computing & Artificial Intelligence",
+        program: "BSCS",
+        faculty: "Engr. Bilal Zahid",
+        description:
+          "Academic writing syntax, reading comprehension, critical analysis, technical summarizing, and vocabulary enrichment.",
+      },
+      {
+        code: "PK-101",
+        name: "Islamic & Pakistan Studies",
+        creditHours: 2,
+        semester: 1,
+        department: "Department of Computing & Artificial Intelligence",
+        program: "BSCS",
+        faculty: "Dr. Arshad Mehmood",
+        description:
+          "Historical evolution of Pakistan, constitutional foundations, socio-economic trajectory, and ethical frameworks.",
+      },
+
+      // Semester 2
+      {
+        code: "CS-111",
+        name: "Object-Oriented Programming",
+        creditHours: 4,
+        semester: 2,
+        department: "Department of Computing & Artificial Intelligence",
+        program: "BSCS",
+        faculty: "Dr. Arshad Mehmood",
+        description:
+          "Classes, abstraction, encapsulation, inheritance, runtime polymorphism, exception handling, and design patterns in Java/C++.",
+      },
+      {
+        code: "CS-112",
+        name: "Discrete Structures",
+        creditHours: 3,
+        semester: 2,
+        department: "Department of Computing & Artificial Intelligence",
+        program: "BSCS",
+        faculty: "Engr. Fatima Tariq",
+        description:
+          "Propositional logic, set theory, proof techniques, induction, combinatorics, graph theory, and recurrence relations.",
+      },
+      {
+        code: "MT-102",
+        name: "Linear Algebra & Differential Equations",
+        creditHours: 3,
+        semester: 2,
+        department: "Department of Computing & Artificial Intelligence",
+        program: "BSCS",
+        faculty: "Dr. Kamran Qureshi",
+        description:
+          "Matrices, vector spaces, eigenvalues/eigenvectors, linear transformations, and first/second-order differential equations.",
+      },
+      {
+        code: "PH-101",
+        name: "Applied Physics for Computing",
+        creditHours: 3,
+        semester: 2,
+        department: "Department of Computing & Artificial Intelligence",
+        program: "BSCS",
+        faculty: "Engr. Bilal Zahid",
+        description:
+          "Semiconductor physics, electromagnetism, circuit theorem analysis, quantum basics, and solid-state electronic fundamentals.",
+      },
+      {
+        code: "EN-102",
+        name: "Communication & Presentation Skills",
+        creditHours: 3,
+        semester: 2,
+        department: "Department of Computing & Artificial Intelligence",
+        program: "BSCS",
+        faculty: "Engr. Fatima Tariq",
+        description:
+          "Interpersonal communication, executive presentations, technical document design, cross-cultural rhetoric, and meeting dynamics.",
+      },
+    ];
+
+    let insertedCount = 0;
+    for (const c of baselineFoundational) {
+      if (!existingCodes.has(c.code)) {
+        const cId = await ctx.db.insert("courses", {
+          code: c.code,
+          name: c.name,
+          description: c.description,
+          creditHours: c.creditHours,
+          department: c.department,
+          program: c.program,
+          semester: c.semester,
+          prerequisites: [],
+          facultyName: c.faculty,
+          status: "Active",
+          createdAt: now,
+          updatedAt: now,
+        });
+
+        await ctx.db.insert("courseSections", {
+          courseId: cId,
+          courseCode: c.code,
+          courseName: c.name,
+          section: "A",
+          semester: "Fall 2026",
+          academicYear: "2026-2027",
+          facultyName: c.faculty,
+          room: c.semester === 1 ? "Lab 101" : "Lab 202",
+          building: "Computing Department Block A",
+          campus: "Chak Shehzad Campus, Islamabad",
+          days: c.semester === 1 ? ["Monday", "Wednesday"] : ["Tuesday", "Thursday"],
+          startTime: "09:00 AM",
+          endTime: "10:30 AM",
+          capacity: 45,
+          enrolledCount: 0,
+          status: "Active",
+          createdAt: now,
+          updatedAt: now,
+        });
+
+        await ctx.db.insert("classSchedules", {
+          courseId: cId,
+          courseCode: c.code,
+          courseTitle: c.name,
+          section: "A",
+          facultyName: c.faculty,
+          day: c.semester === 1 ? "Monday" : "Tuesday",
+          startTime: "09:00 AM",
+          endTime: "10:30 AM",
+          room: c.semester === 1 ? "Lab 101" : "Lab 202",
+          building: "Computing Department Block A",
+          campus: "Chak Shehzad Campus, Islamabad",
+          type: "Lecture",
+          createdAt: now,
+        });
+
+        insertedCount++;
+      }
+    }
+
+    return {
+      insertedCount,
+      message: `Ensured foundational semester courses. (${insertedCount} new courses created)`,
+    };
+  },
+});
+
 // ----------------------------------------------------------------------------
 // ANNOUNCEMENTS & NOTIFICATIONS
 // ----------------------------------------------------------------------------
+
+/**
+ * Fetch all announcements for authenticated administrative and internal dashboards.
+ */
 export const getAnnouncements = query({
   args: {},
   handler: async (ctx) => {
@@ -3113,6 +3976,81 @@ export const getAnnouncements = query({
   },
 });
 
+/**
+ * STRICT PUBLIC QUERY for Explore University portal.
+ * Accessible to public unauthenticated visitors.
+ * SECURITY GUARANTEE:
+ * ONLY returns announcements that are:
+ * 1. createdByRole === "ADMIN" (or official University administration)
+ * 2. status === "Published"
+ * 3. visibility === "PUBLIC"
+ * 
+ * NEVER returns faculty announcements, course announcements, drafts,
+ * student-specific notices, or internal bulletins under any circumstance.
+ */
+export const getPublicAnnouncements = query({
+  args: {
+    limit: v.optional(v.number()),
+    isFeatured: v.optional(v.boolean()),
+    category: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const allPublished = await ctx.db
+      .query("announcements")
+      .withIndex("by_status", (q) => q.eq("status", "Published"))
+      .order("desc")
+      .collect();
+
+    const publicAnnouncements = allPublished.filter((anc) => {
+      // 1. Mandatory status check
+      if (anc.status !== "Published") return false;
+
+      // 2. Reject any course-specific or student-specific notices
+      if (anc.courseCode) return false;
+      if (anc.category === "Course" || anc.category === "Student-specific") return false;
+
+      // 3. Reject faculty announcements
+      if (anc.createdByRole === "FACULTY") return false;
+      if (anc.sender && anc.sender.toLowerCase().includes("course instructor")) return false;
+
+      // 4. Check visibility (must be explicitly PUBLIC or legacy admin official notice)
+      if (anc.visibility) {
+        if (anc.visibility !== "PUBLIC") return false;
+      } else {
+        // Legacy fallback: only if sender is Registrar / Administration and role is ADMIN
+        const isOfficialAdmin =
+          anc.createdByRole === "ADMIN" ||
+          (anc.sender &&
+            (anc.sender.toLowerCase().includes("registrar") ||
+              anc.sender.toLowerCase().includes("admin") ||
+              anc.sender.toLowerCase().includes("university")));
+        if (!isOfficialAdmin) return false;
+      }
+
+      // 5. Featured filter (if requested)
+      if (args.isFeatured !== undefined) {
+        if (Boolean(anc.isFeatured) !== args.isFeatured) return false;
+      }
+
+      // 6. Category filter (if requested)
+      if (args.category && args.category !== "All") {
+        if (anc.category !== args.category) return false;
+      }
+
+      return true;
+    });
+
+    if (args.limit && args.limit > 0) {
+      return publicAnnouncements.slice(0, args.limit);
+    }
+
+    return publicAnnouncements;
+  },
+});
+
+/**
+ * Admin creates an announcement with explicit visibility and publishing controls.
+ */
 export const createAnnouncement = mutation({
   args: {
     title: v.string(),
@@ -3133,21 +4071,35 @@ export const createAnnouncement = mutation({
     expiryDate: v.optional(v.string()),
     adminName: v.string(),
     adminEmail: v.string(),
+    status: v.optional(v.union(v.literal("Published"), v.literal("Draft"), v.literal("Archived"))),
+    visibility: v.optional(
+      v.union(v.literal("PUBLIC"), v.literal("INTERNAL"), v.literal("AUTHENTICATED"))
+    ),
+    isFeatured: v.optional(v.boolean()),
+    imageUrl: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    const status = args.status || "Published";
+    const visibility = args.visibility || "PUBLIC";
+    const isFeatured = Boolean(args.isFeatured);
+
     const id = await ctx.db.insert("announcements", {
       title: args.title.trim(),
       message: args.message.trim(),
-      sender: args.sender.trim(),
+      sender: args.sender.trim() || "Office of the Registrar",
       category: args.category,
-      targetAudience: args.targetAudience.trim(),
+      targetAudience: args.targetAudience.trim() || "All Students",
       department: args.department,
       courseCode: args.courseCode,
       priority: args.priority,
       publishDate: args.publishDate,
       expiryDate: args.expiryDate,
-      status: "Published",
+      status,
       createdAt: Date.now(),
+      createdByRole: "ADMIN",
+      visibility,
+      isFeatured,
+      imageUrl: args.imageUrl?.trim() || undefined,
     });
 
     await ctx.db.insert("auditLogs", {
@@ -3156,11 +4108,243 @@ export const createAnnouncement = mutation({
       adminEmail: args.adminEmail,
       actionType: "create",
       module: "Announcements",
-      details: `Published announcement: "${args.title}" for ${args.targetAudience}`,
+      details: `Created announcement: "${args.title}" [Visibility: ${visibility}, Status: ${status}, Featured: ${isFeatured}]`,
       timestamp: Date.now(),
     });
 
     return id;
+  },
+});
+
+/**
+ * Admin updates an existing announcement.
+ */
+export const updateAnnouncement = mutation({
+  args: {
+    id: v.id("announcements"),
+    title: v.string(),
+    message: v.string(),
+    sender: v.string(),
+    category: v.union(
+      v.literal("University"),
+      v.literal("Department"),
+      v.literal("Course"),
+      v.literal("Exam"),
+      v.literal("Student-specific")
+    ),
+    targetAudience: v.string(),
+    department: v.optional(v.string()),
+    courseCode: v.optional(v.string()),
+    priority: v.union(v.literal("High"), v.literal("Normal"), v.literal("Urgent")),
+    status: v.union(v.literal("Published"), v.literal("Draft"), v.literal("Archived")),
+    visibility: v.union(v.literal("PUBLIC"), v.literal("INTERNAL"), v.literal("AUTHENTICATED")),
+    isFeatured: v.optional(v.boolean()),
+    imageUrl: v.optional(v.string()),
+    adminName: v.string(),
+    adminEmail: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db.get(args.id);
+    if (!existing) throw new Error("Announcement not found");
+
+    await ctx.db.patch(args.id, {
+      title: args.title.trim(),
+      message: args.message.trim(),
+      sender: args.sender.trim(),
+      category: args.category,
+      targetAudience: args.targetAudience.trim(),
+      department: args.department,
+      courseCode: args.courseCode,
+      priority: args.priority,
+      status: args.status,
+      visibility: args.visibility,
+      isFeatured: Boolean(args.isFeatured),
+      imageUrl: args.imageUrl?.trim() || undefined,
+    });
+
+    await ctx.db.insert("auditLogs", {
+      adminId: "admin",
+      adminName: args.adminName,
+      adminEmail: args.adminEmail,
+      actionType: "update",
+      module: "Announcements",
+      details: `Updated announcement "${args.title}" [Visibility: ${args.visibility}, Status: ${args.status}]`,
+      timestamp: Date.now(),
+    });
+
+    return { success: true };
+  },
+});
+
+/**
+ * Admin quickly toggles or updates announcement publication status.
+ */
+export const updateAnnouncementStatus = mutation({
+  args: {
+    id: v.id("announcements"),
+    status: v.union(v.literal("Published"), v.literal("Draft"), v.literal("Archived")),
+    adminName: v.string(),
+    adminEmail: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db.get(args.id);
+    if (!existing) throw new Error("Announcement not found");
+
+    await ctx.db.patch(args.id, { status: args.status });
+
+    await ctx.db.insert("auditLogs", {
+      adminId: "admin",
+      adminName: args.adminName,
+      adminEmail: args.adminEmail,
+      actionType: "status_change",
+      module: "Announcements",
+      details: `Changed status of announcement "${existing.title}" to ${args.status}`,
+      timestamp: Date.now(),
+    });
+
+    return { success: true };
+  },
+});
+
+/**
+ * Admin updates announcement visibility (Public — Explore University vs Internal).
+ * Can also be used to approve a faculty announcement for public publication.
+ */
+export const updateAnnouncementVisibility = mutation({
+  args: {
+    id: v.id("announcements"),
+    visibility: v.union(v.literal("PUBLIC"), v.literal("INTERNAL"), v.literal("AUTHENTICATED")),
+    adminName: v.string(),
+    adminEmail: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db.get(args.id);
+    if (!existing) throw new Error("Announcement not found");
+
+    await ctx.db.patch(args.id, { visibility: args.visibility });
+
+    await ctx.db.insert("auditLogs", {
+      adminId: "admin",
+      adminName: args.adminName,
+      adminEmail: args.adminEmail,
+      actionType: "update",
+      module: "Announcements",
+      details: `Changed visibility of announcement "${existing.title}" to ${args.visibility}`,
+      timestamp: Date.now(),
+    });
+
+    return { success: true };
+  },
+});
+
+/**
+ * Admin toggles featured status for public announcements.
+ */
+export const toggleAnnouncementFeatured = mutation({
+  args: {
+    id: v.id("announcements"),
+    isFeatured: v.boolean(),
+    adminName: v.string(),
+    adminEmail: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db.get(args.id);
+    if (!existing) throw new Error("Announcement not found");
+
+    await ctx.db.patch(args.id, { isFeatured: args.isFeatured });
+
+    await ctx.db.insert("auditLogs", {
+      adminId: "admin",
+      adminName: args.adminName,
+      adminEmail: args.adminEmail,
+      actionType: "update",
+      module: "Announcements",
+      details: `${args.isFeatured ? "Featured" : "Unfeatured"} announcement "${existing.title}"`,
+      timestamp: Date.now(),
+    });
+
+    return { success: true };
+  },
+});
+
+/**
+ * Admin permanently deletes an announcement.
+ */
+export const deleteAnnouncement = mutation({
+  args: {
+    id: v.id("announcements"),
+    adminName: v.string(),
+    adminEmail: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db.get(args.id);
+    if (!existing) throw new Error("Announcement not found");
+
+    await ctx.db.delete(args.id);
+
+    await ctx.db.insert("auditLogs", {
+      adminId: "admin",
+      adminName: args.adminName,
+      adminEmail: args.adminEmail,
+      actionType: "delete",
+      module: "Announcements",
+      details: `Deleted announcement "${existing.title}"`,
+      timestamp: Date.now(),
+    });
+
+    return { success: true };
+  },
+});
+
+/**
+ * Safe idempotent migration to classify legacy announcements without deleting content.
+ */
+export const migrateAnnouncementsVisibility = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const all = await ctx.db.query("announcements").collect();
+    let updatedCount = 0;
+
+    for (const anc of all) {
+      let needsUpdate = false;
+      const patch: any = {};
+
+      if (!anc.createdByRole) {
+        if (
+          anc.courseCode ||
+          anc.category === "Course" ||
+          anc.category === "Student-specific" ||
+          (anc.sender && anc.sender.toLowerCase().includes("course instructor"))
+        ) {
+          patch.createdByRole = "FACULTY";
+        } else {
+          patch.createdByRole = "ADMIN";
+        }
+        needsUpdate = true;
+      }
+
+      if (!anc.visibility) {
+        if (patch.createdByRole === "FACULTY" || anc.createdByRole === "FACULTY") {
+          patch.visibility = "INTERNAL";
+        } else {
+          // Admin announcements default to PUBLIC if published and University category
+          patch.visibility = anc.category === "University" ? "PUBLIC" : "INTERNAL";
+        }
+        needsUpdate = true;
+      }
+
+      if (anc.isFeatured === undefined) {
+        patch.isFeatured = false;
+        needsUpdate = true;
+      }
+
+      if (needsUpdate) {
+        await ctx.db.patch(anc._id, patch);
+        updatedCount++;
+      }
+    }
+
+    return { migrated: true, count: updatedCount };
   },
 });
 

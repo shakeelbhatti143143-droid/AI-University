@@ -9,8 +9,19 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        university: {
+          navy: {
+            DEFAULT: "#0b1f3a",
+            hover: "#122b4e",
+            active: "#071426",
+            light: "#163866",
+            tint: "#f0f4fa",
+            border: "#cbd5e1",
+          },
+        },
         iqra: {
           navy: {
+            DEFAULT: "#0b1f3a",
             950: "#050e1d",
             900: "#0a192f",
             850: "#0c1f3a",

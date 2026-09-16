@@ -13,19 +13,30 @@ import {
   Calendar,
   Layers,
   Sparkles,
+  AlertCircle,
+  XCircle,
 } from "lucide-react";
-import { StudentProfile, SemesterRecord, semesterHistory } from "@/lib/dashboard-data";
+import { StudentProfile, SemesterRecord, semesterHistory, StudentProgressionData } from "@/lib/dashboard-data";
 
 interface AcademicOverviewSectionProps {
   profile: StudentProfile;
   history?: SemesterRecord[];
+  progression?: StudentProgressionData | null;
 }
 
 export const AcademicOverviewSection: React.FC<AcademicOverviewSectionProps> = ({
   profile,
   history = semesterHistory,
+  progression,
 }) => {
-  const progressPercent = Math.round((profile.completedCreditHours / profile.totalCreditHours) * 100);
+  const effectiveCgpa = progression?.cgpa !== undefined ? progression.cgpa : profile.cgpa;
+  const effectiveCurrentGpa = progression?.currentGpa !== undefined ? progression.currentGpa : profile.currentGpa;
+  const effectiveCompletedCredits = progression?.completedCreditHours !== undefined ? progression.completedCreditHours : profile.completedCreditHours;
+  const effectiveTotalCredits = progression?.totalDegreeCredits || profile.totalCreditHours || 134;
+  const effectiveRemainingCredits = progression?.remainingCreditHours !== undefined ? progression.remainingCreditHours : Math.max(0, effectiveTotalCredits - effectiveCompletedCredits);
+  const effectiveProgressPercent = progression?.degreeProgress !== undefined ? progression.degreeProgress : Math.round((effectiveCompletedCredits / effectiveTotalCredits) * 100);
+  const effectiveStanding = progression?.academicStanding || profile.academicStanding;
+  const currentSemNumber = progression?.currentSemester || 1;
 
   // Highest GPA for chart scaling (4.00 max)
   const maxScale = 4.0;
@@ -37,7 +48,7 @@ export const AcademicOverviewSection: React.FC<AcademicOverviewSectionProps> = (
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-iqra-gold-500/20 border border-iqra-gold-400/30 text-iqra-gold-300 text-xs font-bold">
             <Award className="w-3.5 h-3.5" />
-            <span>{profile.academicStanding}</span>
+            <span>{effectiveStanding}</span>
           </div>
 
           <h2 className="text-2xl sm:text-3xl font-black font-heading text-white tracking-tight">
@@ -45,7 +56,7 @@ export const AcademicOverviewSection: React.FC<AcademicOverviewSectionProps> = (
           </h2>
 
           <p className="text-xs sm:text-sm text-slate-300 max-w-xl">
-            Official degree audit for Bachelor of Science in Computer Science. Minimum CGPA of 2.00 required for degree award; currently maintaining <strong>{profile.cgpa.toFixed(2)} CGPA</strong>.
+            Official degree audit for {progression?.degreeProgram || profile.program}. Minimum CGPA of 2.00 required for degree award; currently maintaining <strong>{effectiveCgpa.toFixed(2)} CGPA</strong>.
           </p>
         </div>
 
@@ -59,6 +70,28 @@ export const AcademicOverviewSection: React.FC<AcademicOverviewSectionProps> = (
         </button>
       </div>
 
+      {/* Failed Courses Warning Alert if Any */}
+      {progression?.failedCoursesList && progression.failedCoursesList.length > 0 && (
+        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center shrink-0">
+              <AlertCircle className="w-5 h-5 text-rose-600" />
+            </div>
+            <div>
+              <span className="text-xs font-black text-rose-900 uppercase tracking-wide">
+                Academic Retake Required ({progression.failedCoursesList.length} Failed Course{progression.failedCoursesList.length > 1 ? "s" : ""})
+              </span>
+              <p className="text-xs text-rose-800 mt-0.5">
+                {progression.failedCoursesList.map((f) => `${f.code}: ${f.title} (Grade ${f.grade})`).join(" • ")}
+              </p>
+            </div>
+          </div>
+          <span className="px-3 py-1 rounded-xl text-[10px] font-black uppercase bg-rose-200 text-rose-900 shrink-0">
+            Prerequisite Incomplete
+          </span>
+        </div>
+      )}
+
       {/* 4 Overview Metric Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs">
@@ -67,28 +100,28 @@ export const AcademicOverviewSection: React.FC<AcademicOverviewSectionProps> = (
           </span>
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-black font-heading text-slate-900">
-              {profile.cgpa.toFixed(2)}
+              {effectiveCgpa.toFixed(2)}
             </span>
             <span className="text-xs text-slate-400 font-semibold">/ 4.00</span>
           </div>
           <p className="text-[11px] text-emerald-600 font-semibold mt-2 flex items-center gap-1">
             <TrendingUp className="w-3.5 h-3.5" />
-            +0.04 from previous semester
+            {effectiveCgpa >= 3.5 ? "Dean's Honor Roll" : effectiveCgpa >= 2.0 ? "Good Standing" : "Academic Probation"}
           </p>
         </div>
 
         <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs">
           <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
-            Current Semester GPA (Sem 6)
+            Current Semester GPA (Sem {currentSemNumber})
           </span>
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-black font-heading text-iqra-blue-700">
-              {profile.currentGpa.toFixed(2)}
+              {effectiveCurrentGpa.toFixed(2)}
             </span>
             <span className="text-xs text-slate-400 font-semibold">/ 4.00</span>
           </div>
           <p className="text-[11px] text-slate-500 font-medium mt-2">
-            Highest semester performance to date
+            Active Semester Academic Performance
           </p>
         </div>
 
@@ -98,12 +131,12 @@ export const AcademicOverviewSection: React.FC<AcademicOverviewSectionProps> = (
           </span>
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-black font-heading text-slate-900">
-              {profile.completedCreditHours}
+              {effectiveCompletedCredits}
             </span>
-            <span className="text-xs text-slate-400 font-semibold">/ {profile.totalCreditHours} Cr</span>
+            <span className="text-xs text-slate-400 font-semibold">/ {effectiveTotalCredits} Cr</span>
           </div>
           <p className="text-[11px] text-emerald-600 font-medium mt-2">
-            {profile.remainingCreditHours} Credit Hours remaining
+            {effectiveRemainingCredits} Credit Hours remaining
           </p>
         </div>
 
@@ -113,12 +146,12 @@ export const AcademicOverviewSection: React.FC<AcademicOverviewSectionProps> = (
           </span>
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-black font-heading text-slate-900">
-              {progressPercent}%
+              {effectiveProgressPercent}%
             </span>
             <span className="text-xs text-slate-400 font-semibold">Progress</span>
           </div>
           <p className="text-[11px] text-slate-500 font-medium mt-2">
-            On track for Spring 2027 Graduation
+            {effectiveProgressPercent >= 100 ? "Eligible for Graduation" : "Sequential Progression Active"}
           </p>
         </div>
       </div>
@@ -129,11 +162,11 @@ export const AcademicOverviewSection: React.FC<AcademicOverviewSectionProps> = (
           <div>
             <h3 className="text-sm font-bold text-slate-900">Undergraduate Degree Progress Tracker</h3>
             <p className="text-[11px] text-slate-500">
-              BS Computer Science curriculum roadmap ({profile.completedCreditHours} of {profile.totalCreditHours} credit hours passed)
+              {progression?.degreeProgram || profile.program} curriculum roadmap ({effectiveCompletedCredits} of {effectiveTotalCredits} credit hours passed)
             </p>
           </div>
           <span className="text-xs font-bold text-iqra-blue-700 bg-blue-50 px-3 py-1 rounded-full">
-            {progressPercent}% Completed
+            {effectiveProgressPercent}% Completed
           </span>
         </div>
 
@@ -142,34 +175,59 @@ export const AcademicOverviewSection: React.FC<AcademicOverviewSectionProps> = (
           <div className="w-full h-3 rounded-full bg-slate-100 overflow-hidden p-0.5 border border-slate-200">
             <div
               className="h-full rounded-full bg-gradient-to-r from-iqra-blue-600 via-iqra-blue-500 to-emerald-500 transition-all duration-700"
-              style={{ width: `${progressPercent}%` }}
+              style={{ width: `${Math.min(100, effectiveProgressPercent)}%` }}
             />
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 text-xs">
-            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/70">
-              <span className="text-[10px] text-slate-400 font-bold block uppercase">Computing Core</span>
-              <span className="text-xs font-bold text-slate-800">39 / 39 Cr (100%)</span>
-              <span className="text-[10px] text-emerald-600 block mt-0.5">Completed</span>
-            </div>
-
-            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/70">
-              <span className="text-[10px] text-slate-400 font-bold block uppercase">CS Domain Electives</span>
-              <span className="text-xs font-bold text-slate-800">21 / 33 Cr (63%)</span>
-              <span className="text-[10px] text-iqra-blue-600 block mt-0.5">In Progress</span>
-            </div>
-
-            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/70">
-              <span className="text-[10px] text-slate-400 font-bold block uppercase">General / Humanities</span>
-              <span className="text-xs font-bold text-slate-800">22 / 24 Cr (91%)</span>
-              <span className="text-[10px] text-iqra-blue-600 block mt-0.5">In Progress</span>
-            </div>
-
-            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/70">
-              <span className="text-[10px] text-slate-400 font-bold block uppercase">Final Year Project</span>
-              <span className="text-xs font-bold text-slate-800">6 / 6 Cr (Upcoming)</span>
-              <span className="text-[10px] text-slate-500 block mt-0.5">Sem 7 & Sem 8</span>
-            </div>
+            {progression?.semesters && progression.semesters.length > 0 ? (
+              progression.semesters.slice(0, 4).map((s) => (
+                <div key={s.semesterNumber} className="p-3 rounded-xl bg-slate-50 border border-slate-200/70">
+                  <span className="text-[10px] text-slate-400 font-bold block uppercase">
+                    Semester {s.semesterNumber}
+                  </span>
+                  <span className="text-xs font-bold text-slate-800">
+                    {s.completedCoursesCount} / {Math.max(s.totalCoursesCount, 5)} Courses
+                  </span>
+                  <span
+                    className={`text-[10px] block mt-0.5 font-semibold ${
+                      s.status === "Passed"
+                        ? "text-emerald-600"
+                        : s.status === "In Progress"
+                        ? "text-amber-600"
+                        : s.status === "Available"
+                        ? "text-blue-600"
+                        : "text-slate-400"
+                    }`}
+                  >
+                    {s.statusLabel}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <>
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/70">
+                  <span className="text-[10px] text-slate-400 font-bold block uppercase">Computing Core</span>
+                  <span className="text-xs font-bold text-slate-800">39 / 39 Cr (100%)</span>
+                  <span className="text-[10px] text-emerald-600 block mt-0.5">Completed</span>
+                </div>
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/70">
+                  <span className="text-[10px] text-slate-400 font-bold block uppercase">CS Domain Electives</span>
+                  <span className="text-xs font-bold text-slate-800">21 / 33 Cr (63%)</span>
+                  <span className="text-[10px] text-iqra-blue-600 block mt-0.5">In Progress</span>
+                </div>
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/70">
+                  <span className="text-[10px] text-slate-400 font-bold block uppercase">General / Humanities</span>
+                  <span className="text-xs font-bold text-slate-800">22 / 24 Cr (91%)</span>
+                  <span className="text-[10px] text-iqra-blue-600 block mt-0.5">In Progress</span>
+                </div>
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/70">
+                  <span className="text-[10px] text-slate-400 font-bold block uppercase">Final Year Project</span>
+                  <span className="text-xs font-bold text-slate-800">6 / 6 Cr (Upcoming)</span>
+                  <span className="text-[10px] text-slate-500 block mt-0.5">Sem 7 & Sem 8</span>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>

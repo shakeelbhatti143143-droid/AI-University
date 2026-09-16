@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as academicAiImporter from "../academicAiImporter.js";
 import type * as academicManagement from "../academicManagement.js";
 import type * as applications from "../applications.js";
 import type * as auth from "../auth.js";
@@ -17,6 +18,7 @@ import type * as programs from "../programs.js";
 import type * as storage from "../storage.js";
 import type * as users from "../users.js";
 import type * as videos from "../videos.js";
+import type * as website from "../website.js";
 
 import type {
   ApiFromModules,
@@ -25,6 +27,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  academicAiImporter: typeof academicAiImporter;
   academicManagement: typeof academicManagement;
   applications: typeof applications;
   auth: typeof auth;
@@ -34,6 +37,7 @@ declare const fullApi: ApiFromModules<{
   storage: typeof storage;
   users: typeof users;
   videos: typeof videos;
+  website: typeof website;
 }>;
 
 /**

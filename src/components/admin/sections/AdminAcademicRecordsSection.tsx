@@ -14,8 +14,18 @@ import {
   XCircle,
   BarChart3,
   Sparkles,
+  GraduationCap,
+  Lock,
+  Unlock,
+  Clock,
+  AlertCircle,
+  Filter,
+  X,
+  ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useQuery } from "convex/react";
+import { api } from "../../../../convex/_generated/api";
 
 interface StudentAcademicRecord {
   id: string;
@@ -40,7 +50,7 @@ interface StudentAcademicRecord {
 }
 
 interface AdminAcademicRecordsSectionProps {
-  initialTab?: "transcripts" | "gpa-cgpa" | "reports";
+  initialTab?: "transcripts" | "gpa-cgpa" | "reports" | "progression";
   students: StudentAcademicRecord[];
 }
 
@@ -48,12 +58,22 @@ export const AdminAcademicRecordsSection: React.FC<AdminAcademicRecordsSectionPr
   initialTab = "transcripts",
   students,
 }) => {
-  const [activeSubTab, setActiveSubTab] = useState<"transcripts" | "gpa-cgpa" | "reports">(
-    initialTab
-  );
+  const [activeSubTab, setActiveSubTab] = useState<
+    "transcripts" | "gpa-cgpa" | "reports" | "progression"
+  >(initialTab);
   const [searchQuery, setSearchQuery] = useState("");
+  const [progressionFilterDepartment, setProgressionFilterDepartment] = useState("All");
+  const [progressionFilterStatus, setProgressionFilterStatus] = useState("All");
+  const [auditStudentDetail, setAuditStudentDetail] = useState<any | null>(null);
+
   const [selectedStudent, setSelectedStudent] = useState<StudentAcademicRecord | null>(
     students[0] || null
+  );
+
+  // Live institutional academic progression data from Convex
+  const liveProgressionOverview = useQuery(
+    api.academicManagement.getAdminAcademicProgressionOverview,
+    {}
   );
 
   const filteredStudents = students.filter(
@@ -85,15 +105,28 @@ export const AdminAcademicRecordsSection: React.FC<AdminAcademicRecordsSectionPr
             <span className="text-xs font-semibold text-slate-600">Official Graduation & Standing</span>
           </div>
           <h2 className="text-2xl font-black font-heading text-slate-900 tracking-tight">
-            Transcripts, GPA & Academic Reports
+            Transcripts, GPA & Academic Progression
           </h2>
           <p className="text-xs text-slate-500">
-            Official verifiable web transcripts, cumulative GPA distributions, and departmental performance reports.
+            Official verifiable web transcripts, cumulative GPA distributions, automatic semester progression audits, and institutional reports.
           </p>
         </div>
 
         {/* Sub-tab Switcher */}
-        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-2xl border border-slate-200 self-start md:self-auto">
+        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-2xl border border-slate-200 self-start md:self-auto flex-wrap">
+          <button
+            onClick={() => setActiveSubTab("progression")}
+            className={cn(
+              "px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5",
+              activeSubTab === "progression"
+                ? "bg-white text-slate-900 shadow-xs font-black"
+                : "text-slate-600 hover:text-slate-900"
+            )}
+          >
+            <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Academic Progression</span>
+          </button>
+
           <button
             onClick={() => setActiveSubTab("transcripts")}
             className={cn(
@@ -134,6 +167,353 @@ export const AdminAcademicRecordsSection: React.FC<AdminAcademicRecordsSectionPr
           </button>
         </div>
       </div>
+
+      {/* ------------------------------------------------------------- */}
+      {/* 0. ACADEMIC PROGRESSION AUDIT ROSTER (REGISTRAR OVERVIEW) */}
+      {/* ------------------------------------------------------------- */}
+      {activeSubTab === "progression" && (() => {
+        const rawList = liveProgressionOverview || [];
+        const filteredProgression = rawList.filter((item: any) => {
+          const matchesSearch =
+            item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            item.studentId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            item.email.toLowerCase().includes(searchQuery.toLowerCase());
+
+          const matchesDept =
+            progressionFilterDepartment === "All" || item.department === progressionFilterDepartment;
+
+          const matchesStatus =
+            progressionFilterStatus === "All" ||
+            (progressionFilterStatus === "Passed" && item.semesterStatus.includes("Passed")) ||
+            (progressionFilterStatus === "InProgress" && item.semesterStatus.includes("In Progress")) ||
+            (progressionFilterStatus === "Failed" && item.semesterStatus.includes("Failed")) ||
+            (progressionFilterStatus === "Available" && item.semesterStatus.includes("Available"));
+
+          return matchesSearch && matchesDept && matchesStatus;
+        });
+
+        const passedStudentsCount = rawList.filter((s: any) => s.semesterStatus.includes("Passed")).length;
+        const inProgressStudentsCount = rawList.filter((s: any) => s.semesterStatus.includes("In Progress")).length;
+        const failedStudentsCount = rawList.filter((s: any) => s.semesterStatus.includes("Failed")).length;
+        const availableStudentsCount = rawList.filter((s: any) => s.semesterStatus.includes("Available")).length;
+
+        return (
+          <div className="space-y-6">
+            {/* Top 4 Institutional Metric Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="p-5 rounded-3xl bg-white border border-slate-200/90 shadow-xs">
+                <span className="text-[10px] font-bold uppercase text-slate-400 block mb-1">
+                  Enrolled Students Monitored
+                </span>
+                <span className="text-3xl font-black font-heading text-slate-900">
+                  {rawList.length}
+                </span>
+                <span className="text-[10px] text-slate-500 block mt-1">Real-time Progression Roster</span>
+              </div>
+
+              <div className="p-5 rounded-3xl bg-white border border-slate-200/90 shadow-xs">
+                <span className="text-[10px] font-bold uppercase text-emerald-600 block mb-1">
+                  Passed Current Semester
+                </span>
+                <span className="text-3xl font-black font-heading text-emerald-700">
+                  {passedStudentsCount}
+                </span>
+                <span className="text-[10px] text-emerald-600 block mt-1">Next Semester Unlocked ✓</span>
+              </div>
+
+              <div className="p-5 rounded-3xl bg-white border border-slate-200/90 shadow-xs">
+                <span className="text-[10px] font-bold uppercase text-amber-600 block mb-1">
+                  Semester In Progress
+                </span>
+                <span className="text-3xl font-black font-heading text-amber-700">
+                  {inProgressStudentsCount}
+                </span>
+                <span className="text-[10px] text-amber-600 block mt-1">Pending Exam Marks / Approval</span>
+              </div>
+
+              <div className="p-5 rounded-3xl bg-white border border-slate-200/90 shadow-xs">
+                <span className="text-[10px] font-bold uppercase text-rose-600 block mb-1">
+                  Academic Retake Required
+                </span>
+                <span className="text-3xl font-black font-heading text-rose-700">
+                  {failedStudentsCount}
+                </span>
+                <span className="text-[10px] text-rose-600 block mt-1">Failed Courses Pending Repeat</span>
+              </div>
+            </div>
+
+            {/* Filter & Search Toolbar */}
+            <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex flex-col md:flex-row gap-3 items-center justify-between">
+              <div className="relative w-full md:w-80">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Search student name, ID, email..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-iqra-blue-500/20"
+                />
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="text-slate-400 font-medium">Status:</span>
+                  <select
+                    value={progressionFilterStatus}
+                    onChange={(e) => setProgressionFilterStatus(e.target.value)}
+                    className="py-1.5 px-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 focus:outline-none"
+                  >
+                    <option value="All">All Statuses</option>
+                    <option value="Passed">Passed (Unlocked)</option>
+                    <option value="InProgress">In Progress</option>
+                    <option value="Failed">Failed Courses</option>
+                    <option value="Available">Available for Registration</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Institutional Progression Master Table */}
+            <div className="bg-white rounded-3xl border border-slate-200/90 p-6 shadow-xs space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div>
+                  <h3 className="text-sm font-black font-heading text-slate-900 uppercase tracking-wider">
+                    Student Academic Progression Ledger ({filteredProgression.length})
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Live automatic academic standing, prerequisite unlock eligibility, and degree completion audit.
+                  </p>
+                </div>
+              </div>
+
+              {filteredProgression.length === 0 ? (
+                <div className="p-10 text-center text-slate-400 text-xs bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                  <GraduationCap className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                  <p className="font-bold text-slate-600">No student progression records match this query.</p>
+                  <p className="text-[11px] text-slate-400">Progression records update dynamically as faculty marks are approved and published.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto rounded-2xl border border-slate-200">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-slate-50 text-[10px] uppercase font-black text-slate-500 border-b border-slate-200">
+                      <tr>
+                        <th className="py-3 px-4">Student</th>
+                        <th className="py-3 px-4">Program & Dept</th>
+                        <th className="py-3 px-3 text-center">Level</th>
+                        <th className="py-3 px-3 text-center">Passed Sem</th>
+                        <th className="py-3 px-3 text-center">GPA / CGPA</th>
+                        <th className="py-3 px-3 text-center">Earned Cr</th>
+                        <th className="py-3 px-4">Degree Progress</th>
+                        <th className="py-3 px-3 text-center">Semester Status</th>
+                        <th className="py-3 px-3 text-center">Next Eligible</th>
+                        <th className="py-3 px-4 text-center">Audit</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 font-medium">
+                      {filteredProgression.map((s: any) => {
+                        const isPassed = s.semesterStatus.includes("Passed");
+                        const isFailed = s.semesterStatus.includes("Failed");
+                        const isInProgress = s.semesterStatus.includes("In Progress");
+
+                        return (
+                          <tr key={s.id} className="hover:bg-slate-50/60 transition-colors">
+                            <td className="py-3 px-4">
+                              <span className="font-bold text-slate-900 block">{s.name}</span>
+                              <span className="text-[10px] font-mono text-slate-400">{s.studentId}</span>
+                            </td>
+
+                            <td className="py-3 px-4">
+                              <span className="font-bold text-slate-800 block text-[11px]">{s.program}</span>
+                              <span className="text-[10px] text-slate-500 block truncate max-w-[160px]">{s.department}</span>
+                            </td>
+
+                            <td className="py-3 px-3 text-center font-bold text-slate-800">
+                              Sem {s.currentSemester}
+                            </td>
+
+                            <td className="py-3 px-3 text-center">
+                              {s.completedSemester !== "None" ? (
+                                <span className="inline-flex items-center gap-1 font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded text-[11px] border border-emerald-200/60">
+                                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                  {s.completedSemester}
+                                </span>
+                              ) : (
+                                <span className="text-slate-400 text-[11px]">None</span>
+                              )}
+                            </td>
+
+                            <td className="py-3 px-3 text-center">
+                              <div className="font-bold font-mono text-iqra-blue-700">
+                                {s.cgpa > 0 ? s.cgpa.toFixed(2) : "0.00"}
+                              </div>
+                              <div className="text-[10px] font-mono text-slate-400">
+                                GPA: {s.currentGpa > 0 ? s.currentGpa.toFixed(2) : "0.00"}
+                              </div>
+                            </td>
+
+                            <td className="py-3 px-3 text-center font-mono font-bold text-slate-800">
+                              {s.completedCreditHours} <span className="text-slate-400 font-normal">/ {s.totalDegreeCredits}</span>
+                            </td>
+
+                            <td className="py-3 px-4 min-w-[130px]">
+                              <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 mb-1">
+                                <span>{s.academicProgress}%</span>
+                              </div>
+                              <div className="w-full h-1.5 rounded-full bg-slate-100 overflow-hidden border border-slate-200">
+                                <div
+                                  className="h-full rounded-full bg-gradient-to-r from-iqra-blue-600 to-emerald-500"
+                                  style={{ width: `${Math.min(100, s.academicProgress)}%` }}
+                                />
+                              </div>
+                            </td>
+
+                            <td className="py-3 px-3 text-center">
+                              <span
+                                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                                  isPassed
+                                    ? "bg-emerald-100 text-emerald-800"
+                                    : isFailed
+                                    ? "bg-rose-100 text-rose-800"
+                                    : isInProgress
+                                    ? "bg-amber-100 text-amber-800"
+                                    : "bg-blue-100 text-blue-800"
+                                }`}
+                              >
+                                {isPassed && <CheckCircle2 className="w-3 h-3 text-emerald-600" />}
+                                {isFailed && <AlertCircle className="w-3 h-3 text-rose-600" />}
+                                {isInProgress && <Clock className="w-3 h-3 text-amber-600" />}
+                                <span>{s.semesterStatus}</span>
+                              </span>
+                            </td>
+
+                            <td className="py-3 px-3 text-center">
+                              <span className="font-bold text-slate-800 block text-xs">
+                                Sem {s.nextEligibleSemester}
+                              </span>
+                              <span className="text-[10px] text-slate-500 block">
+                                {s.registrationStatus}
+                              </span>
+                            </td>
+
+                            <td className="py-3 px-4 text-center">
+                              <button
+                                onClick={() => setAuditStudentDetail(s)}
+                                className="px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-iqra-navy-900 hover:text-white text-slate-800 text-[11px] font-bold transition-all"
+                              >
+                                View Roadmap
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Student Audit Detail Modal Dialog */}
+            {auditStudentDetail && (
+              <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+                <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-2xl w-full p-6 space-y-5 animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+                    <div>
+                      <span className="text-[10px] font-black uppercase tracking-wider text-iqra-gold-600">
+                        Academic Progression Audit
+                      </span>
+                      <h3 className="text-lg font-black font-heading text-slate-900">
+                        {auditStudentDetail.name} ({auditStudentDetail.studentId})
+                      </h3>
+                      <p className="text-xs text-slate-500">
+                        {auditStudentDetail.program} • {auditStudentDetail.department}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setAuditStudentDetail(null)}
+                      className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {/* Summary Metric Strip */}
+                  <div className="grid grid-cols-3 gap-3 p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-center">
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-slate-400 block">CGPA</span>
+                      <span className="text-xl font-black font-heading text-iqra-blue-700">
+                        {auditStudentDetail.cgpa > 0 ? auditStudentDetail.cgpa.toFixed(2) : "0.00"}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-slate-400 block">Earned Credits</span>
+                      <span className="text-xl font-black font-heading text-slate-900">
+                        {auditStudentDetail.completedCreditHours} / {auditStudentDetail.totalDegreeCredits}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-slate-400 block">Next Eligible</span>
+                      <span className="text-sm font-black text-emerald-700 mt-1 block">
+                        Semester {auditStudentDetail.nextEligibleSemester}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Semesters 1 to 8 Audit Breakdown */}
+                  <div className="space-y-3">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                      Curriculum Semesters Breakdown (1 to 8)
+                    </h4>
+                    <div className="space-y-2">
+                      {auditStudentDetail.semesters?.map((sem: any) => (
+                        <div
+                          key={sem.semesterNumber}
+                          className="p-3 rounded-2xl border border-slate-200 bg-slate-50/70 space-y-2"
+                        >
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="font-bold text-slate-900">
+                              Semester {sem.semesterNumber}
+                            </span>
+                            <span
+                              className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                sem.status === "Passed"
+                                  ? "bg-emerald-100 text-emerald-800"
+                                  : sem.status === "Failed Courses"
+                                  ? "bg-rose-100 text-rose-800"
+                                  : sem.status === "In Progress"
+                                  ? "bg-amber-100 text-amber-800"
+                                  : "bg-slate-200 text-slate-600"
+                              }`}
+                            >
+                              {sem.statusLabel}
+                            </span>
+                          </div>
+
+                          {sem.courses && sem.courses.length > 0 && (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-1">
+                              {sem.courses.map((c: any, i: number) => (
+                                <div
+                                  key={i}
+                                  className="p-2 rounded-xl bg-white border border-slate-200/80 text-[11px] flex items-center justify-between"
+                                >
+                                  <span className="font-mono font-bold text-slate-800">{c.code}</span>
+                                  <span className="text-slate-600 truncate max-w-[120px] mx-2">{c.title}</span>
+                                  <span className="font-bold text-emerald-700 shrink-0">
+                                    {c.grade} ({c.gradePoints.toFixed(2)})
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* ------------------------------------------------------------- */}
       {/* 1. TRANSCRIPTS VIEW */}

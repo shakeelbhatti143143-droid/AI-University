@@ -547,9 +547,18 @@ export default defineSchema({
     expiryDate: v.optional(v.string()),
     status: v.union(v.literal("Published"), v.literal("Draft"), v.literal("Archived")),
     createdAt: v.number(),
+    createdByRole: v.optional(v.union(v.literal("ADMIN"), v.literal("FACULTY"))),
+    createdByUserId: v.optional(v.string()),
+    visibility: v.optional(
+      v.union(v.literal("PUBLIC"), v.literal("INTERNAL"), v.literal("AUTHENTICATED"))
+    ),
+    isFeatured: v.optional(v.boolean()),
+    imageUrl: v.optional(v.string()),
   })
     .index("by_status", ["status"])
-    .index("by_category", ["category"]),
+    .index("by_category", ["category"])
+    .index("by_visibility_status", ["visibility", "status"])
+    .index("by_createdByRole", ["createdByRole"]),
 
   auditLogs: defineTable({
     adminId: v.string(),
@@ -574,5 +583,170 @@ export default defineSchema({
   })
     .index("by_timestamp", ["timestamp"])
     .index("by_module", ["module"]),
+
+  // --------------------------------------------------------------------------
+  // UNIVERSITY PUBLIC PORTAL & WEBSITE MANAGEMENT
+  // --------------------------------------------------------------------------
+
+  universityProfile: defineTable({
+    name: v.string(),
+    campusName: v.string(),
+    tagline: v.string(),
+    overview: v.string(),
+    vision: v.string(),
+    mission: v.string(),
+    coreValues: v.array(
+      v.object({
+        title: v.string(),
+        description: v.string(),
+      })
+    ),
+    academicPhilosophy: v.string(),
+    campusExperience: v.string(),
+    history: v.string(),
+    leadership: v.array(
+      v.object({
+        name: v.string(),
+        role: v.string(),
+        designation: v.string(),
+        message: v.optional(v.string()),
+        photoUrl: v.optional(v.string()),
+      })
+    ),
+    phone: v.string(),
+    helpline: v.string(),
+    email: v.string(),
+    admissionsEmail: v.string(),
+    address: v.string(),
+    city: v.string(),
+    socialLinks: v.object({
+      facebook: v.optional(v.string()),
+      twitter: v.optional(v.string()),
+      linkedin: v.optional(v.string()),
+      instagram: v.optional(v.string()),
+      youtube: v.optional(v.string()),
+    }),
+    updatedAt: v.number(),
+    updatedBy: v.optional(v.string()),
+  }),
+
+  universityPosts: defineTable({
+    title: v.string(),
+    slug: v.string(),
+    content: v.string(),
+    coverImage: v.optional(v.string()),
+    coverImageStorageId: v.optional(v.string()),
+    additionalImages: v.array(v.string()),
+    additionalImageStorageIds: v.optional(v.array(v.string())),
+    category: v.string(),
+    authorName: v.string(),
+    authorRole: v.optional(v.string()),
+    publishDate: v.string(),
+    eventDate: v.optional(v.string()),
+    tags: v.array(v.string()),
+    status: v.union(v.literal("draft"), v.literal("published"), v.literal("archived")),
+    isFeatured: v.boolean(),
+    views: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_status", ["status"])
+    .index("by_slug", ["slug"])
+    .index("by_category", ["category"])
+    .index("by_featured", ["isFeatured"])
+    .index("by_status_and_featured", ["status", "isFeatured"]),
+
+  universityEvents: defineTable({
+    title: v.string(),
+    description: v.string(),
+    category: v.string(),
+    date: v.string(), // YYYY-MM-DD
+    time: v.string(),
+    location: v.string(),
+    imageUrl: v.optional(v.string()),
+    imageStorageId: v.optional(v.string()),
+    registrationUrl: v.optional(v.string()),
+    organizer: v.optional(v.string()),
+    status: v.union(v.literal("draft"), v.literal("published"), v.literal("cancelled")),
+    isFeatured: v.boolean(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_status", ["status"])
+    .index("by_date", ["date"])
+    .index("by_featured", ["isFeatured"]),
+
+  universityGallery: defineTable({
+    title: v.string(),
+    category: v.union(
+      v.literal("Campus"),
+      v.literal("Events"),
+      v.literal("Students"),
+      v.literal("Faculty"),
+      v.literal("Facilities"),
+      v.literal("Activities")
+    ),
+    imageUrl: v.string(),
+    storageId: v.optional(v.string()),
+    description: v.optional(v.string()),
+    featured: v.boolean(),
+    createdAt: v.number(),
+  })
+    .index("by_category", ["category"])
+    .index("by_featured", ["featured"]),
+
+  universityFacilities: defineTable({
+    name: v.string(),
+    category: v.union(
+      v.literal("Academic"),
+      v.literal("Research"),
+      v.literal("Student Life"),
+      v.literal("Sports"),
+      v.literal("Administrative"),
+      v.literal("Other")
+    ),
+    description: v.string(),
+    location: v.string(),
+    imageUrl: v.optional(v.string()),
+    imageStorageId: v.optional(v.string()),
+    icon: v.optional(v.string()),
+    status: v.union(v.literal("active"), v.literal("inactive")),
+    createdAt: v.number(),
+  })
+    .index("by_status", ["status"])
+    .index("by_category", ["category"]),
+
+  feeStructures: defineTable({
+    programId: v.optional(v.string()),
+    programName: v.string(),
+    degreeLevel: v.string(), // e.g. "Undergraduate", "Graduate", "Postgraduate"
+    department: v.optional(v.string()),
+    semester: v.string(), // e.g. "Per Semester", "First Semester", "Annual"
+    feeType: v.string(), // e.g. "Tuition Fee", "Admission Fee", "Registration Fee", "Exam Fee", "Semester Package"
+    amount: v.number(),
+    currency: v.string(), // "PKR", "USD"
+    description: v.optional(v.string()),
+    effectiveDate: v.string(),
+    status: v.union(v.literal("active"), v.literal("inactive")),
+    createdAt: v.number(),
+  })
+    .index("by_status", ["status"])
+    .index("by_degreeLevel", ["degreeLevel"])
+    .index("by_programName", ["programName"]),
+
+  universityLocation: defineTable({
+    campusName: v.string(),
+    address: v.string(),
+    city: v.string(),
+    latitude: v.number(),
+    longitude: v.number(),
+    googleMapsUrl: v.string(),
+    embedMapUrl: v.optional(v.string()),
+    directions: v.optional(v.string()),
+    phone: v.optional(v.string()),
+    email: v.optional(v.string()),
+    officeHours: v.optional(v.string()),
+    updatedAt: v.number(),
+  }),
 });
 

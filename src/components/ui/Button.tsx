@@ -35,15 +35,15 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
     const variantClasses = {
       primary:
-        "bg-[#0066cc] text-white hover:bg-[#0052a3] active:bg-[#003d7a] shadow-md hover:shadow-blue-500/25 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2",
+        "bg-[#0b1f3a] text-white hover:bg-[#122b4e] active:bg-[#071426] active:scale-[0.98] shadow-sm hover:shadow-md hover:shadow-[#0b1f3a]/20 focus-visible:ring-2 focus-visible:ring-[#0b1f3a] focus-visible:ring-offset-2",
       secondary:
-        "bg-white text-slate-800 hover:bg-slate-100 border border-slate-200 shadow-sm focus-visible:ring-2 focus-visible:ring-slate-400",
+        "bg-white text-[#0b1f3a] hover:bg-[#f0f4fa] hover:text-[#0b1f3a] hover:border-[#0b1f3a]/40 active:bg-[#0b1f3a] active:text-white active:scale-[0.98] border border-slate-200 shadow-xs focus-visible:ring-2 focus-visible:ring-[#0b1f3a]",
       outline:
-        "bg-transparent text-white border border-white/30 hover:border-white/80 hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white",
+        "bg-transparent text-[#0b1f3a] border border-[#0b1f3a]/40 hover:bg-[#f0f4fa] hover:border-[#0b1f3a] hover:text-[#0b1f3a] active:bg-[#0b1f3a] active:text-white active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-[#0b1f3a]",
       ghost:
-        "bg-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-slate-400",
+        "bg-transparent text-slate-700 hover:text-[#0b1f3a] hover:bg-[#f0f4fa] active:bg-[#0b1f3a] active:text-white active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-[#0b1f3a]",
       gold:
-        "bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-bold hover:from-amber-400 hover:to-amber-500 shadow-md shadow-amber-500/20 focus-visible:ring-2 focus-visible:ring-amber-500",
+        "bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-bold hover:from-amber-400 hover:to-amber-500 active:bg-[#0b1f3a] active:text-white active:scale-[0.98] shadow-md shadow-amber-500/20 focus-visible:ring-2 focus-visible:ring-[#0b1f3a]",
     }[variant];
 
     return (

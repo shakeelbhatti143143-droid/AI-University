@@ -118,11 +118,37 @@ function DashboardContent() {
       : "skip"
   );
 
+  // Reactive Convex subscription for student academic progression: updates immediately upon result publishing!
+  const liveProgression = useQuery(
+    api.academicManagement.getStudentAcademicProgression,
+    user
+      ? {
+          userId: user.id as any,
+          studentId: studentKey,
+        }
+      : "skip"
+  );
+
   useEffect(() => {
     if (liveAssignments) {
       setAssignments(liveAssignments as Assignment[]);
     }
   }, [liveAssignments]);
+
+  useEffect(() => {
+    if (liveProgression) {
+      setProfile((prev) => ({
+        ...prev,
+        cgpa: liveProgression.cgpa,
+        currentGpa: liveProgression.currentGpa,
+        completedCreditHours: liveProgression.completedCreditHours,
+        remainingCreditHours: liveProgression.remainingCreditHours,
+        totalCreditHours: liveProgression.totalDegreeCredits || prev.totalCreditHours,
+        academicStanding: liveProgression.academicStanding,
+        currentSemester: `Semester ${liveProgression.currentSemester || 1}`,
+      }));
+    }
+  }, [liveProgression]);
 
   // Unified loader for student data & live academic records from Convex
   const loadAcademicData = useCallback(async () => {
@@ -130,6 +156,13 @@ function DashboardContent() {
     try {
       const client = getConvexClient();
       if (!client || !isConvexConfigured) return;
+
+      // Ensure foundational courses (CS-101..105, CS-111..115) exist in the database for Semester 1 & 2
+      try {
+        await client.mutation(api.academicManagement.ensureFoundationalSemesterCourses, {});
+      } catch (e) {
+        // non-blocking
+      }
 
       const studentKey = user.enrollmentId || user.id || "student";
 
@@ -558,7 +591,11 @@ function DashboardContent() {
           )}
 
           {activeTab === "academics" && (
-            <AcademicOverviewSection profile={profile} history={semesterResults} />
+            <AcademicOverviewSection
+              profile={profile}
+              history={semesterResults}
+              progression={liveProgression as any}
+            />
           )}
 
           {activeTab === "courses" && (
@@ -582,6 +619,7 @@ function DashboardContent() {
               currentSemester={user?.currentSemester || 1}
               selectedSemester={selectedSemester}
               onSelectSemester={(sem) => setSelectedSemester(sem)}
+              progression={liveProgression as any}
             />
           )}
 

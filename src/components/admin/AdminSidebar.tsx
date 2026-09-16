@@ -38,6 +38,7 @@ import {
   Lock,
   DoorOpen,
   ScrollText,
+  Image as ImageIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -65,13 +66,24 @@ export type AdminTab =
   | "exam-rooms"
   | "results"
   // Academic Records
+  | "progression"
   | "transcripts"
   | "gpa-cgpa"
   | "reports"
+  // University Website
+  | "website-posts"
+  | "website-events"
+  | "website-gallery"
+  | "website-fees"
+  | "website-facilities"
+  | "website-location"
+  | "website-profile"
   // Communication
   | "announcements"
   | "notifications"
+  | "videos"
   // AI & Learning
+  | "ai-academic-assistant"
   | "ai-assistant"
   | "ai-planner"
   | "ai-analytics"
@@ -165,6 +177,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
     {
       title: "ACADEMIC RECORDS",
       items: [
+        { id: "progression", label: "Academic Progression", icon: Sparkles },
         { id: "transcripts", label: "Transcripts", icon: ScrollText },
         { id: "gpa-cgpa", label: "GPA & CGPA", icon: Award },
         { id: "reports", label: "Academic Reports", icon: FileSpreadsheet },
@@ -181,9 +194,28 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
     {
       title: "AI & LEARNING",
       items: [
-        { id: "ai-assistant", label: "AI Assistant", icon: Bot },
+        {
+          id: "ai-academic-assistant",
+          label: "AI Academic Assistant",
+          icon: Sparkles,
+          badge: "AI DATA",
+          badgeColor: "bg-indigo-600 text-white font-bold",
+        },
+        { id: "ai-assistant", label: "AI Campus Assistant", icon: Bot },
         { id: "ai-planner", label: "AI Study Planner", icon: Brain },
         { id: "ai-analytics", label: "AI Usage Analytics", icon: BarChart3 },
+      ],
+    },
+    {
+      title: "UNIVERSITY WEBSITE",
+      items: [
+        { id: "website-posts", label: "University Posts", icon: Megaphone },
+        { id: "website-events", label: "University Events", icon: Calendar },
+        { id: "website-gallery", label: "Media & Gallery", icon: ImageIcon },
+        { id: "website-fees", label: "Fee Structures", icon: FileSpreadsheet },
+        { id: "website-facilities", label: "Campus Facilities", icon: Layers },
+        { id: "website-location", label: "Map & Location", icon: MapPin },
+        { id: "website-profile", label: "Institutional Profile", icon: Building2 },
       ],
     },
     {

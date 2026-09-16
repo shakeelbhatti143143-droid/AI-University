@@ -58,6 +58,87 @@ export interface EnrolledCourse {
   classroom: string;
   building: string;
   syllabus: string[];
+  // Dynamic Academic Progression Fields
+  gradePoints?: number;
+  status?: string;
+  resultStatus?: string;
+  curriculumProgress?: string;
+  isCompleted?: boolean;
+  isPassed?: boolean;
+  isFailed?: boolean;
+  marks?: number;
+  percentage?: number;
+  semester?: number;
+  publishedAt?: number;
+}
+
+export interface ProgressionCourseItem {
+  code: string;
+  title: string;
+  creditHours: number;
+  grade: string;
+  gradePoints: number;
+  marks?: number;
+  percentage?: number;
+  status: "Passed" | "Failed" | "In Progress";
+  resultStatus: "Published" | "Pending";
+  isPassed: boolean;
+  isFailed: boolean;
+}
+
+export interface SemesterProgressionItem {
+  semesterNumber: number;
+  semesterLabel: string;
+  status: "Passed" | "In Progress" | "Failed Courses" | "Available" | "Locked";
+  statusLabel: string;
+  isPassed: boolean;
+  isUnlocked: boolean;
+  gpa: number;
+  creditHours: number;
+  passedCreditHours: number;
+  totalCoursesCount: number;
+  completedCoursesCount: number;
+  failedCoursesCount: number;
+  pendingCoursesCount: number;
+  courses: ProgressionCourseItem[];
+  unlockMessage?: string;
+}
+
+export interface StudentProgressionData {
+  studentId: string;
+  name: string;
+  email: string;
+  department: string;
+  degreeProgram: string;
+  currentSemester: number;
+  highestPassedSemester: number;
+  nextEligibleSemester: number;
+  isGraduated: boolean;
+  cgpa: number;
+  currentGpa: number;
+  completedCreditHours: number;
+  remainingCreditHours: number;
+  totalDegreeCredits: number;
+  degreeProgress: number;
+  academicStanding: string;
+  totalPassedCoursesCount: number;
+  totalFailedCoursesCount: number;
+  failedCoursesList: Array<{
+    code: string;
+    title: string;
+    semester: number;
+    grade: string;
+    gradePoints: number;
+    percentage: number;
+    remarks: string;
+  }>;
+  congratulationsNotification?: {
+    title: string;
+    message: string;
+    targetSemester: number;
+    ctaText: string;
+  } | null;
+  semesters: SemesterProgressionItem[];
 }
 
 export interface AvailableCourse {

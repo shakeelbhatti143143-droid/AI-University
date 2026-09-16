@@ -90,7 +90,7 @@ export const InputField = React.forwardRef<HTMLInputElement, InputFieldProps>(
                   )
                 : cn(
                     "text-slate-900 bg-slate-50 border border-slate-200 placeholder:text-slate-400",
-                    "hover:bg-white hover:border-slate-300 focus:bg-white focus:border-[#0066cc] focus:ring-2 focus:ring-blue-100 shadow-sm",
+                    "hover:bg-white hover:border-slate-300 focus:bg-white focus:border-[#0b1f3a] focus:ring-2 focus:ring-[#0b1f3a]/15 shadow-sm",
                     error && "border-rose-400 focus:border-rose-500 focus:ring-rose-200"
                   ),
               className
