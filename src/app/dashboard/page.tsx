@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, Suspense } from "react";
+import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
+import { ArrowRight, ShieldCheck } from "lucide-react";
 import { Sidebar, DashboardTab } from "@/components/dashboard/Sidebar";
 import { Header } from "@/components/dashboard/Header";
 import { DashboardOverview } from "@/components/dashboard/sections/DashboardOverview";
@@ -18,6 +20,12 @@ import { AcademicTranscriptSection } from "@/components/dashboard/sections/Acade
 import { GpaAnalyticsSection } from "@/components/dashboard/sections/GpaAnalyticsSection";
 import { AiAssistantSection } from "@/components/dashboard/sections/AiAssistantSection";
 import { AiStudyPlannerSection } from "@/components/dashboard/sections/AiStudyPlannerSection";
+import { CourseMaterialsSection } from "@/components/dashboard/sections/CourseMaterialsSection";
+import { LearningResourcesSection } from "@/components/dashboard/sections/LearningResourcesSection";
+import { EventsActivitiesSection } from "@/components/dashboard/sections/EventsActivitiesSection";
+import { CareerInternshipsSection } from "@/components/dashboard/sections/CareerInternshipsSection";
+import { FeeChallanSection } from "@/components/dashboard/sections/FeeChallanSection";
+import { CourseDiscussionsSection } from "@/components/dashboard/sections/CourseDiscussionsSection";
 import { CourseDetailsModal } from "@/components/dashboard/modals/CourseDetailsModal";
 import { EditProfileModal } from "@/components/dashboard/modals/EditProfileModal";
 import { SubmitAssignmentModal } from "@/components/dashboard/modals/SubmitAssignmentModal";
@@ -27,6 +35,14 @@ import {
   initialEnrolledCourses,
   initialAvailableCourses,
   initialAssignments,
+  initialCourseMaterials,
+  initialLearningResources,
+  initialCampusEvents,
+  initialCareerOpportunities,
+  CourseMaterialItem,
+  LearningResource,
+  CampusEvent,
+  CareerOpportunity,
   StudentProfile,
   EnrolledCourse,
   AvailableCourse,
@@ -58,21 +74,32 @@ function DashboardContent() {
     window.history.pushState(null, "", `/dashboard?tab=${tab}`);
   };
 
-  // Redirect users to their dedicated portals based on role
+  const userRole = (user?.role || "").toLowerCase();
+  const isAdmin = userRole === "admin" || userRole === "super_admin";
+
+  // Redirect users to their dedicated portals based on role (admins can preview student dashboard freely)
   useEffect(() => {
     if (!user) return;
     const role = (user.role || "").toLowerCase();
     if (role === "faculty" || role === "teacher") {
       router.push("/faculty/dashboard");
-    } else if (role === "admin" || role === "super_admin") {
-      router.push("/admin");
     } else if (role === "applicant") {
       router.push("/status");
     }
   }, [user, router]);
 
-  // Profile State scoped to logged in student
+  // Profile State scoped to logged in student or rich administrator preview
   const [profile, setProfile] = useState<StudentProfile>(() => {
+    if (isAdmin) {
+      return {
+        ...initialStudentProfile,
+        name: `${user?.name || "Administrator"} (Admin Preview)`,
+        email: "student@isb.iqra.edu.pk",
+        studentId: "IU-ISB-2024-0418",
+        cgpa: 3.62,
+        currentGpa: 3.67,
+      };
+    }
     return {
       ...initialStudentProfile,
       name: user?.name || "Student",
@@ -93,6 +120,10 @@ function DashboardContent() {
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [semesterResults, setSemesterResults] = useState<SemesterResultRecord[]>([]);
   const [activities, setActivities] = useState<AcademicActivity[]>([]);
+  const [courseMaterials, setCourseMaterials] = useState<CourseMaterialItem[]>(initialCourseMaterials);
+  const [learningResources, setLearningResources] = useState<LearningResource[]>(initialLearningResources);
+  const [campusEvents, setCampusEvents] = useState<CampusEvent[]>(initialCampusEvents);
+  const [careerOpportunities, setCareerOpportunities] = useState<CareerOpportunity[]>(initialCareerOpportunities);
 
   // Layout State
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -554,6 +585,27 @@ function DashboardContent() {
 
       {/* 2. MAIN VIEW CONTAINER */}
       <div className="flex-1 flex flex-col min-w-0">
+        {/* Administrator Preview Mode Notice Banner */}
+        {isAdmin && (
+          <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white px-4 sm:px-6 py-2.5 flex items-center justify-between shadow-xs text-xs font-bold shrink-0 border-b border-indigo-500/30">
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 rounded-md bg-amber-400 text-slate-950 text-[10px] font-extrabold uppercase tracking-wider">
+                Admin Preview Mode
+              </span>
+              <span className="text-slate-200 hidden sm:inline">
+                You are previewing the Student Portal.
+              </span>
+            </div>
+            <Link
+              href="/admin"
+              className="px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition-all flex items-center gap-1.5 backdrop-blur-xs shadow-2xs"
+            >
+              <span>Return to Admin Console</span>
+              <ArrowRight className="w-3.5 h-3.5 text-amber-400" />
+            </Link>
+          </div>
+        )}
+
         {/* Top Header */}
         <Header
           profile={profile}
@@ -607,6 +659,23 @@ function DashboardContent() {
             />
           )}
 
+          {activeTab === "course-materials" && (
+            <CourseMaterialsSection
+              materials={courseMaterials}
+              enrolledCourses={enrolledCourses}
+            />
+          )}
+
+          {activeTab === "resources" && (
+            <LearningResourcesSection
+              resources={learningResources}
+            />
+          )}
+
+          {activeTab === "discussions" && (
+            <CourseDiscussionsSection profile={profile} />
+          )}
+
           {activeTab === "registration" && (
             <CourseRegistrationSection
               availableCourses={availableCourses}
@@ -641,7 +710,7 @@ function DashboardContent() {
           )}
 
           {activeTab === "examinations" && (
-            <ExaminationsSection examinations={examinations} />
+            <ExaminationsSection examinations={examinations} profile={profile} />
           )}
 
           {activeTab === "results" && (
@@ -652,8 +721,26 @@ function DashboardContent() {
             <AcademicTranscriptSection profile={profile} history={semesterResults} />
           )}
 
+          {activeTab === "finances" && (
+            <FeeChallanSection profile={profile} />
+          )}
+
           {activeTab === "analytics" && (
             <GpaAnalyticsSection profile={profile} history={semesterResults} />
+          )}
+
+          {activeTab === "events" && (
+            <EventsActivitiesSection
+              events={campusEvents}
+              profile={profile}
+            />
+          )}
+
+          {activeTab === "careers" && (
+            <CareerInternshipsSection
+              opportunities={careerOpportunities}
+              profile={profile}
+            />
           )}
 
           {activeTab === "ai-assistant" && (

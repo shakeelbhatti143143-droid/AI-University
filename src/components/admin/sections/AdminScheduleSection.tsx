@@ -7,19 +7,27 @@ import {
   MapPin,
   User,
   Plus,
-  Edit,
   Trash2,
-  AlertTriangle,
   CheckCircle2,
-  Filter,
-  X,
-  Building,
+  AlertTriangle,
 } from "lucide-react";
 import {
   AdminScheduleSlot,
   AdminCourse,
   detectScheduleConflicts,
 } from "@/lib/admin-data";
+import {
+  CredentialCard,
+  CredentialHeader,
+  CredentialTitle,
+  CredentialDetailRow,
+  CredentialDetailList,
+  CredentialFooter,
+  CredentialModal,
+  CredentialInput,
+  CredentialSelect,
+  CredentialButton,
+} from "@/components/admin/credential";
 
 interface AdminScheduleSectionProps {
   slots: AdminScheduleSlot[];
@@ -84,7 +92,6 @@ export const AdminScheduleSection: React.FC<AdminScheduleSectionProps> = ({
       type: newType,
     };
 
-    // Run conflict detection engine
     const conflictResult = detectScheduleConflicts(slots, candidateSlot);
 
     if (conflictResult.hasConflict) {
@@ -110,46 +117,70 @@ export const AdminScheduleSection: React.FC<AdminScheduleSectionProps> = ({
   };
 
   const filteredSlots = slots.filter((slot) => {
-    if (classroomFilter !== "All" && slot.classroom !== classroomFilter) return false;
-    return true;
+    if (classroomFilter === "All") return true;
+    return slot.classroom.includes(classroomFilter);
   });
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
-      {/* Header */}
-      <div className="p-6 rounded-3xl bg-white border border-slate-200/90 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* Top Banner */}
+      <div
+        className="relative overflow-hidden p-6 rounded-[10px] border flex flex-col md:flex-row md:items-center justify-between gap-4 before:content-[''] before:absolute before:top-0 before:left-0 before:right-0 before:h-[2px] before:bg-[#C9A25B]"
+        style={{
+          backgroundColor: "var(--card-bg, #1D1B18)",
+          borderColor: "var(--card-border, #4a4335)",
+          borderRadius: "var(--radius-card, 10px)",
+        }}
+      >
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-iqra-blue-800 uppercase flex items-center gap-1">
-              <Calendar className="w-3 h-3" />
+          <div className="flex items-center gap-2 mb-1.5">
+            <span
+              className="text-[10px] font-semibold uppercase tracking-[0.12em]"
+              style={{ color: "var(--text-muted, #8a8272)" }}
+            >
               Master Campus Timetable Engine
             </span>
-            <span className="text-xs text-slate-400">•</span>
-            <span className="text-xs font-semibold text-slate-600">Fall 2026 Session</span>
+            <span style={{ color: "var(--text-muted, #8a8272)" }}>•</span>
+            <span className="text-[11px]" style={{ color: "var(--text-muted, #8a8272)" }}>
+              Fall 2026 Session
+            </span>
           </div>
-          <h2 className="text-2xl font-black font-heading text-slate-900 tracking-tight">
+          <h2
+            className="font-serif text-[26px] font-[500] leading-tight tracking-tight"
+            style={{ color: "var(--text-heading, #F2EEE4)" }}
+          >
             Class Schedule & Conflict Management
           </h2>
-          <p className="text-xs text-slate-500">
-            Configure time slots, assign rooms & labs, and automatically prevent instructor & room double-booking.
+          <p className="text-xs mt-1 leading-relaxed" style={{ color: "var(--text-muted, #8a8272)" }}>
+            Configure time slots, assign laboratories and classrooms, and detect overlapping bookings in real time.
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
-          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-2xl border border-slate-200">
+        <div className="flex items-center gap-2.5 shrink-0">
+          <div
+            className="flex items-center gap-1 p-1 rounded-[6px] border"
+            style={{
+              backgroundColor: "var(--card-bg, #1D1B18)",
+              borderColor: "var(--card-border, #4a4335)",
+            }}
+          >
             <button
               onClick={() => setViewMode("weekly")}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                viewMode === "weekly" ? "bg-white text-slate-900 shadow-xs" : "text-slate-600"
-              }`}
+              className="px-3 py-1 rounded-[4px] text-xs font-semibold transition-colors"
+              style={{
+                backgroundColor: viewMode === "weekly" ? "rgba(255,255,255,0.08)" : "transparent",
+                color: viewMode === "weekly" ? "var(--text-heading, #F2EEE4)" : "var(--text-muted, #8a8272)",
+              }}
             >
               Weekly Grid
             </button>
             <button
               onClick={() => setViewMode("daily")}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                viewMode === "daily" ? "bg-white text-slate-900 shadow-xs" : "text-slate-600"
-              }`}
+              className="px-3 py-1 rounded-[4px] text-xs font-semibold transition-colors"
+              style={{
+                backgroundColor: viewMode === "daily" ? "rgba(255,255,255,0.08)" : "transparent",
+                color: viewMode === "daily" ? "var(--text-heading, #F2EEE4)" : "var(--text-muted, #8a8272)",
+              }}
             >
               Daily List
             </button>
@@ -160,21 +191,37 @@ export const AdminScheduleSection: React.FC<AdminScheduleSectionProps> = ({
               setConflictWarning(null);
               setIsCreateOpen(true);
             }}
-            className="px-4 py-2 rounded-xl bg-iqra-navy-900 hover:bg-iqra-blue-700 text-white text-xs font-bold transition-colors flex items-center gap-1.5 shadow-sm"
+            className="h-[36px] px-4 rounded-[6px] border text-xs font-semibold flex items-center gap-2 transition-colors active:scale-[0.98]"
+            style={{
+              borderColor: "var(--accent-gold, #C9A25B)",
+              color: "var(--accent-gold, #C9A25B)",
+              backgroundColor: "transparent",
+            }}
           >
-            <Plus className="w-4 h-4 text-iqra-gold-400" />
+            <Plus className="w-4 h-4" />
             <span>Add Class Slot</span>
           </button>
         </div>
       </div>
 
       {/* Conflict Engine Notice */}
-      <div className="p-4 rounded-2xl bg-blue-50/70 border border-blue-200/80 text-xs text-iqra-blue-900 flex items-start gap-3">
-        <CheckCircle2 className="w-5 h-5 text-iqra-blue-600 shrink-0 mt-0.5" />
+      <div
+        className="p-4 rounded-[10px] border flex items-start gap-3"
+        style={{
+          backgroundColor: "var(--card-bg, #1D1B18)",
+          borderColor: "var(--card-border, #4a4335)",
+        }}
+      >
+        <CheckCircle2
+          className="w-5 h-5 shrink-0 mt-0.5"
+          style={{ color: "var(--status-success, #7DAE7A)" }}
+        />
         <div>
-          <h4 className="font-bold">Automated Conflict Detection Active</h4>
-          <p className="text-[11px] text-iqra-blue-800 mt-0.5 leading-relaxed">
-            The scheduler verifies classroom occupancy and faculty availability in real-time. Any overlapping bookings or room collisions are rejected with explicit conflict warnings.
+          <h4 className="font-semibold text-xs" style={{ color: "var(--text-heading, #F2EEE4)" }}>
+            Automated Conflict Detection Active
+          </h4>
+          <p className="text-[11px] mt-0.5 leading-relaxed" style={{ color: "var(--text-muted, #8a8272)" }}>
+            The scheduler verifies classroom occupancy and faculty availability in real time. Any overlapping bookings or room collisions are rejected with explicit conflict warnings.
           </p>
         </div>
       </div>
@@ -187,11 +234,20 @@ export const AdminScheduleSection: React.FC<AdminScheduleSectionProps> = ({
 
             return (
               <div key={day} className="space-y-3">
-                <div className="p-3 rounded-2xl bg-white border border-slate-200 text-center shadow-xs">
-                  <span className="text-xs font-extrabold uppercase tracking-wider text-slate-800 block">
+                <div
+                  className="p-3 rounded-[8px] border text-center"
+                  style={{
+                    backgroundColor: "var(--card-bg, #1D1B18)",
+                    borderColor: "var(--card-border, #4a4335)",
+                  }}
+                >
+                  <span
+                    className="text-xs font-bold uppercase tracking-wider block"
+                    style={{ color: "var(--text-muted, #8a8272)" }}
+                  >
                     {day}
                   </span>
-                  <span className="text-[10px] font-bold text-slate-400">
+                  <span className="text-[10px] font-mono mt-0.5 block" style={{ color: "var(--text-muted, #8a8272)" }}>
                     {daySlots.length} Classes
                   </span>
                 </div>
@@ -200,45 +256,62 @@ export const AdminScheduleSection: React.FC<AdminScheduleSectionProps> = ({
                   {daySlots.map((slot) => (
                     <div
                       key={slot.id}
-                      className="p-4 rounded-2xl bg-white border border-slate-200/90 hover:border-slate-300 shadow-2xs space-y-2 relative group"
+                      className="relative overflow-hidden p-4 rounded-[10px] border space-y-2 group before:content-[''] before:absolute before:top-0 before:left-0 before:right-0 before:h-[2px] before:bg-[#C9A25B]"
+                      style={{
+                        backgroundColor: "var(--card-bg, #1D1B18)",
+                        borderColor: "var(--card-border, #4a4335)",
+                      }}
                     >
                       <button
                         onClick={() => onDeleteSlot(slot.id)}
-                        className="absolute top-2 right-2 p-1 rounded-lg text-slate-300 hover:text-rose-600 hover:bg-rose-50 transition-colors opacity-0 group-hover:opacity-100"
+                        className="absolute top-2 right-2 p-1 rounded-[4px] opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white/5"
+                        style={{ color: "var(--status-danger, #E27878)" }}
                         title="Delete Schedule Slot"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
 
                       <div className="flex items-center gap-1.5">
-                        <span className="font-mono text-[10px] font-black px-2 py-0.5 rounded bg-iqra-navy-900 text-white">
+                        <span
+                          className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded border"
+                          style={{
+                            borderColor: "var(--card-border, #4a4335)",
+                            color: "var(--text-value, #D8D3C6)",
+                          }}
+                        >
                           {slot.courseCode}
                         </span>
                         <span
-                          className={`text-[9px] font-bold px-1.5 py-0.2 rounded uppercase ${
-                            slot.type === "Lab"
-                              ? "bg-purple-100 text-purple-800"
-                              : "bg-blue-100 text-blue-800"
-                          }`}
+                          className="text-[9px] font-mono px-1.5 py-0.2 rounded border uppercase"
+                          style={{
+                            borderColor: "var(--card-border, #4a4335)",
+                            color: "var(--text-muted, #8a8272)",
+                          }}
                         >
                           {slot.type}
                         </span>
                       </div>
 
-                      <h4 className="text-xs font-bold text-slate-900 line-clamp-2 leading-snug">
+                      <h4
+                        className="font-serif text-[15px] font-[500] leading-snug line-clamp-2"
+                        style={{ color: "var(--text-heading, #F2EEE4)" }}
+                      >
                         {slot.courseTitle}
                       </h4>
 
-                      <div className="pt-2 border-t border-slate-100 text-[11px] text-slate-600 space-y-1">
-                        <p className="flex items-center gap-1 font-semibold text-iqra-blue-700">
+                      <div
+                        className="pt-2 border-t text-[11px] space-y-1 font-mono"
+                        style={{ borderColor: "var(--card-border, #4a4335)" }}
+                      >
+                        <p className="flex items-center gap-1.5" style={{ color: "var(--text-value, #D8D3C6)" }}>
                           <Clock className="w-3 h-3 shrink-0" />
                           <span>{slot.startTime} - {slot.endTime}</span>
                         </p>
-                        <p className="flex items-center gap-1 truncate text-slate-700">
-                          <MapPin className="w-3 h-3 text-iqra-gold-600 shrink-0" />
+                        <p className="flex items-center gap-1.5 truncate" style={{ color: "var(--text-value, #D8D3C6)" }}>
+                          <MapPin className="w-3 h-3 shrink-0" style={{ color: "var(--text-muted, #8a8272)" }} />
                           <span className="truncate">{slot.classroom}</span>
                         </p>
-                        <p className="flex items-center gap-1 truncate text-slate-500 text-[10px]">
+                        <p className="flex items-center gap-1.5 truncate text-[10px]" style={{ color: "var(--text-muted, #8a8272)" }}>
                           <User className="w-3 h-3 shrink-0" />
                           <span className="truncate">{slot.instructor}</span>
                         </p>
@@ -255,229 +328,186 @@ export const AdminScheduleSection: React.FC<AdminScheduleSectionProps> = ({
       {/* VIEW: DAILY LIST */}
       {viewMode === "daily" && (
         <div className="space-y-4">
-          <div className="flex items-center gap-2 overflow-x-auto pb-2">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1">
             {days.map((day) => (
               <button
                 key={day}
                 onClick={() => setSelectedDay(day)}
-                className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-colors ${
-                  selectedDay === day
-                    ? "bg-iqra-navy-900 text-white shadow-xs"
-                    : "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50"
-                }`}
+                className="h-[32px] px-3.5 rounded-[6px] border text-xs font-semibold transition-colors"
+                style={{
+                  backgroundColor: selectedDay === day ? "rgba(255,255,255,0.06)" : "var(--card-bg, #1D1B18)",
+                  borderColor: selectedDay === day ? "#6a6050" : "var(--card-border, #4a4335)",
+                  color: selectedDay === day ? "var(--text-heading, #F2EEE4)" : "var(--text-muted, #8a8272)",
+                }}
               >
                 {day}
               </button>
             ))}
           </div>
 
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {filteredSlots
               .filter((s) => s.day === selectedDay)
               .map((slot) => (
-                <div
-                  key={slot.id}
-                  className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-                >
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-100 text-iqra-blue-700 flex flex-col items-center justify-center shrink-0">
-                      <Clock className="w-4 h-4" />
-                      <span className="text-[9px] font-bold uppercase mt-0.5">{slot.type}</span>
-                    </div>
+                <CredentialCard key={slot.id}>
+                  <CredentialHeader
+                    eyebrow={`${slot.day} • ${slot.type}`}
+                    referenceId={slot.courseCode}
+                  />
 
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs font-black px-2 py-0.5 rounded bg-iqra-navy-900 text-white">
-                          {slot.courseCode}
-                        </span>
-                        <h4 className="text-sm font-bold text-slate-900">{slot.courseTitle}</h4>
-                      </div>
+                  <CredentialTitle
+                    title={slot.courseTitle}
+                    subheading={`Section ${slot.section} • Semester ${slot.semester}`}
+                    hasDivider
+                  />
 
-                      <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-slate-600">
-                        <span className="font-semibold text-iqra-blue-700">
-                          {slot.startTime} – {slot.endTime}
-                        </span>
-                        <span>•</span>
-                        <span className="flex items-center gap-1 text-slate-700">
-                          <MapPin className="w-3.5 h-3.5 text-iqra-gold-600" />
-                          {slot.classroom}, {slot.building}
-                        </span>
-                        <span>•</span>
-                        <span className="text-slate-500">Instructor: {slot.instructor}</span>
-                      </div>
-                    </div>
-                  </div>
+                  <CredentialDetailList className="flex-1">
+                    <CredentialDetailRow
+                      label="Lecture Timings"
+                      value={`${slot.startTime} - ${slot.endTime}`}
+                    />
+                    <CredentialDetailRow
+                      label="Venue & Lab"
+                      value={`${slot.classroom} (${slot.building})`}
+                    />
+                    <CredentialDetailRow
+                      label="Course Instructor"
+                      value={slot.instructor}
+                    />
+                  </CredentialDetailList>
 
-                  <button
-                    onClick={() => onDeleteSlot(slot.id)}
-                    className="p-2 rounded-xl border border-rose-200 hover:bg-rose-50 text-rose-600 transition-colors self-start sm:self-center"
-                    title="Remove slot"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
+                  <CredentialFooter
+                    primaryAction={{
+                      label: "Remove Slot",
+                      onClick: () => onDeleteSlot(slot.id),
+                    }}
+                  />
+                </CredentialCard>
               ))}
           </div>
         </div>
       )}
 
-      {/* CREATE CLASS SCHEDULE MODAL WITH CONFLICT CHECK */}
-      {isCreateOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="p-6 bg-gradient-to-r from-iqra-navy-950 to-iqra-navy-900 text-white flex items-center justify-between">
-              <div>
-                <h3 className="text-base font-black font-heading text-white">Add Class Schedule Slot</h3>
-                <p className="text-xs text-blue-200">With Automated Conflict Collision Check</p>
-              </div>
-              <button
-                onClick={() => setIsCreateOpen(false)}
-                className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white"
-              >
-                <X className="w-5 h-5" />
-              </button>
+      {/* CREATE SLOT MODAL */}
+      <CredentialModal
+        isOpen={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        eyebrow="TIMETABLE ENGINE"
+        title="Schedule Class Session"
+        description="Verify real-time classroom availability and prevent faculty collision."
+        maxWidth="lg"
+        footer={
+          <>
+            <CredentialButton
+              variant="secondary"
+              onClick={() => setIsCreateOpen(false)}
+            >
+              Cancel
+            </CredentialButton>
+            <CredentialButton
+              variant="primary"
+              onClick={handleCreateSubmit}
+            >
+              Verify & Schedule
+            </CredentialButton>
+          </>
+        }
+      >
+        {conflictWarning && (
+          <div
+            className="p-3.5 rounded-[6px] border flex items-start gap-2.5 text-xs"
+            style={{
+              borderColor: "var(--status-danger, #E27878)",
+              color: "var(--status-danger, #E27878)",
+            }}
+          >
+            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold">Collision Conflict</p>
+              <p className="mt-0.5">{conflictWarning}</p>
             </div>
-
-            <form onSubmit={handleCreateSubmit} className="p-6 space-y-4 text-xs overflow-y-auto">
-              {conflictWarning && (
-                <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-300 text-rose-800 text-xs font-semibold flex items-start gap-2 animate-shake">
-                  <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
-                  <div>
-                    <span className="font-bold block">Scheduling Conflict Prevented:</span>
-                    <span className="leading-relaxed">{conflictWarning}</span>
-                  </div>
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-700 uppercase">Day of Week</label>
-                  <select
-                    value={newDay}
-                    onChange={(e) => setNewDay(e.target.value as any)}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold"
-                  >
-                    {days.map((d) => (
-                      <option key={d} value={d}>{d}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-700 uppercase">Class Type</label>
-                  <select
-                    value={newType}
-                    onChange={(e) => setNewType(e.target.value as any)}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold"
-                  >
-                    <option value="Lecture">Lecture</option>
-                    <option value="Lab">Lab Session</option>
-                    <option value="Tutorial">Tutorial</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-700 uppercase">Start Time</label>
-                  <input
-                    type="text"
-                    value={newStartTime}
-                    onChange={(e) => setNewStartTime(e.target.value)}
-                    placeholder="08:30 AM"
-                    required
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-mono font-bold"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-700 uppercase">End Time</label>
-                  <input
-                    type="text"
-                    value={newEndTime}
-                    onChange={(e) => setNewEndTime(e.target.value)}
-                    placeholder="10:00 AM"
-                    required
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-mono font-bold"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[11px] font-bold text-slate-700 uppercase">Select Course</label>
-                <select
-                  value={newCourseCode}
-                  onChange={(e) => {
-                    setNewCourseCode(e.target.value);
-                    const c = courses.find((crs) => crs.code === e.target.value);
-                    if (c) setNewInstructor(c.instructor);
-                  }}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs"
-                >
-                  {courses.map((c) => (
-                    <option key={c.id} value={c.code}>
-                      {c.code} — {c.title}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[11px] font-bold text-slate-700 uppercase">Assigned Instructor</label>
-                <input
-                  type="text"
-                  value={newInstructor}
-                  onChange={(e) => setNewInstructor(e.target.value)}
-                  required
-                  className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-700 uppercase">Classroom / Lab</label>
-                  <input
-                    type="text"
-                    value={newRoom}
-                    onChange={(e) => setNewRoom(e.target.value)}
-                    placeholder="Lab 4 - AI Lab"
-                    required
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-700 uppercase">Building</label>
-                  <input
-                    type="text"
-                    value={newBuilding}
-                    onChange={(e) => setNewBuilding(e.target.value)}
-                    placeholder="Block B"
-                    required
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold"
-                  />
-                </div>
-              </div>
-
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsCreateOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-bold"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 rounded-xl bg-iqra-navy-900 hover:bg-iqra-blue-700 text-white font-bold"
-                >
-                  Verify & Schedule
-                </button>
-              </div>
-            </form>
           </div>
-        </div>
-      )}
+        )}
+
+        <form onSubmit={handleCreateSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <CredentialSelect
+              label="Day of Week"
+              value={newDay}
+              onChange={(e) => setNewDay(e.target.value as any)}
+            >
+              {days.map((d) => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </CredentialSelect>
+
+            <CredentialSelect
+              label="Class Type"
+              value={newType}
+              onChange={(e) => setNewType(e.target.value as any)}
+            >
+              <option value="Lecture">Lecture</option>
+              <option value="Lab">Lab Session</option>
+              <option value="Tutorial">Tutorial</option>
+            </CredentialSelect>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <CredentialInput
+              label="Start Time"
+              value={newStartTime}
+              onChange={(e) => setNewStartTime(e.target.value)}
+              required
+            />
+            <CredentialInput
+              label="End Time"
+              value={newEndTime}
+              onChange={(e) => setNewEndTime(e.target.value)}
+              required
+            />
+          </div>
+
+          <CredentialSelect
+            label="Select Course"
+            value={newCourseCode}
+            onChange={(e) => {
+              setNewCourseCode(e.target.value);
+              const c = courses.find((crs) => crs.code === e.target.value);
+              if (c) setNewInstructor(c.instructor);
+            }}
+          >
+            {courses.map((c) => (
+              <option key={c.id} value={c.code}>
+                {c.code} — {c.title}
+              </option>
+            ))}
+          </CredentialSelect>
+
+          <CredentialInput
+            label="Assigned Instructor"
+            value={newInstructor}
+            onChange={(e) => setNewInstructor(e.target.value)}
+            required
+          />
+
+          <div className="grid grid-cols-2 gap-3">
+            <CredentialInput
+              label="Classroom / Lab"
+              value={newRoom}
+              onChange={(e) => setNewRoom(e.target.value)}
+              required
+            />
+            <CredentialInput
+              label="Building"
+              value={newBuilding}
+              onChange={(e) => setNewBuilding(e.target.value)}
+              required
+            />
+          </div>
+        </form>
+      </CredentialModal>
     </div>
   );
 };
+
+

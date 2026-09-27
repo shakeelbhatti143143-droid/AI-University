@@ -8,11 +8,20 @@
  * @module
  */
 
+<<<<<<< Updated upstream
 import type * as academicAiImporter from "../academicAiImporter.js";
+=======
+import type * as academicAlerts from "../academicAlerts.js";
+>>>>>>> Stashed changes
 import type * as academicManagement from "../academicManagement.js";
 import type * as applications from "../applications.js";
 import type * as auth from "../auth.js";
+import type * as campusLife from "../campusLife.js";
+import type * as credentials from "../credentials.js";
+import type * as discussions from "../discussions.js";
 import type * as emails from "../emails.js";
+import type * as examSeating from "../examSeating.js";
+import type * as finance from "../finance.js";
 import type * as notifications from "../notifications.js";
 import type * as programs from "../programs.js";
 import type * as storage from "../storage.js";
@@ -27,11 +36,20 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+<<<<<<< Updated upstream
   academicAiImporter: typeof academicAiImporter;
+=======
+  academicAlerts: typeof academicAlerts;
+>>>>>>> Stashed changes
   academicManagement: typeof academicManagement;
   applications: typeof applications;
   auth: typeof auth;
+  campusLife: typeof campusLife;
+  credentials: typeof credentials;
+  discussions: typeof discussions;
   emails: typeof emails;
+  examSeating: typeof examSeating;
+  finance: typeof finance;
   notifications: typeof notifications;
   programs: typeof programs;
   storage: typeof storage;

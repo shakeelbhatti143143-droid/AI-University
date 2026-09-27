@@ -396,3 +396,473 @@ export const attendanceHistory: any[] = [];
 export const weeklySchedule: ScheduleSlot[] = [];
 export const recentAcademicActivities: AcademicActivity[] = [];
 
+// ============================================================================
+// CAMPUS LIFE & RESOURCES TYPES AND DATA
+// ============================================================================
+
+export interface LearningResource {
+  id: string;
+  title: string;
+  category: "Research Paper" | "Digital Book" | "AI & Data" | "Cheat Sheet" | "Development Tool" | "HEC Repository";
+  description: string;
+  link: string;
+  fileType: string;
+  fileSize?: string;
+  tags: string[];
+  department?: string;
+  author?: string;
+  publisher?: string;
+  downloadsCount: number;
+  featured?: boolean;
+}
+
+export interface CourseMaterialItem {
+  id: string;
+  courseCode: string;
+  courseTitle: string;
+  weekNumber: number;
+  topicTitle: string;
+  title: string;
+  description: string;
+  materialType: "Lecture Slides" | "Reading Notes" | "Lab Manual" | "Source Code" | "Reference Material";
+  fileUrl: string;
+  fileType: "PDF" | "PPTX" | "ZIP" | "DOCX";
+  fileSize: string;
+  uploadedBy: string;
+  uploadDate: string;
+}
+
+export interface CampusEvent {
+  id: string;
+  title: string;
+  category: "Hackathon" | "Seminar" | "Workshop" | "Sports" | "Cultural" | "Career Fair";
+  description: string;
+  date: string;
+  time: string;
+  venue: string;
+  campus: string;
+  organizer: string;
+  capacity: number;
+  registeredCount: number;
+  bannerGradient: string;
+  status: "Upcoming" | "Ongoing" | "Completed";
+  registrationDeadline: string;
+  isRegistered?: boolean;
+  tags: string[];
+}
+
+export interface CareerOpportunity {
+  id: string;
+  title: string;
+  company: string;
+  companyLogo?: string;
+  roleType: "Internship" | "Full-Time" | "Part-Time" | "Contract";
+  workModel: "On-Site" | "Hybrid" | "Remote";
+  location: string;
+  stipendSalary: string;
+  department: string;
+  description: string;
+  requirements: string[];
+  skills: string[];
+  deadline: string;
+  applyUrl?: string;
+  contactEmail?: string;
+  applicantsCount: number;
+  status: "Active" | "Closed";
+  postedDate: string;
+  featured?: boolean;
+}
+
+export const initialLearningResources: LearningResource[] = [
+  {
+    id: "res-1",
+    title: "IEEE Xplore Digital Library & ACM Digital Computing Archive",
+    category: "HEC Repository",
+    description: "Official campus proxy access to over 5 million peer-reviewed journal articles, conference proceedings, and IEEE standards.",
+    link: "https://ieeexplore.ieee.org",
+    fileType: "WEB",
+    tags: ["IEEE", "ACM", "Research", "Journals"],
+    department: "Department of Computing & Artificial Intelligence",
+    publisher: "Higher Education Commission Pakistan",
+    downloadsCount: 1420,
+    featured: true,
+  },
+  {
+    id: "res-2",
+    title: "Deep Learning with PyTorch: Foundations & Neural Architecture",
+    category: "Digital Book",
+    description: "Comprehensive university e-book detailing tensor operations, convolutional neural networks, and Transformer architectures.",
+    link: "https://pytorch.org/tutorials/",
+    fileType: "PDF",
+    fileSize: "18.4 MB",
+    tags: ["Deep Learning", "PyTorch", "AI", "Transformers"],
+    department: "Department of Computing & Artificial Intelligence",
+    author: "Dr. Eli Stevens & Luca Antiga",
+    publisher: "Manning Publications",
+    downloadsCount: 890,
+    featured: true,
+  },
+  {
+    id: "res-3",
+    title: "Data Structures & Algorithms in C++ / Python Master Cheatsheet",
+    category: "Cheat Sheet",
+    description: "Quick-reference asymptotic complexity tables, pointer manipulation guides, and balanced binary search tree traversal routines.",
+    link: "#",
+    fileType: "PDF",
+    fileSize: "3.2 MB",
+    tags: ["DSA", "Big-O", "Algorithms", "Cheat Sheet"],
+    downloadsCount: 2310,
+    featured: false,
+  },
+  {
+    id: "res-4",
+    title: "Attention Is All You Need — Original Transformer Paper",
+    category: "Research Paper",
+    description: "Vaswani et al. landmark publication outlining the multi-head self-attention mechanism powering modern LLMs.",
+    link: "https://arxiv.org/abs/1706.03762",
+    fileType: "PDF",
+    fileSize: "1.2 MB",
+    tags: ["NLP", "Transformers", "Research", "arXiv"],
+    author: "Vaswani, Shazeer, Parmar, et al.",
+    publisher: "Cornell arXiv",
+    downloadsCount: 1650,
+  },
+  {
+    id: "res-5",
+    title: "Distributed Systems & Cloud Computing Lab Setup Toolkit",
+    category: "Development Tool",
+    description: "Docker Compose configurations, Kubernetes local cluster templates, and Linux shell scripts for systems programming labs.",
+    link: "#",
+    fileType: "ZIP",
+    fileSize: "45 MB",
+    tags: ["Docker", "Kubernetes", "Cloud", "DevOps"],
+    downloadsCount: 640,
+  },
+  {
+    id: "res-6",
+    title: "Modern Database Management & SQL Optimization Handbook",
+    category: "Digital Book",
+    description: "Principles of B-Tree indexing, ACID transaction isolation, query execution plans, and normalization best practices.",
+    link: "#",
+    fileType: "PDF",
+    fileSize: "12.8 MB",
+    tags: ["Databases", "SQL", "PostgreSQL", "Convex"],
+    downloadsCount: 775,
+  },
+];
+
+export const initialCourseMaterials: CourseMaterialItem[] = [
+  {
+    id: "mat-1",
+    courseCode: "CS301",
+    courseTitle: "Artificial Intelligence",
+    weekNumber: 1,
+    topicTitle: "Intelligent Agents & Problem Formulation",
+    title: "Lecture 01: Introduction to AI & Rational Agents",
+    description: "Overview of PEAS descriptors, environment types, state space representation, and search problem modeling.",
+    materialType: "Lecture Slides",
+    fileUrl: "#",
+    fileType: "PPTX",
+    fileSize: "4.8 MB",
+    uploadedBy: "Dr. Farooq Tariq",
+    uploadDate: "Sep 02, 2026",
+  },
+  {
+    id: "mat-2",
+    courseCode: "CS301",
+    courseTitle: "Artificial Intelligence",
+    weekNumber: 2,
+    topicTitle: "Uninformed & Heuristic Search Strategies",
+    title: "Lecture 02: A* Search, BFS, DFS & Admissible Heuristics",
+    description: "Mathematical proof of A* optimality with consistent heuristics, tree search vs graph search algorithms.",
+    materialType: "Lecture Slides",
+    fileUrl: "#",
+    fileType: "PPTX",
+    fileSize: "6.1 MB",
+    uploadedBy: "Dr. Farooq Tariq",
+    uploadDate: "Sep 09, 2026",
+  },
+  {
+    id: "mat-3",
+    courseCode: "CS301",
+    courseTitle: "Artificial Intelligence",
+    weekNumber: 2,
+    topicTitle: "Lab 02: Pathfinding in Grid Worlds",
+    title: "Lab Manual 02: Python Implementation of A* Search",
+    description: "Hands-on Jupyter notebook implementing PriorityQueue, Manhattan distance heuristic, and 8-puzzle solver.",
+    materialType: "Lab Manual",
+    fileUrl: "#",
+    fileType: "ZIP",
+    fileSize: "1.8 MB",
+    uploadedBy: "Engr. Hamza Malik",
+    uploadDate: "Sep 11, 2026",
+  },
+  {
+    id: "mat-4",
+    courseCode: "CS301",
+    courseTitle: "Artificial Intelligence",
+    weekNumber: 3,
+    topicTitle: "Adversarial Search & Game Playing",
+    title: "Lecture 03: Minimax Algorithm & Alpha-Beta Pruning",
+    description: "Game trees, terminal states, utility functions, cutoff evaluations, and optimal pruning bounds.",
+    materialType: "Reading Notes",
+    fileUrl: "#",
+    fileType: "PDF",
+    fileSize: "2.4 MB",
+    uploadedBy: "Dr. Farooq Tariq",
+    uploadDate: "Sep 16, 2026",
+  },
+  {
+    id: "mat-5",
+    courseCode: "CS204",
+    courseTitle: "Data Structures & Algorithms",
+    weekNumber: 1,
+    topicTitle: "Algorithmic Complexity & Abstract Data Types",
+    title: "Lecture 01: Asymptotic Notations & Recurrence Relations",
+    description: "Master theorem derivations, Big-O, Big-Omega, Big-Theta, space-time trade-off analysis.",
+    materialType: "Lecture Slides",
+    fileUrl: "#",
+    fileType: "PDF",
+    fileSize: "3.5 MB",
+    uploadedBy: "Dr. Saima Nawaz",
+    uploadDate: "Sep 03, 2026",
+  },
+  {
+    id: "mat-6",
+    courseCode: "CS204",
+    courseTitle: "Data Structures & Algorithms",
+    weekNumber: 2,
+    topicTitle: "Dynamic Linear Data Structures",
+    title: "Lab Manual 01: Singly and Doubly Linked Lists in C++",
+    description: "Node pointers, dynamic memory allocation with malloc/new, memory leaks prevention with Valgrind.",
+    materialType: "Lab Manual",
+    fileUrl: "#",
+    fileType: "PDF",
+    fileSize: "1.5 MB",
+    uploadedBy: "Engr. Bilal Qureshi",
+    uploadDate: "Sep 10, 2026",
+  },
+  {
+    id: "mat-7",
+    courseCode: "SE302",
+    courseTitle: "Software Engineering & Architecture",
+    weekNumber: 1,
+    topicTitle: "Agile Methodologies & Requirements Engineering",
+    title: "Lecture 01: SCRUM Lifecycles & User Story Mapping",
+    description: "Sprint planning, product backlogs, epic decomposition, acceptance criteria formulation.",
+    materialType: "Lecture Slides",
+    fileUrl: "#",
+    fileType: "PPTX",
+    fileSize: "5.2 MB",
+    uploadedBy: "Prof. Asad Ullah",
+    uploadDate: "Sep 04, 2026",
+  },
+];
+
+export const initialCampusEvents: CampusEvent[] = [
+  {
+    id: "evt-1",
+    title: "Annual AI University Hackathon 2026: GenAI & Robotics",
+    category: "Hackathon",
+    description: "36-hour non-stop flagship hackathon tackling real-world healthcare, sustainable energy, and automated agents. Cash prizes of PKR 500,000 and direct internship interviews with industry sponsors.",
+    date: "2026-10-15",
+    time: "09:00 AM - Next Day 09:00 PM",
+    venue: "Main Auditorium & Computing Complex",
+    campus: "Chak Shehzad Campus, Islamabad",
+    organizer: "ACM Student Chapter & Faculty of Computing",
+    capacity: 250,
+    registeredCount: 184,
+    bannerGradient: "from-blue-600 via-indigo-600 to-purple-700",
+    status: "Upcoming",
+    registrationDeadline: "2026-10-10",
+    tags: ["Hackathon", "AI", "PKR 500k Prize", "ACM"],
+  },
+  {
+    id: "evt-2",
+    title: "Industry Keynote: Scaling Large Language Models in Production",
+    category: "Seminar",
+    description: "Distinguished guest lecture by Principal AI Engineer at Silicon Valley AI Labs on low-latency inference, model quantization, and distributed GPU serving.",
+    date: "2026-09-28",
+    time: "02:00 PM - 04:30 PM",
+    venue: "Executive Seminar Hall B-Block",
+    campus: "Chak Shehzad Campus, Islamabad",
+    organizer: "Department of Artificial Intelligence",
+    capacity: 120,
+    registeredCount: 95,
+    bannerGradient: "from-emerald-600 via-teal-600 to-cyan-700",
+    status: "Upcoming",
+    registrationDeadline: "2026-09-26",
+    tags: ["Keynote", "LLMs", "Silicon Valley", "GPU"],
+  },
+  {
+    id: "evt-3",
+    title: "Hands-on Workshop: Cloud-Native Microservices with Docker & Convex",
+    category: "Workshop",
+    description: "Interactive technical bootcamp covering real-time backend reactivity, containerized deployment, CI/CD pipelines, and secure API gateways.",
+    date: "2026-10-04",
+    time: "11:00 AM - 03:00 PM",
+    venue: "Software Engineering Lab 04",
+    campus: "Chak Shehzad Campus, Islamabad",
+    organizer: "Google Developer Student Club (GDSC)",
+    capacity: 60,
+    registeredCount: 48,
+    bannerGradient: "from-amber-500 via-orange-600 to-red-600",
+    status: "Upcoming",
+    registrationDeadline: "2026-10-02",
+    tags: ["Workshop", "Docker", "Convex", "GDSC"],
+  },
+  {
+    id: "evt-4",
+    title: "Inter-Department Cricket Championship & Sports Gala 2026",
+    category: "Sports",
+    description: "Annual sports tournament featuring T20 cricket, badminton, table tennis, and chess championships with faculty and student teams.",
+    date: "2026-10-22",
+    time: "08:30 AM - 05:00 PM",
+    venue: "University Sports Arena & Cricket Grounds",
+    campus: "Chak Shehzad Campus, Islamabad",
+    organizer: "Directorate of Sports & Student Affairs",
+    capacity: 500,
+    registeredCount: 310,
+    bannerGradient: "from-emerald-700 to-green-900",
+    status: "Upcoming",
+    registrationDeadline: "2026-10-18",
+    tags: ["Sports", "Cricket", "Trophy", "Campus Spirit"],
+  },
+  {
+    id: "evt-5",
+    title: "Fall Career & Placement Expo: 45+ Tech Companies On Campus",
+    category: "Career Fair",
+    description: "Meet talent scouts, technical recruiters, and engineering managers from top national and multinational IT companies, fintechs, and software houses.",
+    date: "2026-11-05",
+    time: "10:00 AM - 05:00 PM",
+    venue: "Central Courtyard & Exhibition Hall",
+    campus: "Chak Shehzad Campus, Islamabad",
+    organizer: "Office of Career Placement & Corporate Linkages",
+    capacity: 800,
+    registeredCount: 420,
+    bannerGradient: "from-violet-600 via-purple-700 to-pink-700",
+    status: "Upcoming",
+    registrationDeadline: "2026-11-01",
+    tags: ["Career Fair", "Jobs", "Interviews", "Networking"],
+  },
+];
+
+export const initialCareerOpportunities: CareerOpportunity[] = [
+  {
+    id: "job-1",
+    title: "Junior Full-Stack AI Engineer (Next.js & Python)",
+    company: "Devsinc Global Technologies",
+    roleType: "Full-Time",
+    workModel: "Hybrid",
+    location: "Islamabad, Pakistan",
+    stipendSalary: "PKR 110,000 - 150,000 / month",
+    department: "Computer Science / Software Engineering",
+    description: "Devsinc is hiring driven fresh graduates and final-year students for building enterprise AI dashboards, Next.js web applications, and scalable vector retrieval pipelines.",
+    requirements: [
+      "Proficiency in TypeScript, React / Next.js, and Tailwind CSS",
+      "Solid understanding of RESTful APIs and asynchronous state handling",
+      "Familiarity with Python (FastAPI/Flask) and LangChain or OpenAI/Gemini SDKs",
+      "Minimum CGPA 3.0 or strong project portfolio",
+    ],
+    skills: ["TypeScript", "Next.js", "Python", "Docker", "Tailwind CSS"],
+    deadline: "2026-10-20",
+    applyUrl: "https://careers.devsinc.com",
+    contactEmail: "talent@devsinc.com",
+    applicantsCount: 38,
+    status: "Active",
+    postedDate: "Sep 12, 2026",
+    featured: true,
+  },
+  {
+    id: "job-2",
+    title: "Machine Learning Research Intern (Computer Vision)",
+    company: "National Center of Artificial Intelligence (NCAI)",
+    roleType: "Internship",
+    workModel: "On-Site",
+    location: "NUST H-12 / Chak Shehzad Labs, Islamabad",
+    stipendSalary: "PKR 45,000 / month stipend",
+    department: "Artificial Intelligence & Data Science",
+    description: "Paid 3-month research internship focusing on autonomous drone surveillance, edge YOLO model optimization, and synthetic dataset generation.",
+    requirements: [
+      "Currently enrolled in 5th-8th semester of BS CS / BS AI / BS SE",
+      "Strong mathematical foundations in Linear Algebra, Probability & Calculus",
+      "Hands-on experience with PyTorch or TensorFlow",
+      "Publication ambition and curiosity for scientific research",
+    ],
+    skills: ["PyTorch", "OpenCV", "Python", "Computer Vision", "YOLO"],
+    deadline: "2026-10-08",
+    applyUrl: "https://ncai.gov.pk/careers",
+    contactEmail: "internships@ncai.gov.pk",
+    applicantsCount: 62,
+    status: "Active",
+    postedDate: "Sep 10, 2026",
+    featured: true,
+  },
+  {
+    id: "job-3",
+    title: "Frontend Developer Intern (React 19 & Modern Web)",
+    company: "Afiniti Technologies",
+    roleType: "Internship",
+    workModel: "Hybrid",
+    location: "Islamabad, Pakistan",
+    stipendSalary: "PKR 50,000 / month stipend",
+    department: "Software Engineering",
+    description: "Join our UI/UX and Frontend engineering squad crafting responsive customer intelligence dashboards with ultra-clean modern design systems.",
+    requirements: [
+      "Deep understanding of modern JavaScript (ES6+), HTML5, and CSS3",
+      "Working knowledge of React hooks, state management, and component architecture",
+      "Attention to detail regarding responsive layouts and cross-browser quirks",
+    ],
+    skills: ["React", "JavaScript", "CSS Grid/Flexbox", "Git", "Figma"],
+    deadline: "2026-10-15",
+    applyUrl: "https://afiniti.com/careers",
+    applicantsCount: 44,
+    status: "Active",
+    postedDate: "Sep 14, 2026",
+  },
+  {
+    id: "job-4",
+    title: "Associate DevOps & Cloud Infrastructure Engineer",
+    company: "10Pearls Pakistan",
+    roleType: "Full-Time",
+    workModel: "Remote",
+    location: "Islamabad / Remote Nationwide",
+    stipendSalary: "PKR 120,000 - 160,000 / month",
+    department: "Computer Science / Information Technology",
+    description: "Opportunity for talented graduates to manage AWS and Azure Kubernetes workloads, automate Terraform infrastructure as code, and establish robust CI/CD pipelines.",
+    requirements: [
+      "Familiarity with Linux systems administration and Bash scripting",
+      "Basic understanding of Docker containers and Kubernetes primitives",
+      "Knowledge of Git workflows and GitHub Actions",
+    ],
+    skills: ["Linux", "Docker", "AWS", "CI/CD", "Kubernetes"],
+    deadline: "2026-10-25",
+    applyUrl: "https://10pearls.com/careers",
+    applicantsCount: 29,
+    status: "Active",
+    postedDate: "Sep 08, 2026",
+  },
+  {
+    id: "job-5",
+    title: "Data Analyst & Business Intelligence Intern",
+    company: "Jazz (Veon Telecom)",
+    roleType: "Internship",
+    workModel: "On-Site",
+    location: "Jazz HQ, F-8 Markaz, Islamabad",
+    stipendSalary: "PKR 40,000 / month stipend",
+    department: "Data Science / Computing / Business Analytics",
+    description: "Analyze customer telemetry data, write complex SQL aggregations, and build PowerBI dashboards for executive decision support.",
+    requirements: [
+      "Strong SQL skills (joins, window functions, aggregations)",
+      "Experience with Power BI or Tableau",
+      "Intermediate Python data manipulation (Pandas, NumPy)",
+    ],
+    skills: ["SQL", "Power BI", "Pandas", "Excel", "Data Modeling"],
+    deadline: "2026-10-18",
+    applyUrl: "https://jazz.com.pk/careers",
+    applicantsCount: 51,
+    status: "Active",
+    postedDate: "Sep 15, 2026",
+  },
+];
+

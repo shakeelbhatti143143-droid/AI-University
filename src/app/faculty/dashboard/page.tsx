@@ -20,13 +20,22 @@ import { FacultyResourcesSection } from "@/components/faculty/sections/FacultyRe
 import { FacultySettingsSection } from "@/components/faculty/sections/FacultySettingsSection";
 import { Shield, Sparkles } from "lucide-react";
 
+const FACULTY_TABS = new Set<FacultyTab>([
+  "overview", "courses", "schedule", "students", "attendance", "assignments",
+  "exams", "results", "announcements", "resources", "settings",
+]);
+
+function isFacultyTab(value: string | null): value is FacultyTab {
+  return value !== null && FACULTY_TABS.has(value as FacultyTab);
+}
+
 function FacultyDashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, token, isLoading: isAuthLoading, logout } = useAuth();
 
-  const initialTab = (searchParams?.get("tab") as FacultyTab) || "overview";
-  const [activeTab, setActiveTab] = useState<FacultyTab>(initialTab);
+  const tabParam = searchParams.get("tab");
+  const activeTab: FacultyTab = isFacultyTab(tabParam) ? tabParam : "overview";
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isDataLoading, setIsDataLoading] = useState(true);
 
@@ -59,8 +68,7 @@ function FacultyDashboardContent() {
 
   // Sync tab with URL parameter
   const handleSelectTab = (tab: FacultyTab) => {
-    setActiveTab(tab);
-    window.history.pushState(null, "", `/faculty/dashboard?tab=${tab}`);
+    router.push(`/faculty/dashboard?tab=${tab}`);
   };
 
   // Role-Based Route Guard
@@ -73,12 +81,12 @@ function FacultyDashboardContent() {
     }
 
     const role = (user.role || "").toLowerCase();
-    if (role === "student") {
-      router.push("/dashboard");
+    if (role === "admin" || role === "super_admin") {
+      router.replace("/admin");
       return;
     }
-    if (role === "applicant") {
-      router.push("/status");
+    if (role !== "faculty" && role !== "teacher") {
+      router.replace("/login");
       return;
     }
   }, [user, isAuthLoading, router]);
@@ -156,7 +164,8 @@ function FacultyDashboardContent() {
     }
   };
 
-  if (isAuthLoading || (isDataLoading && !facultyData.faculty.fullName)) {
+  const isFaculty = ["faculty", "teacher"].includes((user?.role || "").toLowerCase());
+  if (isAuthLoading || !user || !isFaculty || (isDataLoading && !facultyData.faculty.fullName)) {
     return (
       <div className="min-h-screen bg-[#0B1528] flex flex-col items-center justify-center text-white space-y-4">
         <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-cyan-400 p-0.5 animate-spin">

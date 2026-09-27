@@ -3,14 +3,11 @@
 import React, { useState } from "react";
 import {
   Megaphone,
-  Bell,
   Plus,
   Send,
   Calendar,
   AlertCircle,
   CheckCircle2,
-  X,
-  Sparkles,
   Users,
   Globe,
   Lock,
@@ -25,6 +22,18 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
+import {
+  CredentialCard,
+  CredentialHeader,
+  CredentialTitle,
+  CredentialDetailRow,
+  CredentialDetailList,
+  CredentialFooter,
+  CredentialModal,
+  CredentialInput,
+  CredentialSelect,
+  CredentialButton,
+} from "@/components/admin/credential";
 
 export interface Announcement {
   _id: string;
@@ -298,6 +307,7 @@ export const AdminCommunicationSection: React.FC<AdminCommunicationSectionProps>
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* Top Banner */}
+<<<<<<< Updated upstream
       <div className="p-6 rounded-3xl bg-white border border-slate-200/90 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
@@ -324,6 +334,36 @@ export const AdminCommunicationSection: React.FC<AdminCommunicationSectionProps>
           <span>New Announcement</span>
         </button>
       </div>
+=======
+      <CredentialCard>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[10px] font-mono tracking-[0.12em] uppercase text-[#8a8272] flex items-center gap-1">
+                <Megaphone className="w-3.5 h-3.5 text-[#8a8272]" />
+                University Communications
+              </span>
+              <span className="text-xs text-[#4a4335]">•</span>
+              <span className="text-xs font-semibold text-[#8a8272]">Chak Shehzad Campus Broadcast</span>
+            </div>
+            <h2 className="text-2xl font-serif font-medium text-[#F2EEE4] tracking-tight">
+              Announcements & Targeted Notifications
+            </h2>
+            <p className="text-xs text-[#8a8272] mt-1">
+              Publish official university announcements, schedule notifications, and broadcast messages to student dashboards.
+            </p>
+          </div>
+
+          <CredentialButton
+            variant="primary"
+            onClick={() => setIsModalOpen(true)}
+          >
+            <Plus className="w-3.5 h-3.5 mr-1" />
+            <span>New Announcement</span>
+          </CredentialButton>
+        </div>
+      </CredentialCard>
+>>>>>>> Stashed changes
 
       {/* Filter and Search Bar */}
       <div className="p-4 rounded-2xl bg-white border border-slate-200/90 flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -403,6 +443,7 @@ export const AdminCommunicationSection: React.FC<AdminCommunicationSectionProps>
 
       {/* Announcements List */}
       <div className="space-y-4">
+<<<<<<< Updated upstream
         {filteredAnnouncements.length === 0 ? (
           <div className="p-12 text-center rounded-3xl bg-white border border-dashed border-slate-200 space-y-3">
             <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
@@ -411,10 +452,21 @@ export const AdminCommunicationSection: React.FC<AdminCommunicationSectionProps>
             <h3 className="text-base font-bold text-slate-800">No announcements match criteria</h3>
             <p className="text-xs text-slate-500 max-w-sm mx-auto">
               Try adjusting your filter or search query, or create a new announcement using the button above.
+=======
+        {announcements.length === 0 ? (
+          <CredentialCard className="text-center py-12">
+            <div className="w-12 h-12 rounded-[10px] bg-[#1D1B18] border border-[#4a4335] flex items-center justify-center mx-auto text-[#8a8272] mb-3">
+              <Megaphone className="w-6 h-6 text-[#8a8272]" />
+            </div>
+            <h3 className="text-base font-serif font-medium text-[#F2EEE4]">No announcements published</h3>
+            <p className="text-xs text-[#8a8272] max-w-sm mx-auto mt-1">
+              Announcements published here will appear in the top notification marquee of relevant students.
+>>>>>>> Stashed changes
             </p>
-          </div>
+          </CredentialCard>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+<<<<<<< Updated upstream
             {filteredAnnouncements.map((a) => {
               const isFacultyPost =
                 a.createdByRole === "FACULTY" ||
@@ -616,11 +668,43 @@ export const AdminCommunicationSection: React.FC<AdminCommunicationSectionProps>
                 </div>
               );
             })}
+=======
+            {announcements.map((a) => (
+              <CredentialCard key={a._id}>
+                <CredentialHeader
+                  eyebrow={`${a.category} • ${a.priority}`}
+                  referenceId={a.publishDate}
+                />
+                <CredentialTitle
+                  title={a.title}
+                  subheading={`From: ${a.sender}`}
+                />
+                <p className="text-xs text-[#D8D3C6] leading-relaxed my-3">
+                  {a.message}
+                </p>
+                <CredentialDetailList>
+                  <CredentialDetailRow label="Target Audience" value={a.targetAudience} />
+                  <CredentialDetailRow label="Priority" value={a.priority} />
+                </CredentialDetailList>
+                <CredentialFooter
+                  status={{
+                    label: a.status || "Published",
+                    state: a.priority === "Urgent" ? "danger" : "neutral",
+                  }}
+                  primaryAction={{
+                    label: "View Broadcast",
+                    onClick: () => alert(`Audience: ${a.targetAudience}\nMessage: ${a.message}`),
+                  }}
+                />
+              </CredentialCard>
+            ))}
+>>>>>>> Stashed changes
           </div>
         )}
       </div>
 
       {/* CREATE ANNOUNCEMENT MODAL */}
+<<<<<<< Updated upstream
       {isCreateModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-5 shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto">
@@ -1071,6 +1155,96 @@ export const AdminCommunicationSection: React.FC<AdminCommunicationSectionProps>
           </div>
         </div>
       )}
+=======
+      <CredentialModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title="Publish Campus Announcement"
+        eyebrow="BROADCAST"
+        maxWidth="lg"
+      >
+        <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+          <CredentialInput
+            label="Title *"
+            required
+            placeholder="e.g. Midterm Examination Timetable Published"
+            value={formData.title}
+            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+          />
+
+          <div className="grid grid-cols-2 gap-3">
+            <CredentialSelect
+              label="Category *"
+              value={formData.category}
+              onChange={(e) => setFormData({ ...formData, category: e.target.value as any })}
+            >
+              <option value="University">University</option>
+              <option value="Department">Department</option>
+              <option value="Course">Course</option>
+              <option value="Exam">Exam</option>
+              <option value="Student-specific">Student-specific</option>
+            </CredentialSelect>
+
+            <CredentialSelect
+              label="Priority *"
+              value={formData.priority}
+              onChange={(e) => setFormData({ ...formData, priority: e.target.value as any })}
+            >
+              <option value="Normal">Normal</option>
+              <option value="High">High</option>
+              <option value="Urgent">Urgent</option>
+            </CredentialSelect>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <CredentialInput
+              label="Target Audience *"
+              required
+              placeholder="e.g. All Students, Computing Dept"
+              value={formData.targetAudience}
+              onChange={(e) => setFormData({ ...formData, targetAudience: e.target.value })}
+            />
+
+            <CredentialInput
+              label="Sender Entity"
+              value={formData.sender}
+              onChange={(e) => setFormData({ ...formData, sender: e.target.value })}
+            />
+          </div>
+
+          <div>
+            <label className="block text-[#8a8272] text-xs mb-1.5 font-medium">Announcement Content *</label>
+            <textarea
+              rows={3}
+              required
+              placeholder="Detailed message text..."
+              value={formData.message}
+              onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+              className="w-full bg-[#1D1B18] border border-[#4a4335] rounded-[6px] p-3 text-xs text-[#F2EEE4] placeholder-[#8a8272] focus:outline-none focus:border-[#C9A25B]"
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-2">
+            <CredentialButton
+              variant="secondary"
+              onClick={() => setIsModalOpen(false)}
+            >
+              Cancel
+            </CredentialButton>
+            <CredentialButton
+              variant="primary"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Publishing..." : "Broadcast Announcement"}
+            </CredentialButton>
+          </div>
+        </form>
+      </CredentialModal>
+>>>>>>> Stashed changes
     </div>
   );
 };
+
+
+
+

@@ -8,13 +8,9 @@ import {
   XCircle,
   Clock,
   Plus,
-  Trash2,
-  AlertCircle,
   ToggleLeft,
   ToggleRight,
   Filter,
-  UserCheck,
-  BookOpen,
   X,
 } from "lucide-react";
 import {
@@ -23,6 +19,19 @@ import {
   AdminCourse,
   AdminStudent,
 } from "@/lib/admin-data";
+import {
+  CredentialCard,
+  CredentialHeader,
+  CredentialTitle,
+  CredentialDetailRow,
+  CredentialDetailList,
+  CredentialFooter,
+  CredentialModal,
+  CredentialInput,
+  CredentialSelect,
+  CredentialButton,
+  CredentialFilterBar,
+} from "@/components/admin/credential";
 
 interface AdminRegistrationSectionProps {
   period: RegistrationPeriod;
@@ -85,187 +94,261 @@ export const AdminRegistrationSection: React.FC<AdminRegistrationSectionProps> =
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* Registration Period Controller Banner */}
-      <div className="p-6 rounded-3xl bg-white border border-slate-200/90 shadow-xs space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-100">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span
-                className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase flex items-center gap-1 ${
-                  period.isOpen
-                    ? "bg-emerald-100 text-emerald-800"
-                    : "bg-rose-100 text-rose-800"
-                }`}
-              >
-                <span
-                  className={`w-2 h-2 rounded-full ${
-                    period.isOpen ? "bg-emerald-500 animate-pulse" : "bg-rose-500"
-                  }`}
-                />
-                {period.isOpen ? "Registration Window Open" : "Registration Closed"}
-              </span>
-              <span className="text-xs text-slate-400">•</span>
-              <span className="text-xs font-semibold text-slate-600">{period.session}</span>
-            </div>
-
-            <h2 className="text-2xl font-black font-heading text-slate-900 tracking-tight">
-              Course Registration Administration
-            </h2>
-
-            <p className="text-xs text-slate-500">
-              Active Window: <strong>{period.startDate} to {period.endDate}</strong> • Max Credit Limit: <strong>{period.maxCreditHours} Cr. Hrs</strong>
-            </p>
-          </div>
-
-          {/* Toggle Switch */}
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => onTogglePeriod(!period.isOpen)}
-              className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 shadow-xs ${
-                period.isOpen
-                  ? "bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100"
-                  : "bg-emerald-600 text-white hover:bg-emerald-700"
-              }`}
+      <div
+        className="relative overflow-hidden p-6 rounded-[10px] border flex flex-col md:flex-row md:items-center justify-between gap-4 before:content-[''] before:absolute before:top-0 before:left-0 before:right-0 before:h-[2px] before:bg-[#C9A25B]"
+        style={{
+          backgroundColor: "var(--card-bg, #1D1B18)",
+          borderColor: "var(--card-border, #4a4335)",
+          borderRadius: "var(--radius-card, 10px)",
+        }}
+      >
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2">
+            <span
+              className="w-[7px] h-[7px] rounded-full shrink-0"
+              style={{
+                backgroundColor: period.isOpen
+                  ? "var(--status-success, #7DAE7A)"
+                  : "var(--status-danger, #E27878)",
+              }}
+            />
+            <span
+              className="text-[10px] font-semibold uppercase tracking-[0.12em]"
+              style={{
+                color: period.isOpen
+                  ? "var(--status-success, #7DAE7A)"
+                  : "var(--status-danger, #E27878)",
+              }}
             >
-              {period.isOpen ? <ToggleRight className="w-5 h-5 text-rose-600" /> : <ToggleLeft className="w-5 h-5" />}
-              <span>{period.isOpen ? "Close Registration Window" : "Open Registration Window"}</span>
-            </button>
-
-            <button
-              onClick={() => setIsManualOpen(true)}
-              className="px-4 py-2.5 rounded-2xl bg-iqra-navy-900 hover:bg-iqra-blue-700 text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
-            >
-              <Plus className="w-4 h-4 text-iqra-gold-400" />
-              <span>Manually Register Student</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Registration Statistics Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/70">
-            <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Total Requests</span>
-            <span className="text-2xl font-black font-heading text-slate-900">{totalRequests}</span>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-200/60">
-            <span className="text-[10px] font-bold text-amber-800 uppercase block mb-1">Pending Review</span>
-            <span className="text-2xl font-black font-heading text-amber-700">{pendingCount}</span>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-200/60">
-            <span className="text-[10px] font-bold text-emerald-800 uppercase block mb-1">Approved</span>
-            <span className="text-2xl font-black font-heading text-emerald-700">{approvedCount}</span>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-rose-50/60 border border-rose-200/60">
-            <span className="text-[10px] font-bold text-rose-800 uppercase block mb-1">Capacity Saturated</span>
-            <span className="text-2xl font-black font-heading text-rose-700">
-              {fullCourses.length} Full Courses
+              {period.isOpen ? "Registration Window Open" : "Registration Closed"}
+            </span>
+            <span style={{ color: "var(--text-muted, #8a8272)" }}>•</span>
+            <span className="text-[11px]" style={{ color: "var(--text-muted, #8a8272)" }}>
+              {period.session}
             </span>
           </div>
+
+          <h2
+            className="font-serif text-[26px] font-[500] leading-tight tracking-tight"
+            style={{ color: "var(--text-heading, #F2EEE4)" }}
+          >
+            Course Registration Administration
+          </h2>
+
+          <p className="text-xs leading-relaxed" style={{ color: "var(--text-muted, #8a8272)" }}>
+            Active Window: <strong style={{ color: "var(--text-value, #D8D3C6)" }}>{period.startDate} to {period.endDate}</strong> • Max Credit Limit: <strong style={{ color: "var(--text-value, #D8D3C6)" }}>{period.maxCreditHours} Cr. Hrs</strong>
+          </p>
+        </div>
+
+        {/* Toggle Switch & Manual Register Button */}
+        <div className="flex flex-wrap items-center gap-3 shrink-0">
+          <button
+            onClick={() => onTogglePeriod(!period.isOpen)}
+            className="h-[36px] px-3.5 rounded-[6px] border text-xs font-semibold flex items-center gap-2 transition-colors hover:bg-white/5 active:scale-[0.98]"
+            style={{
+              borderColor: period.isOpen ? "var(--status-danger, #E27878)" : "var(--status-success, #7DAE7A)",
+              color: period.isOpen ? "var(--status-danger, #E27878)" : "var(--status-success, #7DAE7A)",
+            }}
+          >
+            {period.isOpen ? <ToggleRight className="w-4 h-4" /> : <ToggleLeft className="w-4 h-4" />}
+            <span>{period.isOpen ? "Close Window" : "Open Window"}</span>
+          </button>
+
+          <button
+            onClick={() => setIsManualOpen(true)}
+            className="h-[36px] px-4 rounded-[6px] border text-xs font-semibold flex items-center gap-2 transition-colors active:scale-[0.98]"
+            style={{
+              borderColor: "var(--accent-gold, #C9A25B)",
+              color: "var(--accent-gold, #C9A25B)",
+              backgroundColor: "transparent",
+            }}
+          >
+            <Plus className="w-4 h-4" />
+            <span>Manually Register Student</span>
+          </button>
         </div>
       </div>
 
+      {/* Registration Statistics Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <CredentialCard className="pt-4 px-5 pb-4">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.12em]" style={{ color: "var(--text-muted, #8a8272)" }}>
+            Total Requests
+          </span>
+          <span className="font-serif text-[28px] font-[500] leading-none mt-2" style={{ color: "var(--text-heading, #F2EEE4)" }}>
+            {totalRequests}
+          </span>
+          <span className="text-[11px] mt-1.5" style={{ color: "var(--text-muted, #8a8272)" }}>
+            Enqueued student filings
+          </span>
+        </CredentialCard>
+
+        <CredentialCard className="pt-4 px-5 pb-4">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.12em]" style={{ color: "var(--text-muted, #8a8272)" }}>
+            Pending Review
+          </span>
+          <span className="font-serif text-[28px] font-[500] leading-none mt-2" style={{ color: "var(--text-heading, #F2EEE4)" }}>
+            {pendingCount}
+          </span>
+          <span className="text-[11px] mt-1.5" style={{ color: "var(--text-muted, #8a8272)" }}>
+            Awaiting administrator action
+          </span>
+        </CredentialCard>
+
+        <CredentialCard className="pt-4 px-5 pb-4">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.12em]" style={{ color: "var(--text-muted, #8a8272)" }}>
+            Approved
+          </span>
+          <span className="font-serif text-[28px] font-[500] leading-none mt-2" style={{ color: "var(--status-success, #7DAE7A)" }}>
+            {approvedCount}
+          </span>
+          <span className="text-[11px] mt-1.5" style={{ color: "var(--text-muted, #8a8272)" }}>
+            Seats authorized
+          </span>
+        </CredentialCard>
+
+        <CredentialCard className="pt-4 px-5 pb-4">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.12em]" style={{ color: "var(--text-muted, #8a8272)" }}>
+            Capacity Saturated
+          </span>
+          <span className="font-serif text-[28px] font-[500] leading-none mt-2" style={{ color: "var(--status-danger, #E27878)" }}>
+            {fullCourses.length}
+          </span>
+          <span className="text-[11px] mt-1.5" style={{ color: "var(--text-muted, #8a8272)" }}>
+            Full course sections
+          </span>
+        </CredentialCard>
+      </div>
+
+      {/* Filter Bar */}
+      <CredentialFilterBar
+        searchQuery={searchTerm}
+        onSearchChange={setSearchTerm}
+        searchPlaceholder="Search by student name, ID, course code, title..."
+      >
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="h-[36px] px-3 bg-[#1D1B18] border border-[#4a4335] rounded-[6px] text-xs text-[#D8D3C6] focus:outline-none focus:border-[#C9A25B]"
+          style={{
+            backgroundColor: "var(--card-bg, #1D1B18)",
+            borderColor: "var(--card-border, #4a4335)",
+            color: "var(--text-value, #D8D3C6)",
+            borderRadius: "var(--radius-control, 6px)",
+          }}
+        >
+          <option value="All">All Statuses</option>
+          <option value="Pending">Pending</option>
+          <option value="Approved">Approved</option>
+          <option value="Rejected">Rejected</option>
+        </select>
+      </CredentialFilterBar>
+
       {/* Requests Data Table */}
-      <div className="p-6 rounded-3xl bg-white border border-slate-200/90 shadow-xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+      <div
+        className="relative overflow-hidden p-6 rounded-[10px] border space-y-4 before:content-[''] before:absolute before:top-0 before:left-0 before:right-0 before:h-[2px] before:bg-[#C9A25B]"
+        style={{
+          backgroundColor: "var(--card-bg, #1D1B18)",
+          borderColor: "var(--card-border, #4a4335)",
+          borderRadius: "var(--radius-card, 10px)",
+        }}
+      >
+        <div
+          className="flex items-center justify-between pb-3 border-b"
+          style={{ borderColor: "var(--card-border, #4a4335)" }}
+        >
           <div>
-            <h3 className="text-sm font-bold text-slate-900">
-              Registration Requests & Approval Queue ({filteredRequests.length})
+            <h3 className="font-serif text-[18px] font-[500]" style={{ color: "var(--text-heading, #F2EEE4)" }}>
+              Registration Requests Queue ({filteredRequests.length})
             </h3>
-            <p className="text-[11px] text-slate-500">Review student prerequisite compliance and authorize seats</p>
-          </div>
-
-          <div className="flex items-center gap-2 text-xs">
-            <input
-              type="text"
-              placeholder="Search request..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="py-1.5 px-3 rounded-xl bg-slate-50 border border-slate-200 text-xs w-48"
-            />
-
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="py-1.5 px-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700"
-            >
-              <option value="All">All Statuses</option>
-              <option value="Pending">Pending</option>
-              <option value="Approved">Approved</option>
-              <option value="Rejected">Rejected</option>
-            </select>
+            <p className="text-[11px]" style={{ color: "var(--text-muted, #8a8272)" }}>
+              Review student prerequisite compliance and authorize classroom seats
+            </p>
           </div>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="border-b border-slate-200 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
-                <th className="pb-3 font-bold">Student Name & ID</th>
-                <th className="pb-3 font-bold">Requested Course</th>
-                <th className="pb-3 font-bold text-center">Credit Hours</th>
-                <th className="pb-3 font-bold text-center">Section</th>
-                <th className="pb-3 font-bold">Requested Timestamp</th>
-                <th className="pb-3 font-bold text-center">Status</th>
-                <th className="pb-3 font-bold text-right">Admin Decisions</th>
+              <tr
+                className="border-b text-[10px] font-semibold uppercase tracking-[0.12em]"
+                style={{
+                  borderColor: "var(--card-border, #4a4335)",
+                  color: "var(--text-muted, #8a8272)",
+                }}
+              >
+                <th className="pb-3 font-medium">Student Name & ID</th>
+                <th className="pb-3 font-medium">Requested Course</th>
+                <th className="pb-3 font-medium text-center">Credit Hours</th>
+                <th className="pb-3 font-medium text-center">Section</th>
+                <th className="pb-3 font-medium">Timestamp</th>
+                <th className="pb-3 font-medium text-center">Status</th>
+                <th className="pb-3 font-medium text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody
+              className="divide-y"
+              style={{ borderColor: "var(--card-border, #4a4335)" }}
+            >
               {filteredRequests.map((req) => (
-                <tr key={req.id} className="hover:bg-slate-50/70 transition-colors">
+                <tr key={req.id} className="hover:bg-white/[0.02] transition-colors">
                   <td className="py-3">
-                    <span className="font-bold text-slate-900 block">{req.studentName}</span>
-                    <span className="font-mono text-[10px] text-slate-500 block">{req.studentId}</span>
-                    <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                      {req.department && (
-                        <span className="text-[10px] text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded font-medium">
-                          {req.department}
-                        </span>
-                      )}
-                      {req.program && (
-                        <span className="text-[10px] text-iqra-blue-700 bg-blue-50 px-1.5 py-0.5 rounded font-medium">
-                          {req.program}
-                        </span>
-                      )}
-                      <span className="text-[10px] font-bold text-slate-700 bg-slate-200/70 px-1.5 py-0.5 rounded">
-                        Sem {req.semester || 1}
-                      </span>
-                    </div>
+                    <span className="font-medium block leading-tight" style={{ color: "var(--text-heading, #F2EEE4)" }}>
+                      {req.studentName}
+                    </span>
+                    <span className="font-mono text-[10px]" style={{ color: "var(--text-muted, #8a8272)" }}>
+                      {req.studentId}
+                    </span>
                   </td>
 
                   <td className="py-3">
-                    <span className="font-mono font-bold text-iqra-blue-700 block">{req.courseCode}</span>
-                    <span className="text-[11px] text-slate-600">{req.courseTitle}</span>
+                    <span className="font-mono font-medium block" style={{ color: "var(--text-value, #D8D3C6)" }}>
+                      {req.courseCode}
+                    </span>
+                    <span className="text-[11px]" style={{ color: "var(--text-muted, #8a8272)" }}>
+                      {req.courseTitle}
+                    </span>
                   </td>
 
-                  <td className="py-3 text-center font-mono font-bold text-slate-800">
+                  <td className="py-3 text-center font-mono" style={{ color: "var(--text-value, #D8D3C6)" }}>
                     {req.creditHours} Cr
                   </td>
 
-                  <td className="py-3 text-center font-bold text-slate-700">
+                  <td className="py-3 text-center font-mono" style={{ color: "var(--text-value, #D8D3C6)" }}>
                     {req.section}
                   </td>
 
-                  <td className="py-3 text-[11px] text-slate-500">
+                  <td className="py-3 font-mono text-[11px]" style={{ color: "var(--text-muted, #8a8272)" }}>
                     {req.requestedAt}
                   </td>
 
                   <td className="py-3 text-center">
-                    <span
-                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                        req.status === "Approved"
-                          ? "bg-emerald-100 text-emerald-800"
-                          : req.status === "Pending"
-                          ? "bg-amber-100 text-amber-800"
-                          : "bg-rose-100 text-rose-800"
-                      }`}
-                    >
-                      {req.status === "Approved" && <CheckCircle2 className="w-3 h-3" />}
-                      {req.status === "Pending" && <Clock className="w-3 h-3" />}
-                      {req.status === "Rejected" && <XCircle className="w-3 h-3" />}
-                      <span>{req.status}</span>
-                    </span>
+                    <div className="inline-flex items-center gap-1.5 select-none">
+                      <span
+                        className="w-[7px] h-[7px] rounded-full shrink-0"
+                        style={{
+                          backgroundColor:
+                            req.status === "Approved"
+                              ? "var(--status-success, #7DAE7A)"
+                              : req.status === "Pending"
+                              ? "#B8963E"
+                              : "var(--status-danger, #E27878)",
+                        }}
+                      />
+                      <span
+                        className="text-[11px] font-medium"
+                        style={{
+                          color:
+                            req.status === "Approved"
+                              ? "var(--status-success, #7DAE7A)"
+                              : req.status === "Pending"
+                              ? "#B8963E"
+                              : "var(--status-danger, #E27878)",
+                        }}
+                      >
+                        {req.status}
+                      </span>
+                    </div>
                   </td>
 
                   <td className="py-3 text-right">
@@ -273,19 +356,29 @@ export const AdminRegistrationSection: React.FC<AdminRegistrationSectionProps> =
                       <div className="flex items-center justify-end gap-1.5">
                         <button
                           onClick={() => onApproveRequest(req.id)}
-                          className="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-colors"
+                          className="h-[28px] px-3 text-[11px] font-semibold rounded-[4px] border transition-colors hover:bg-[#7DAE7A]/10"
+                          style={{
+                            borderColor: "var(--status-success, #7DAE7A)",
+                            color: "var(--status-success, #7DAE7A)",
+                          }}
                         >
                           Approve
                         </button>
                         <button
                           onClick={() => onRejectRequest(req.id)}
-                          className="px-3 py-1 rounded-lg bg-slate-100 hover:bg-rose-100 hover:text-rose-700 text-slate-700 text-xs font-bold transition-colors"
+                          className="h-[28px] px-3 text-[11px] font-semibold rounded-[4px] border transition-colors hover:bg-[#E27878]/10"
+                          style={{
+                            borderColor: "var(--card-border, #4a4335)",
+                            color: "var(--text-muted, #8a8272)",
+                          }}
                         >
                           Reject
                         </button>
                       </div>
                     ) : (
-                      <span className="text-[11px] text-slate-400 font-medium">Decided</span>
+                      <span className="text-[11px] font-mono" style={{ color: "var(--text-muted, #8a8272)" }}>
+                        Decided
+                      </span>
                     )}
                   </td>
                 </tr>
@@ -296,86 +389,68 @@ export const AdminRegistrationSection: React.FC<AdminRegistrationSectionProps> =
       </div>
 
       {/* Manual Registration Modal */}
-      {isManualOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col">
-            <div className="p-6 bg-gradient-to-r from-iqra-navy-950 to-iqra-navy-900 text-white flex items-center justify-between">
-              <div>
-                <h3 className="text-base font-black font-heading text-white">Manual Course Enrollment</h3>
-                <p className="text-xs text-blue-200">Administrator Direct Course Assignment</p>
-              </div>
-              <button
-                onClick={() => setIsManualOpen(false)}
-                className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+      <CredentialModal
+        isOpen={isManualOpen}
+        onClose={() => setIsManualOpen(false)}
+        eyebrow="ADMINISTRATIVE OVERRIDE"
+        title="Manual Course Enrollment"
+        description="Directly register a student into a designated course section."
+        maxWidth="md"
+        footer={
+          <>
+            <CredentialButton
+              variant="secondary"
+              onClick={() => setIsManualOpen(false)}
+            >
+              Cancel
+            </CredentialButton>
+            <CredentialButton
+              variant="primary"
+              onClick={handleManualSubmit}
+            >
+              Confirm Enrollment
+            </CredentialButton>
+          </>
+        }
+      >
+        <form onSubmit={handleManualSubmit} className="space-y-4">
+          <CredentialSelect
+            label="Select Student *"
+            value={selectedStudentId}
+            onChange={(e) => setSelectedStudentId(e.target.value)}
+          >
+            {students.map((s) => (
+              <option key={s.id} value={s.studentId}>
+                {s.studentId} — {s.name} ({s.semester})
+              </option>
+            ))}
+          </CredentialSelect>
 
-            <form onSubmit={handleManualSubmit} className="p-6 space-y-4 text-xs">
-              <div className="space-y-1">
-                <label className="text-[11px] font-bold text-slate-700 uppercase">Select Student</label>
-                <select
-                  value={selectedStudentId}
-                  onChange={(e) => setSelectedStudentId(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs"
-                >
-                  {students.map((s) => (
-                    <option key={s.id} value={s.studentId}>
-                      {s.studentId} — {s.name} ({s.semester})
-                    </option>
-                  ))}
-                </select>
-              </div>
+          <CredentialSelect
+            label="Select Course to Enroll *"
+            value={selectedCourseCode}
+            onChange={(e) => setSelectedCourseCode(e.target.value)}
+          >
+            {courses.map((c) => (
+              <option key={c.id} value={c.code}>
+                {c.code} — {c.title} ({c.enrolledCount}/{c.capacity} Enrolled)
+              </option>
+            ))}
+          </CredentialSelect>
 
-              <div className="space-y-1">
-                <label className="text-[11px] font-bold text-slate-700 uppercase">Select Course to Enroll</label>
-                <select
-                  value={selectedCourseCode}
-                  onChange={(e) => setSelectedCourseCode(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs"
-                >
-                  {courses.map((c) => (
-                    <option key={c.id} value={c.code}>
-                      {c.code} — {c.title} ({c.enrolledCount}/{c.capacity} Enrolled)
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[11px] font-bold text-slate-700 uppercase">Section</label>
-                <select
-                  value={selectedSection}
-                  onChange={(e) => setSelectedSection(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold"
-                >
-                  <option value="CS-6A">Section CS-6A</option>
-                  <option value="CS-6B">Section CS-6B</option>
-                  <option value="SE-7A">Section SE-7A</option>
-                  <option value="AI-4A">Section AI-4A</option>
-                </select>
-              </div>
-
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsManualOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-bold"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 rounded-xl bg-iqra-navy-900 hover:bg-iqra-blue-700 text-white font-bold"
-                >
-                  Confirm Manual Registration
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+          <CredentialSelect
+            label="Section *"
+            value={selectedSection}
+            onChange={(e) => setSelectedSection(e.target.value)}
+          >
+            <option value="CS-6A">Section CS-6A</option>
+            <option value="CS-6B">Section CS-6B</option>
+            <option value="SE-7A">Section SE-7A</option>
+            <option value="AI-4A">Section AI-4A</option>
+          </CredentialSelect>
+        </form>
+      </CredentialModal>
     </div>
   );
 };
+

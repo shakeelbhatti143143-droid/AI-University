@@ -18,17 +18,14 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
-  Sparkles,
   ExternalLink,
   ShieldCheck,
   Building2,
-  MapPin,
   X,
   Video,
   Award,
   Layers,
   Calendar,
-  Clock,
   Bell,
   Megaphone,
   Bot,
@@ -38,19 +35,22 @@ import {
   Lock,
   DoorOpen,
   ScrollText,
+<<<<<<< Updated upstream
   Image as ImageIcon,
+=======
+  Receipt,
+>>>>>>> Stashed changes
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type AdminTab =
   | "dashboard"
-  // People
+  | "finances"
   | "students"
   | "faculty"
   | "administrators"
   | "applications"
   | "videos"
-  // Academics
   | "academics"
   | "departments"
   | "programs"
@@ -60,11 +60,11 @@ export type AdminTab =
   | "schedule"
   | "attendance"
   | "assignments"
-  // Examinations
   | "exams"
   | "exam-schedule"
   | "exam-rooms"
   | "results"
+<<<<<<< Updated upstream
   // Academic Records
   | "progression"
   | "transcripts"
@@ -84,10 +84,16 @@ export type AdminTab =
   | "videos"
   // AI & Learning
   | "ai-academic-assistant"
+=======
+  | "transcripts"
+  | "gpa-cgpa"
+  | "reports"
+  | "announcements"
+  | "notifications"
+>>>>>>> Stashed changes
   | "ai-assistant"
   | "ai-planner"
   | "ai-analytics"
-  // System
   | "user-management"
   | "security"
   | "audit-logs"
@@ -98,12 +104,14 @@ interface NavItem {
   id: AdminTab;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
+  iconColor?: string;
   badge?: string | number;
   badgeColor?: string;
 }
 
 interface NavGroup {
   title: string;
+  accentColor?: string;
   items: NavItem[];
 }
 
@@ -133,67 +141,83 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   const navGroups: NavGroup[] = [
     {
       title: "PEOPLE",
+      accentColor: "text-blue-600",
       items: [
-        { id: "students", label: "Students", icon: Users },
-        { id: "faculty", label: "Faculty Members", icon: UserCheck },
-        { id: "administrators", label: "Administrators", icon: ShieldCheck },
+        { id: "students", label: "Students", icon: Users, iconColor: "text-blue-500" },
+        { id: "faculty", label: "Faculty Members", icon: UserCheck, iconColor: "text-cyan-500" },
+        { id: "administrators", label: "Administrators", icon: ShieldCheck, iconColor: "text-indigo-500" },
         {
           id: "applications",
           label: "Admissions & Applications",
           icon: ScrollText,
+          iconColor: "text-amber-500",
           badge: pendingApplicationsCount > 0 ? `${pendingApplicationsCount}` : undefined,
-          badgeColor: "bg-amber-400 text-slate-950 font-black",
+          badgeColor: "bg-amber-100 text-amber-700 border-amber-200",
         },
       ],
     },
     {
       title: "ACADEMICS",
+      accentColor: "text-indigo-600",
       items: [
-        { id: "departments", label: "Departments", icon: Building2 },
-        { id: "programs", label: "Programs", icon: GraduationCap },
-        { id: "courses", label: "Courses", icon: BookOpen },
-        { id: "course-sections", label: "Course Sections", icon: Layers },
+        { id: "departments", label: "Departments", icon: Building2, iconColor: "text-indigo-500" },
+        { id: "programs", label: "Programs", icon: GraduationCap, iconColor: "text-blue-500" },
+        { id: "courses", label: "Courses", icon: BookOpen, iconColor: "text-emerald-500" },
+        { id: "course-sections", label: "Course Sections", icon: Layers, iconColor: "text-teal-500" },
         {
           id: "registration",
           label: "Course Registration",
           icon: FolderPlus,
+          iconColor: "text-cyan-500",
           badge: pendingRegistrationsCount > 0 ? `${pendingRegistrationsCount}` : undefined,
-          badgeColor: "bg-cyan-400 text-slate-950 font-black",
+          badgeColor: "bg-cyan-100 text-cyan-700 border-cyan-200",
         },
-        { id: "schedule", label: "Class Schedule", icon: CalendarDays },
-        { id: "attendance", label: "Attendance", icon: CheckCircle2 },
-        { id: "assignments", label: "Assignments", icon: FileText },
+        { id: "schedule", label: "Class Schedule", icon: CalendarDays, iconColor: "text-blue-500" },
+        { id: "attendance", label: "Attendance", icon: CheckCircle2, iconColor: "text-emerald-500" },
+        { id: "assignments", label: "Assignments", icon: FileText, iconColor: "text-amber-500" },
       ],
     },
     {
       title: "EXAMINATIONS",
+      accentColor: "text-amber-600",
       items: [
-        { id: "exams", label: "Exams", icon: Award },
-        { id: "exam-schedule", label: "Exam Schedule", icon: Calendar },
-        { id: "exam-rooms", label: "Exam Rooms", icon: DoorOpen },
-        { id: "results", label: "Results & Grades", icon: BarChart3 },
+        { id: "exams", label: "Exams", icon: Award, iconColor: "text-amber-500" },
+        { id: "exam-schedule", label: "Exam Schedule", icon: Calendar, iconColor: "text-blue-500" },
+        { id: "exam-rooms", label: "Exam Rooms", icon: DoorOpen, iconColor: "text-purple-500" },
+        { id: "results", label: "Results & Grades", icon: BarChart3, iconColor: "text-emerald-500" },
       ],
     },
     {
       title: "ACADEMIC RECORDS",
+      accentColor: "text-purple-600",
       items: [
+<<<<<<< Updated upstream
         { id: "progression", label: "Academic Progression", icon: Sparkles },
         { id: "transcripts", label: "Transcripts", icon: ScrollText },
         { id: "gpa-cgpa", label: "GPA & CGPA", icon: Award },
         { id: "reports", label: "Academic Reports", icon: FileSpreadsheet },
+=======
+        { id: "transcripts", label: "Transcripts", icon: ScrollText, iconColor: "text-purple-500" },
+        { id: "gpa-cgpa", label: "GPA & CGPA", icon: Award, iconColor: "text-indigo-500" },
+        { id: "reports", label: "Academic Reports", icon: FileSpreadsheet, iconColor: "text-blue-500" },
+        { id: "finances", label: "Fee & Finances", icon: Receipt, iconColor: "text-emerald-500" },
+>>>>>>> Stashed changes
       ],
     },
     {
       title: "COMMUNICATION",
+      accentColor: "text-teal-600",
       items: [
-        { id: "announcements", label: "Announcements", icon: Megaphone },
-        { id: "notifications", label: "Notifications", icon: Bell },
-        { id: "videos", label: "University Media", icon: Video },
+        { id: "announcements", label: "Announcements", icon: Megaphone, iconColor: "text-teal-500" },
+        { id: "notifications", label: "Notifications", icon: Bell, iconColor: "text-amber-500" },
+        { id: "videos", label: "University Media", icon: Video, iconColor: "text-rose-500" },
       ],
     },
     {
       title: "AI & LEARNING",
+      accentColor: "text-violet-600",
       items: [
+<<<<<<< Updated upstream
         {
           id: "ai-academic-assistant",
           label: "AI Academic Assistant",
@@ -204,6 +228,11 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
         { id: "ai-assistant", label: "AI Campus Assistant", icon: Bot },
         { id: "ai-planner", label: "AI Study Planner", icon: Brain },
         { id: "ai-analytics", label: "AI Usage Analytics", icon: BarChart3 },
+=======
+        { id: "ai-assistant", label: "AI Assistant", icon: Bot, iconColor: "text-violet-500" },
+        { id: "ai-planner", label: "AI Study Planner", icon: Brain, iconColor: "text-indigo-500" },
+        { id: "ai-analytics", label: "AI Usage Analytics", icon: BarChart3, iconColor: "text-cyan-500" },
+>>>>>>> Stashed changes
       ],
     },
     {
@@ -220,11 +249,12 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
     },
     {
       title: "SYSTEM",
+      accentColor: "text-slate-600",
       items: [
-        { id: "user-management", label: "User Management", icon: Users },
-        { id: "security", label: "Roles & Permissions", icon: Lock },
-        { id: "audit-logs", label: "Audit Logs", icon: History },
-        { id: "settings", label: "Settings", icon: Settings },
+        { id: "user-management", label: "User Management", icon: Users, iconColor: "text-slate-500" },
+        { id: "security", label: "Roles & Permissions", icon: Lock, iconColor: "text-rose-500" },
+        { id: "audit-logs", label: "Audit Logs", icon: History, iconColor: "text-blue-500" },
+        { id: "settings", label: "Settings", icon: Settings, iconColor: "text-slate-500" },
       ],
     },
   ];
@@ -235,25 +265,24 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   };
 
   const sidebarContent = (
-    <div className="h-full flex flex-col justify-between bg-[#081022] text-slate-100 border-r border-slate-800 shadow-2xl select-none">
+    <div className="h-full flex flex-col justify-between bg-slate-50/80 border-r border-slate-200 select-none">
       {/* Header / Brand */}
-      <div className="p-4 border-b border-slate-800/80">
+      <div className="p-4 border-b border-slate-200/80 bg-white">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5 overflow-hidden">
             {/* Logo Crest */}
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-iqra-gold-400 to-amber-600 text-slate-950 font-black flex items-center justify-center shrink-0 shadow-md shadow-amber-500/20">
-              <span className="font-black tracking-wider text-xs">IU</span>
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center shrink-0 font-black text-xs text-white shadow-xs">
+              IU
             </div>
 
             {(!isCollapsed || mobileOpen) && (
               <div className="flex flex-col min-w-0 transition-opacity duration-200">
-                <span className="font-heading font-black text-white tracking-tight text-xs uppercase truncate">
+                <span className="font-bold tracking-tight text-xs uppercase truncate text-slate-800">
                   IQRA UNIVERSITY
                 </span>
-                <div className="flex items-center gap-1 text-[10px] font-bold text-iqra-gold-400 tracking-wider uppercase truncate">
-                  <ShieldCheck className="w-3 h-3 text-iqra-gold-400 shrink-0" />
-                  <span>Admin ERP Portal</span>
-                </div>
+                <span className="text-[10px] font-semibold tracking-wider uppercase truncate text-blue-600">
+                  Executive Admin
+                </span>
               </div>
             )}
           </div>
@@ -261,7 +290,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           {/* Desktop collapse toggle */}
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="hidden lg:flex w-7 h-7 rounded-lg border border-slate-700 text-slate-400 hover:text-white hover:bg-slate-800 items-center justify-center transition-colors"
+            className="hidden lg:flex w-7 h-7 rounded-lg border border-slate-200 items-center justify-center transition-colors hover:bg-slate-50 text-slate-400 hover:text-slate-600"
             title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
           >
             {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
@@ -270,21 +299,21 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           {/* Mobile close button */}
           <button
             onClick={() => setMobileOpen(false)}
-            className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+            className="lg:hidden p-1.5 rounded-lg border border-slate-200 text-slate-400 hover:bg-slate-50"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {(!isCollapsed || mobileOpen) && (
-          <div className="mt-3 px-2.5 py-1.5 rounded-lg bg-slate-900/90 border border-slate-800 flex items-center justify-between text-[10px]">
-            <span className="font-semibold text-slate-300 flex items-center gap-1">
-              <MapPin className="w-3 h-3 text-iqra-gold-400" />
+          <div className="mt-3 px-2.5 py-1.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between text-[10px]">
+            <span className="font-semibold text-slate-500 flex items-center gap-1">
               Chak Shehzad Campus
             </span>
-            <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-              Live SIS
-            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="font-bold text-[9px] uppercase text-emerald-600">Active</span>
+            </div>
           </div>
         )}
       </div>
@@ -296,20 +325,17 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           <button
             onClick={() => handleItemClick("dashboard")}
             className={cn(
-              "w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left transition-all duration-150 group relative",
+              "w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left transition-all relative border text-xs font-semibold",
               activeTab === "dashboard"
-                ? "bg-gradient-to-r from-iqra-blue-600 to-indigo-600 text-white font-bold shadow-md shadow-blue-900/40"
-                : "text-slate-300 hover:text-white hover:bg-slate-850 font-medium",
+                ? "bg-gradient-to-r from-blue-600 to-indigo-600 border-transparent text-white shadow-sm shadow-blue-500/20"
+                : "border-transparent text-slate-600 hover:text-slate-900 hover:bg-white/80",
               isCollapsed && !mobileOpen ? "justify-center px-2" : ""
             )}
             title="Dashboard Overview"
           >
-            {activeTab === "dashboard" && (
-              <span className="absolute left-0 top-1.5 bottom-1.5 w-1 bg-iqra-gold-400 rounded-r-full" />
-            )}
-            <LayoutDashboard className="w-4 h-4 shrink-0 text-iqra-gold-400" />
+            <LayoutDashboard className={cn("w-4 h-4 shrink-0", activeTab === "dashboard" ? "text-white" : "text-blue-500")} />
             {(!isCollapsed || mobileOpen) && (
-              <span className="text-xs tracking-tight truncate">Dashboard</span>
+              <span className="tracking-tight truncate">Dashboard</span>
             )}
           </button>
         </div>
@@ -319,7 +345,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           <div key={group.title} className="space-y-0.5">
             <div
               className={cn(
-                "px-2.5 mb-1 text-[9px] font-black uppercase tracking-wider text-slate-400/90",
+                "px-2.5 mb-1 text-[9px] font-bold uppercase tracking-[0.14em] text-slate-400",
                 isCollapsed && !mobileOpen ? "text-center text-[8px]" : ""
               )}
             >
@@ -335,33 +361,29 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                   key={item.id}
                   onClick={() => handleItemClick(item.id)}
                   className={cn(
-                    "w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-left transition-all duration-150 group relative",
+                    "w-full flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-left transition-all border text-xs",
                     isActive
-                      ? "bg-iqra-blue-600/90 text-white font-semibold shadow-sm"
-                      : "text-slate-400 hover:text-slate-100 hover:bg-slate-850 font-normal",
+                      ? "bg-gradient-to-r from-blue-600 to-indigo-600 border-transparent text-white font-bold shadow-sm shadow-blue-500/20"
+                      : "border-transparent text-slate-600 hover:text-slate-900 hover:bg-white font-medium",
                     isCollapsed && !mobileOpen ? "justify-center px-2" : ""
                   )}
                   title={item.label}
                 >
-                  {isActive && (
-                    <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 bg-iqra-gold-400 rounded-r-full" />
-                  )}
-
                   <Icon
                     className={cn(
-                      "w-4 h-4 shrink-0 transition-transform duration-200 group-hover:scale-105",
-                      isActive ? "text-iqra-gold-400" : "text-slate-400 group-hover:text-slate-200"
+                      "w-4 h-4 shrink-0 transition-colors",
+                      isActive ? "text-white" : item.iconColor || "text-slate-400"
                     )}
                   />
 
                   {(!isCollapsed || mobileOpen) && (
                     <div className="flex-1 min-w-0 flex items-center justify-between">
-                      <span className="text-xs tracking-tight truncate">{item.label}</span>
+                      <span className="tracking-tight truncate">{item.label}</span>
                       {item.badge !== undefined && (
                         <span
                           className={cn(
-                            "text-[9px] px-1.5 py-0.2 rounded-full shrink-0 ml-1 font-bold",
-                            item.badgeColor || "bg-slate-800 text-slate-300"
+                            "text-[9px] px-1.5 py-0.5 rounded-full shrink-0 ml-1 font-bold border",
+                            item.badgeColor || "bg-slate-100 border-slate-200 text-slate-600"
                           )}
                         >
                           {item.badge}
@@ -377,23 +399,23 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
       </div>
 
       {/* Footer Links & Logout */}
-      <div className="p-3 border-t border-slate-800/80 space-y-2 bg-[#050b18]">
+      <div className="p-3 border-t border-slate-200/80 bg-white space-y-1.5">
         <Link
           href="/dashboard"
           className={cn(
-            "w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition-colors",
+            "w-full flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-colors border border-transparent hover:border-blue-200",
             isCollapsed && !mobileOpen ? "justify-center px-2" : ""
           )}
           title="Switch to Student Portal"
         >
-          <ExternalLink className="w-3.5 h-3.5 text-iqra-gold-400" />
+          <ExternalLink className="w-3.5 h-3.5 text-blue-500" />
           {(!isCollapsed || mobileOpen) && <span>Student Portal View</span>}
         </Link>
 
         <button
           onClick={onLogout}
           className={cn(
-            "w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-400 hover:text-rose-300 hover:bg-rose-950/40 border border-transparent hover:border-rose-800/40 transition-colors",
+            "w-full flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold text-red-500 hover:bg-red-50 border border-transparent hover:border-red-200 transition-colors",
             isCollapsed && !mobileOpen ? "justify-center px-2" : ""
           )}
           title="Sign Out"
@@ -420,7 +442,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
       {/* Mobile Drawer Overlay */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-40 bg-slate-950/80 backdrop-blur-xs lg:hidden animate-in fade-in duration-200"
+          className="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-sm lg:hidden animate-in fade-in duration-200"
           onClick={() => setMobileOpen(false)}
         />
       )}

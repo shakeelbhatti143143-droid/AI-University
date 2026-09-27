@@ -47,10 +47,22 @@ const config: Config = {
             600: "#d97706",
           },
         },
+        credential: {
+          page: "var(--admin-page-bg)",
+          bg: "var(--card-bg)",
+          border: "var(--card-border)",
+          gold: "var(--accent-gold)",
+          heading: "var(--text-heading)",
+          muted: "var(--text-muted)",
+          value: "var(--text-value)",
+          success: "var(--status-success)",
+          danger: "var(--status-danger)",
+        },
       },
       fontFamily: {
         sans: ["var(--font-inter)", "system-ui", "sans-serif"],
         heading: ["var(--font-outfit)", "system-ui", "sans-serif"],
+        serif: ["var(--font-serif)", "Newsreader", "Playfair Display", "Georgia", "serif"],
       },
       boxShadow: {
         glass: "0 8px 32px 0 rgba(0, 0, 0, 0.37)",

@@ -14,14 +14,20 @@ import {
   Layers,
 } from "lucide-react";
 import { AuditLog } from "@/lib/admin-data";
+import {
+  CredentialCard,
+  CredentialHeader,
+  CredentialTitle,
+  CredentialDetailRow,
+  CredentialDetailList,
+  CredentialFooter,
+} from "@/components/admin/credential";
 
 interface AdminReportsSectionProps {
   auditLogs: AuditLog[];
 }
 
 export const AdminReportsSection: React.FC<AdminReportsSectionProps> = ({ auditLogs }) => {
-  const [selectedReport, setSelectedReport] = useState("all");
-
   const reportsList = [
     {
       id: "rep-1",
@@ -64,113 +70,103 @@ export const AdminReportsSection: React.FC<AdminReportsSectionProps> = ({ auditL
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* Header */}
-      <div className="p-6 rounded-3xl bg-white border border-slate-200/90 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-iqra-blue-800 uppercase flex items-center gap-1">
-              <FileSpreadsheet className="w-3 h-3" />
-              Institutional Audit & Governance
-            </span>
-            <span className="text-xs text-slate-400">•</span>
-            <span className="text-xs font-semibold text-slate-600">Chak Shehzad, Islamabad</span>
+      <CredentialCard>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[10px] font-mono tracking-[0.12em] uppercase text-[#8a8272] flex items-center gap-1">
+                <FileSpreadsheet className="w-3.5 h-3.5 text-[#8a8272]" />
+                Institutional Audit & Governance
+              </span>
+              <span className="text-xs text-[#4a4335]">•</span>
+              <span className="text-xs font-semibold text-[#8a8272]">Chak Shehzad, Islamabad</span>
+            </div>
+            <h2 className="text-2xl font-serif font-medium text-[#F2EEE4] tracking-tight">
+              Reports, Compliance & System Audit Trail
+            </h2>
+            <p className="text-xs text-[#8a8272] mt-1">
+              Generate HEC-certified transcripts, attendance rosters, and review chronological administrative actions.
+            </p>
           </div>
-          <h2 className="text-2xl font-black font-heading text-slate-900 tracking-tight">
-            Reports, Compliance & System Audit Trail
-          </h2>
-          <p className="text-xs text-slate-500">
-            Generate HEC-certified transcripts, attendance rosters, and review chronological administrative actions.
-          </p>
         </div>
-      </div>
+      </CredentialCard>
 
       {/* Reports Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {reportsList.map((rep) => (
-          <div
-            key={rep.id}
-            className="p-5 rounded-2xl bg-white border border-slate-200/90 hover:border-iqra-blue-500/40 shadow-xs hover:shadow-md transition-all flex flex-col justify-between gap-4"
-          >
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-[10px]">
-                <span className="px-2 py-0.5 rounded-full font-bold uppercase bg-blue-50 text-iqra-blue-700 border border-blue-100">
-                  {rep.category}
-                </span>
-                <span className="text-slate-400 font-medium">{rep.generatedDate}</span>
-              </div>
-
-              <h3 className="text-sm font-bold text-slate-900 leading-snug">{rep.title}</h3>
-              <p className="text-xs text-slate-500 leading-relaxed">{rep.description}</p>
-            </div>
-
-            <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-              <span className="text-[11px] font-mono text-slate-400">{rep.format}</span>
-              <button
-                onClick={() => handleDownload(rep.title)}
-                className="px-3.5 py-1.5 rounded-xl bg-iqra-navy-900 hover:bg-iqra-blue-700 text-white text-xs font-bold flex items-center gap-1.5 transition-colors"
-              >
-                <Download className="w-3.5 h-3.5 text-iqra-gold-400" />
-                <span>Download Report</span>
-              </button>
-            </div>
-          </div>
+          <CredentialCard key={rep.id}>
+            <CredentialHeader
+              eyebrow={rep.category}
+              referenceId={rep.generatedDate}
+            />
+            <CredentialTitle
+              title={rep.title}
+              subheading={`Format: ${rep.format}`}
+            />
+            <p className="text-xs text-[#8a8272] leading-relaxed my-3">
+              {rep.description}
+            </p>
+            <CredentialFooter
+              status={{ label: "Ready to export", state: "neutral" }}
+              primaryAction={{
+                label: "Download Report",
+                onClick: () => handleDownload(rep.title),
+              }}
+            />
+          </CredentialCard>
         ))}
       </div>
 
       {/* Full Administrative Audit Trail */}
-      <div className="p-6 rounded-3xl bg-white border border-slate-200/90 shadow-xs space-y-4">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-          <div className="flex items-center gap-2">
-            <Activity className="w-5 h-5 text-emerald-600" />
-            <div>
-              <h3 className="text-sm font-bold text-slate-900">
-                Administrative Audit Logs & Mutation History ({auditLogs.length})
-              </h3>
-              <p className="text-[11px] text-slate-500">
-                Immutable chronological log of all administrator actions performed in this session
-              </p>
-            </div>
+      <CredentialCard>
+        <div className="flex items-center gap-2 pb-3 mb-3 border-b border-[#4a4335]">
+          <Activity className="w-5 h-5 text-[#8a8272]" />
+          <div>
+            <h3 className="text-sm font-serif font-medium text-[#F2EEE4]">
+              Administrative Audit Logs & Mutation History ({auditLogs.length})
+            </h3>
+            <p className="text-[11px] text-[#8a8272]">
+              Immutable chronological log of all administrator actions performed in this session
+            </p>
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+        <div className="overflow-x-auto rounded-[6px] border border-[#4a4335]">
+          <table className="w-full text-left text-xs text-[#D8D3C6]">
             <thead>
-              <tr className="border-b border-slate-200 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
-                <th className="pb-3 font-bold">Timestamp</th>
-                <th className="pb-3 font-bold">Module</th>
-                <th className="pb-3 font-bold">Action Type</th>
-                <th className="pb-3 font-bold">Details</th>
-                <th className="pb-3 font-bold text-right">Executor</th>
+              <tr className="border-b border-[#4a4335] bg-[#0e0d0b] text-[#8a8272] font-mono uppercase tracking-wider text-[10px]">
+                <th className="py-2.5 px-3">Timestamp</th>
+                <th className="py-2.5 px-3">Module</th>
+                <th className="py-2.5 px-3">Action Type</th>
+                <th className="py-2.5 px-3">Details</th>
+                <th className="py-2.5 px-3 text-right">Executor</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-[#4a4335]">
               {auditLogs.map((log) => (
-                <tr key={log.id} className="hover:bg-slate-50/70 transition-colors">
-                  <td className="py-3 font-mono text-slate-500 text-[11px] whitespace-nowrap">
+                <tr key={log.id} className="hover:bg-[#23201b]/50 transition-colors">
+                  <td className="py-2.5 px-3 font-mono text-[#8a8272] text-[11px] whitespace-nowrap">
                     {log.timestamp}
                   </td>
-
-                  <td className="py-3 font-bold text-slate-800">{log.module}</td>
-
-                  <td className="py-3">
-                    <span
-                      className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                        log.actionType === "approve"
-                          ? "bg-emerald-100 text-emerald-800"
-                          : log.actionType === "reject" || log.actionType === "delete"
-                          ? "bg-rose-100 text-rose-800"
-                          : "bg-blue-100 text-blue-800"
-                      }`}
-                    >
-                      {log.actionType}
+                  <td className="py-2.5 px-3 font-semibold text-[#D8D3C6]">{log.module}</td>
+                  <td className="py-2.5 px-3">
+                    <span className="inline-flex items-center gap-1.5 text-[11px] font-mono">
+                      <span
+                        className={`w-[7px] h-[7px] rounded-full ${
+                          log.actionType === "approve"
+                            ? "bg-[#7DAE7A]"
+                            : log.actionType === "reject" || log.actionType === "delete"
+                            ? "bg-[#E27878]"
+                            : "bg-[#B8963E]"
+                        }`}
+                      />
+                      <span className="uppercase text-[#D8D3C6]">{log.actionType}</span>
                     </span>
                   </td>
-
-                  <td className="py-3 text-slate-700 max-w-md leading-snug font-medium">
+                  <td className="py-2.5 px-3 text-[#8a8272] max-w-md leading-snug">
                     {log.details}
                   </td>
-
-                  <td className="py-3 text-right font-bold text-slate-800 whitespace-nowrap">
+                  <td className="py-2.5 px-3 text-right font-serif text-[#F2EEE4] whitespace-nowrap">
                     {log.adminName}
                   </td>
                 </tr>
@@ -178,7 +174,10 @@ export const AdminReportsSection: React.FC<AdminReportsSectionProps> = ({ auditL
             </tbody>
           </table>
         </div>
-      </div>
+      </CredentialCard>
     </div>
   );
 };
+
+
+

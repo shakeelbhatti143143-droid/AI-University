@@ -39,11 +39,27 @@ import { AdminSystemSection } from "@/components/admin/sections/AdminSystemSecti
 import { AdminProfileSection } from "@/components/admin/sections/AdminProfileSection";
 import { AdminPendingApplicationsSection } from "@/components/admin/sections/AdminPendingApplicationsSection";
 import { AdminVideosSection } from "@/components/admin/sections/AdminVideosSection";
+<<<<<<< Updated upstream
 import { AdminWebsiteManagementSection } from "@/components/admin/sections/AdminWebsiteManagementSection";
+=======
+import { AdminFinanceSection } from "@/components/admin/sections/AdminFinanceSection";
+>>>>>>> Stashed changes
 
 import { getConvexClient, isConvexConfigured } from "@/lib/convex";
 import { api } from "../../../convex/_generated/api";
 import { Loader2 } from "lucide-react";
+
+const ADMIN_TABS = new Set<AdminTab>([
+  "dashboard", "finances", "students", "faculty", "administrators", "applications", "videos",
+  "academics", "departments", "programs", "courses", "course-sections", "registration",
+  "schedule", "attendance", "assignments", "exams", "exam-schedule", "exam-rooms", "results",
+  "transcripts", "gpa-cgpa", "reports", "announcements", "notifications", "ai-assistant",
+  "ai-planner", "ai-analytics", "user-management", "security", "audit-logs", "settings", "profile",
+]);
+
+function isAdminTab(value: string | null): value is AdminTab {
+  return value !== null && ADMIN_TABS.has(value as AdminTab);
+}
 
 function AdminPortalContent() {
   const { user, logout, isLoading } = useAuth();
@@ -51,14 +67,13 @@ function AdminPortalContent() {
   const router = useRouter();
 
   // Active navigation tab & layout state
-  const tabParam = (searchParams.get("tab") as AdminTab) || "dashboard";
-  const [activeTab, setActiveTab] = useState<AdminTab>(tabParam);
+  const tabParam = searchParams.get("tab");
+  const activeTab: AdminTab = isAdminTab(tabParam) ? tabParam : "dashboard";
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [globalSearch, setGlobalSearch] = useState("");
 
   const handleTabChange = (tab: AdminTab) => {
-    setActiveTab(tab);
     router.push(`/admin?tab=${tab}`);
   };
 
@@ -359,7 +374,8 @@ function AdminPortalContent() {
     );
   }
 
-  if (!user || user.role !== "admin") {
+  const userRole = user?.role?.toLowerCase();
+  if (!user || (userRole !== "admin" && userRole !== "super_admin")) {
     return (
       <AccessDenied
         userRole={user?.role}
@@ -710,7 +726,7 @@ function AdminPortalContent() {
   const pendingRegistrationsCount = registrationRequests.filter((r) => r.status === "Pending").length;
 
   return (
-    <div className="min-h-screen w-full bg-[#f8fafc] text-slate-900 flex flex-row overflow-x-hidden selection:bg-iqra-blue-600 selection:text-white">
+    <div className="min-h-screen w-full bg-[#f8fafc] text-slate-900 flex flex-row overflow-x-hidden selection:bg-blue-600 selection:text-white">
       {/* 1. Left Sidebar Navigation */}
       <AdminSidebar
         activeTab={activeTab}
@@ -922,6 +938,8 @@ function AdminPortalContent() {
             />
           )}
 
+          {activeTab === "finances" && <AdminFinanceSection />}
+
           {/* COMMUNICATION */}
           {(activeTab === "announcements" || activeTab === "notifications") && (
             <AdminCommunicationSection
@@ -1036,10 +1054,10 @@ export default function AdminPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-white">
-          <Loader2 className="w-10 h-10 animate-spin text-iqra-gold-400 mb-4" />
-          <p className="text-sm font-semibold tracking-wide text-slate-400">
-            Loading Iqra University Administration Portal...
+        <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center text-slate-800">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-3" />
+          <p className="text-xs font-mono tracking-wider uppercase text-slate-400">
+            Loading Administration Portal...
           </p>
         </div>
       }

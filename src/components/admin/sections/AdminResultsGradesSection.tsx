@@ -11,16 +11,24 @@ import {
   FileSpreadsheet,
   Plus,
   Search,
-  Filter,
-  X,
-  AlertTriangle,
   Lock,
   Unlock,
-  ShieldCheck,
-  TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
+import {
+  CredentialCard,
+  CredentialHeader,
+  CredentialTitle,
+  CredentialDetailRow,
+  CredentialDetailList,
+  CredentialFooter,
+  CredentialModal,
+  CredentialInput,
+  CredentialSelect,
+  CredentialButton,
+  CredentialFilterBar,
+} from "@/components/admin/credential";
 
 interface AcademicResult {
   _id: string;
@@ -91,31 +99,29 @@ export const AdminResultsGradesSection: React.FC<AdminResultsGradesSectionProps>
     remarks: "",
   });
 
-  // Calculate live preview in modal
   const previewTotal =
     formData.assignmentMarks +
     formData.quizMarks +
     formData.midtermMarks +
     formData.finalMarks +
     formData.attendanceMarks;
-  const previewPct = Math.min(Math.max(previewTotal, 0), 100);
 
-  const getPreviewGrade = (pct: number) => {
-    if (pct >= 85) return { grade: "A", gp: 4.0 };
-    if (pct >= 80) return { grade: "A-", gp: 3.67 };
-    if (pct >= 75) return { grade: "B+", gp: 3.33 };
-    if (pct >= 71) return { grade: "B", gp: 3.0 };
-    if (pct >= 68) return { grade: "B-", gp: 2.67 };
-    if (pct >= 64) return { grade: "C+", gp: 2.33 };
-    if (pct >= 60) return { grade: "C", gp: 2.0 };
-    if (pct >= 50) return { grade: "D", gp: 1.0 };
+  const calculateGradeScale = (total: number) => {
+    if (total >= 85) return { grade: "A", gp: 4.0 };
+    if (total >= 80) return { grade: "A-", gp: 3.67 };
+    if (total >= 75) return { grade: "B+", gp: 3.33 };
+    if (total >= 70) return { grade: "B", gp: 3.0 };
+    if (total >= 65) return { grade: "B-", gp: 2.67 };
+    if (total >= 60) return { grade: "C+", gp: 2.33 };
+    if (total >= 55) return { grade: "C", gp: 2.0 };
+    if (total >= 50) return { grade: "D", gp: 1.0 };
     return { grade: "F", gp: 0.0 };
   };
 
-  const previewScale = getPreviewGrade(previewPct);
+  const previewScale = calculateGradeScale(previewTotal);
 
-  const handleStudentSelect = (sId: string) => {
-    const s = students.find((x) => x.id === sId);
+  const handleStudentSelect = (enrollmentId: string) => {
+    const s = students.find((x) => x.studentId === enrollmentId);
     if (s) {
       setFormData((prev) => ({
         ...prev,
@@ -133,18 +139,13 @@ export const AdminResultsGradesSection: React.FC<AdminResultsGradesSectionProps>
         ...prev,
         courseCode: c.code,
         courseTitle: c.title,
-        creditHours: c.creditHours,
+        creditHours: c.creditHours || 4,
       }));
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSaveSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.studentId || !formData.courseCode) {
-      alert("Please select student and course.");
-      return;
-    }
-
     try {
       setIsSubmitting(true);
       await onSaveResult({
@@ -175,27 +176,47 @@ export const AdminResultsGradesSection: React.FC<AdminResultsGradesSectionProps>
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* Top Banner */}
-      <div className="p-6 rounded-3xl bg-white border border-slate-200/90 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div
+        className="relative overflow-hidden p-6 rounded-[10px] border flex flex-col md:flex-row md:items-center justify-between gap-4 before:content-[''] before:absolute before:top-0 before:left-0 before:right-0 before:h-[2px] before:bg-[#C9A25B]"
+        style={{
+          backgroundColor: "var(--card-bg, #1D1B18)",
+          borderColor: "var(--card-border, #4a4335)",
+          borderRadius: "var(--radius-card, 10px)",
+        }}
+      >
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 uppercase flex items-center gap-1">
-              <Award className="w-3 h-3 text-emerald-600" />
+          <div className="flex items-center gap-2 mb-1.5">
+            <span
+              className="text-[10px] font-semibold uppercase tracking-[0.12em]"
+              style={{ color: "var(--text-muted, #8a8272)" }}
+            >
               Official Grading Engine
             </span>
-            <span className="text-xs text-slate-400">•</span>
-            <span className="text-xs font-semibold text-slate-600">Iqra University Registrar</span>
+            <span style={{ color: "var(--text-muted, #8a8272)" }}>•</span>
+            <span className="text-[11px]" style={{ color: "var(--text-muted, #8a8272)" }}>
+              Iqra University Registrar
+            </span>
           </div>
-          <h2 className="text-2xl font-black font-heading text-slate-900 tracking-tight">
+          <h2
+            className="font-serif text-[26px] font-[500] leading-tight tracking-tight"
+            style={{ color: "var(--text-heading, #F2EEE4)" }}
+          >
             Results Entry & Grade Publishing
           </h2>
-          <p className="text-xs text-slate-500">
-            Enter terminal marks, compute HEC quality points, and publish approved grades to Student Portals & Transcripts.
+          <p className="text-xs mt-1 leading-relaxed" style={{ color: "var(--text-muted, #8a8272)" }}>
+            Enter terminal marks, compute HEC quality points, and publish approved grades to Student Transcripts.
           </p>
         </div>
 
         <button
           onClick={() => setIsEntryModalOpen(true)}
-          className="px-4 py-2.5 rounded-xl bg-iqra-blue-600 hover:bg-iqra-blue-500 text-white font-bold text-xs shadow-md shadow-blue-600/20 flex items-center gap-2 self-start md:self-auto transition-transform hover:scale-[1.02]"
+          className="h-[36px] px-4 rounded-[6px] border text-xs font-semibold flex items-center gap-2 transition-colors active:scale-[0.98] shrink-0"
+          style={{
+            borderColor: "var(--accent-gold, #C9A25B)",
+            color: "var(--accent-gold, #C9A25B)",
+            backgroundColor: "transparent",
+            borderRadius: "var(--radius-control, 6px)",
+          }}
         >
           <Plus className="w-4 h-4" />
           <span>Enter Student Marks</span>
@@ -203,90 +224,141 @@ export const AdminResultsGradesSection: React.FC<AdminResultsGradesSectionProps>
       </div>
 
       {/* Filter & Search Bar */}
-      <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex flex-col sm:flex-row items-center gap-3">
-        <div className="relative flex-1 w-full">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Search by student name, enrollment ID, course code..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none"
-          />
-        </div>
+      <CredentialFilterBar
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        searchPlaceholder="Search by student name, enrollment ID, course code..."
+      >
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="h-[36px] px-3 bg-[#1D1B18] border border-[#4a4335] rounded-[6px] text-xs text-[#D8D3C6] focus:outline-none focus:border-[#C9A25B]"
+          style={{
+            backgroundColor: "var(--card-bg, #1D1B18)",
+            borderColor: "var(--card-border, #4a4335)",
+            color: "var(--text-value, #D8D3C6)",
+            borderRadius: "var(--radius-control, 6px)",
+          }}
+        >
+          <option value="All">All Workflow States</option>
+          <option value="Draft">Draft (Hidden)</option>
+          <option value="Submitted">Submitted</option>
+          <option value="Reviewed">Reviewed</option>
+          <option value="Approved">Approved</option>
+          <option value="Published">Published (Live)</option>
+        </select>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none"
-          >
-            <option value="All">All Workflow States</option>
-            <option value="Draft">Draft (Hidden)</option>
-            <option value="Submitted">Submitted</option>
-            <option value="Reviewed">Reviewed</option>
-            <option value="Approved">Approved</option>
-            <option value="Published">Published (Live)</option>
-          </select>
-
-          <select
-            value={courseFilter}
-            onChange={(e) => setCourseFilter(e.target.value)}
-            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none"
-          >
-            <option value="All">All Courses</option>
-            {courses.map((c) => (
-              <option key={c.code} value={c.code}>
-                {c.code}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
+        <select
+          value={courseFilter}
+          onChange={(e) => setCourseFilter(e.target.value)}
+          className="h-[36px] px-3 bg-[#1D1B18] border border-[#4a4335] rounded-[6px] text-xs text-[#D8D3C6] focus:outline-none focus:border-[#C9A25B]"
+          style={{
+            backgroundColor: "var(--card-bg, #1D1B18)",
+            borderColor: "var(--card-border, #4a4335)",
+            color: "var(--text-value, #D8D3C6)",
+            borderRadius: "var(--radius-control, 6px)",
+          }}
+        >
+          <option value="All">All Courses</option>
+          {courses.map((c) => (
+            <option key={c.code} value={c.code}>
+              {c.code}
+            </option>
+          ))}
+        </select>
+      </CredentialFilterBar>
 
       {/* Results Table */}
-      <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden">
+      <div
+        className="relative overflow-hidden p-6 rounded-[10px] border space-y-4 before:content-[''] before:absolute before:top-0 before:left-0 before:right-0 before:h-[2px] before:bg-[#C9A25B]"
+        style={{
+          backgroundColor: "var(--card-bg, #1D1B18)",
+          borderColor: "var(--card-border, #4a4335)",
+          borderRadius: "var(--radius-card, 10px)",
+        }}
+      >
+        <div
+          className="flex items-center justify-between pb-3 border-b"
+          style={{ borderColor: "var(--card-border, #4a4335)" }}
+        >
+          <h3 className="font-serif text-[18px] font-[500]" style={{ color: "var(--text-heading, #F2EEE4)" }}>
+            Academic Records & Grading Ledger ({filteredResults.length})
+          </h3>
+          <span className="text-[11px]" style={{ color: "var(--text-muted, #8a8272)" }}>
+            Terminal Score Allocations
+          </span>
+        </div>
+
         {filteredResults.length === 0 ? (
           <div className="p-12 text-center space-y-3">
-            <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
+            <div
+              className="w-12 h-12 rounded-[8px] border flex items-center justify-center mx-auto"
+              style={{
+                borderColor: "var(--card-border, #4a4335)",
+                color: "var(--text-muted, #8a8272)",
+              }}
+            >
               <BarChart3 className="w-6 h-6" />
             </div>
-            <h3 className="text-base font-bold text-slate-800">No results found</h3>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+            <h3 className="font-serif text-[20px] font-[500]" style={{ color: "var(--text-heading, #F2EEE4)" }}>
+              No results found
+            </h3>
+            <p className="text-xs max-w-sm mx-auto" style={{ color: "var(--text-muted, #8a8272)" }}>
               No academic results have been entered yet. Click 'Enter Student Marks' to evaluate students.
             </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
+            <table className="w-full text-left text-xs">
               <thead>
-                <tr className="bg-slate-50/80 border-b border-slate-200/80 text-[10px] font-black uppercase text-slate-500 tracking-wider">
-                  <th className="py-3 px-4">Student</th>
-                  <th className="py-3 px-4">Course</th>
-                  <th className="py-3 px-4 text-center">Score Breakdown</th>
-                  <th className="py-3 px-4 text-center">Total / %</th>
-                  <th className="py-3 px-4 text-center">Grade (GP)</th>
-                  <th className="py-3 px-4 text-center">Workflow State</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
+                <tr
+                  className="border-b text-[10px] font-semibold uppercase tracking-[0.12em]"
+                  style={{
+                    borderColor: "var(--card-border, #4a4335)",
+                    color: "var(--text-muted, #8a8272)",
+                  }}
+                >
+                  <th className="pb-3 font-medium">Student</th>
+                  <th className="pb-3 font-medium">Course</th>
+                  <th className="pb-3 font-medium text-center">Score Breakdown</th>
+                  <th className="pb-3 font-medium text-center">Total / %</th>
+                  <th className="pb-3 font-medium text-center">Grade (GP)</th>
+                  <th className="pb-3 font-medium text-center">Workflow State</th>
+                  <th className="pb-3 font-medium text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody
+                className="divide-y"
+                style={{ borderColor: "var(--card-border, #4a4335)" }}
+              >
                 {filteredResults.map((r) => (
-                  <tr key={r._id} className="hover:bg-slate-50/60 transition-colors">
-                    <td className="py-3 px-4">
-                      <span className="font-bold text-slate-900 block">{r.studentName}</span>
-                      <span className="text-[10px] font-mono text-slate-400">{r.enrollmentId}</span>
+                  <tr key={r._id} className="hover:bg-white/[0.02] transition-colors">
+                    <td className="py-3">
+                      <span className="font-medium block leading-tight" style={{ color: "var(--text-heading, #F2EEE4)" }}>
+                        {r.studentName}
+                      </span>
+                      <span className="font-mono text-[10px]" style={{ color: "var(--text-muted, #8a8272)" }}>
+                        {r.enrollmentId}
+                      </span>
                     </td>
 
-                    <td className="py-3 px-4">
-                      <span className="font-bold text-slate-900 block font-mono">{r.courseCode}</span>
-                      <span className="text-[10px] text-slate-500 block truncate max-w-[180px]">
+                    <td className="py-3">
+                      <span className="font-mono font-medium block" style={{ color: "var(--text-value, #D8D3C6)" }}>
+                        {r.courseCode}
+                      </span>
+                      <span className="text-[10px] truncate max-w-[180px] block" style={{ color: "var(--text-muted, #8a8272)" }}>
                         {r.courseTitle}
                       </span>
                     </td>
 
-                    <td className="py-3 px-4 text-center">
-                      <div className="inline-flex items-center gap-1.5 text-[10px] text-slate-600 font-mono bg-slate-100 px-2.5 py-1 rounded-lg">
+                    <td className="py-3 text-center">
+                      <div
+                        className="inline-flex items-center gap-1.5 text-[10px] font-mono px-2.5 py-1 rounded-[4px] border"
+                        style={{
+                          borderColor: "var(--card-border, #4a4335)",
+                          color: "var(--text-value, #D8D3C6)",
+                        }}
+                      >
                         <span>Asg:{r.assignmentMarks}</span>
                         <span>•</span>
                         <span>Qz:{r.quizMarks}</span>
@@ -297,60 +369,76 @@ export const AdminResultsGradesSection: React.FC<AdminResultsGradesSectionProps>
                       </div>
                     </td>
 
-                    <td className="py-3 px-4 text-center">
-                      <span className="font-black text-slate-900 block">{r.totalMarks} / 100</span>
-                      <span className="text-[10px] text-slate-500">{r.percentage}%</span>
-                    </td>
-
-                    <td className="py-3 px-4 text-center">
-                      <span
-                        className={cn(
-                          "inline-block px-2.5 py-0.5 rounded text-[11px] font-black uppercase",
-                          r.grade === "A" || r.grade === "A-"
-                            ? "bg-emerald-100 text-emerald-800"
-                            : r.grade.startsWith("B")
-                              ? "bg-blue-100 text-blue-800"
-                              : r.grade === "F"
-                                ? "bg-rose-100 text-rose-800"
-                                : "bg-amber-100 text-amber-800"
-                        )}
-                      >
-                        {r.grade} ({r.gradePoints} GP)
+                    <td className="py-3 text-center font-mono">
+                      <span className="font-bold" style={{ color: "var(--text-heading, #F2EEE4)" }}>
+                        {r.totalMarks}
+                      </span>
+                      <span className="text-[10px] ml-1" style={{ color: "var(--text-muted, #8a8272)" }}>
+                        ({r.percentage}%)
                       </span>
                     </td>
 
-                    <td className="py-3 px-4 text-center">
+                    <td className="py-3 text-center">
                       <span
-                        className={cn(
-                          "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase",
-                          r.status === "Published"
-                            ? "bg-emerald-500 text-white font-black"
-                            : r.status === "Approved"
-                              ? "bg-blue-100 text-blue-800"
-                              : r.status === "Reviewed"
-                                ? "bg-purple-100 text-purple-800"
-                                : "bg-slate-100 text-slate-600"
-                        )}
+                        className="font-mono text-xs font-semibold px-2 py-0.5 rounded border"
+                        style={{
+                          borderColor: "var(--card-border, #4a4335)",
+                          color: "var(--text-value, #D8D3C6)",
+                        }}
                       >
-                        {r.status}
+                        {r.grade} ({r.gradePoints.toFixed(2)})
                       </span>
                     </td>
 
-                    <td className="py-3 px-4 text-right">
+                    <td className="py-3 text-center">
+                      <div className="inline-flex items-center gap-1.5 select-none">
+                        <span
+                          className="w-[7px] h-[7px] rounded-full shrink-0"
+                          style={{
+                            backgroundColor:
+                              r.status === "Published"
+                                ? "var(--status-success, #7DAE7A)"
+                                : r.status === "Draft"
+                                ? "var(--text-muted, #8a8272)"
+                                : "#B8963E",
+                          }}
+                        />
+                        <span
+                          className="text-[11px] font-medium"
+                          style={{
+                            color:
+                              r.status === "Published"
+                                ? "var(--status-success, #7DAE7A)"
+                                : r.status === "Draft"
+                                ? "var(--text-muted, #8a8272)"
+                                : "#B8963E",
+                          }}
+                        >
+                          {r.status}
+                        </span>
+                      </div>
+                    </td>
+
+                    <td className="py-3 text-right">
                       {r.status !== "Published" ? (
                         <button
                           onClick={() => onUpdateStatus(r._id, "Published")}
-                          className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-sm flex items-center gap-1 ml-auto"
-                          title="Publish Result to Student Portal & Transcript"
+                          className="h-[28px] px-3 text-[11px] font-semibold rounded-[4px] border transition-colors hover:bg-[#7DAE7A]/10"
+                          style={{
+                            borderColor: "var(--status-success, #7DAE7A)",
+                            color: "var(--status-success, #7DAE7A)",
+                          }}
                         >
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          <span>Publish</span>
+                          Publish
                         </button>
                       ) : (
                         <button
                           onClick={() => onUpdateStatus(r._id, "Draft")}
-                          className="px-2.5 py-1.5 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-100 font-semibold text-xs ml-auto"
-                          title="Unpublish to Draft"
+                          className="h-[28px] px-3 text-[11px] font-semibold rounded-[4px] border transition-colors hover:bg-white/5"
+                          style={{
+                            borderColor: "var(--card-border, #4a4335)",
+                            color: "var(--text-muted, #8a8272)",
+                          }}
                         >
                           Unpublish
                         </button>
@@ -365,196 +453,151 @@ export const AdminResultsGradesSection: React.FC<AdminResultsGradesSectionProps>
       </div>
 
       {/* MARKS ENTRY MODAL */}
-      {isEntryModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 space-y-5 shadow-2xl border border-slate-200 my-8">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div>
-                <h3 className="text-lg font-black font-heading text-slate-900">
-                  Enter Academic Evaluation
-                </h3>
-                <p className="text-xs text-slate-500">
-                  Total marks, percentage, grade letter and grade points will compute automatically.
-                </p>
-              </div>
-              <button
-                onClick={() => setIsEntryModalOpen(false)}
-                className="p-2 rounded-xl text-slate-400 hover:text-slate-800 hover:bg-slate-100"
-              >
-                <X className="w-5 h-5" />
-              </button>
+      <CredentialModal
+        isOpen={isEntryModalOpen}
+        onClose={() => setIsEntryModalOpen(false)}
+        eyebrow="GRADING ENGINE"
+        title="Enter Student Academic Marks"
+        description="Compute HEC grade points and publish official transcripts."
+        maxWidth="lg"
+        footer={
+          <>
+            <CredentialButton
+              variant="secondary"
+              onClick={() => setIsEntryModalOpen(false)}
+            >
+              Cancel
+            </CredentialButton>
+            <CredentialButton
+              variant="primary"
+              disabled={isSubmitting}
+              onClick={handleSaveSubmit}
+            >
+              {isSubmitting ? "Saving Marks..." : "Save Academic Result"}
+            </CredentialButton>
+          </>
+        }
+      >
+        <form onSubmit={handleSaveSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <CredentialSelect
+              label="Select Student *"
+              value={formData.enrollmentId}
+              onChange={(e) => handleStudentSelect(e.target.value)}
+            >
+              {students.map((s) => (
+                <option key={s.id} value={s.studentId}>
+                  {s.studentId} — {s.name}
+                </option>
+              ))}
+            </CredentialSelect>
+
+            <CredentialSelect
+              label="Select Course *"
+              value={formData.courseCode}
+              onChange={(e) => handleCourseSelect(e.target.value)}
+            >
+              {courses.map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.code} - {c.title}
+                </option>
+              ))}
+            </CredentialSelect>
+          </div>
+
+          {/* Marks Breakdown */}
+          <div
+            className="p-4 rounded-[6px] border space-y-3"
+            style={{
+              backgroundColor: "var(--card-bg, #1D1B18)",
+              borderColor: "var(--card-border, #4a4335)",
+            }}
+          >
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+              <CredentialInput
+                label="Asg (20)"
+                type="number"
+                min={0}
+                max={20}
+                value={formData.assignmentMarks}
+                onChange={(e) => setFormData({ ...formData, assignmentMarks: parseFloat(e.target.value) || 0 })}
+              />
+              <CredentialInput
+                label="Quiz (15)"
+                type="number"
+                min={0}
+                max={15}
+                value={formData.quizMarks}
+                onChange={(e) => setFormData({ ...formData, quizMarks: parseFloat(e.target.value) || 0 })}
+              />
+              <CredentialInput
+                label="Mid (25)"
+                type="number"
+                min={0}
+                max={25}
+                value={formData.midtermMarks}
+                onChange={(e) => setFormData({ ...formData, midtermMarks: parseFloat(e.target.value) || 0 })}
+              />
+              <CredentialInput
+                label="Final (35)"
+                type="number"
+                min={0}
+                max={35}
+                value={formData.finalMarks}
+                onChange={(e) => setFormData({ ...formData, finalMarks: parseFloat(e.target.value) || 0 })}
+              />
+              <CredentialInput
+                label="Att (5)"
+                type="number"
+                min={0}
+                max={5}
+                value={formData.attendanceMarks}
+                onChange={(e) => setFormData({ ...formData, attendanceMarks: parseFloat(e.target.value) || 0 })}
+              />
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Select Student *</label>
-                  <select
-                    value={formData.studentId}
-                    onChange={(e) => handleStudentSelect(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none"
-                  >
-                    {students.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name} ({s.studentId})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Select Course *</label>
-                  <select
-                    value={formData.courseCode}
-                    onChange={(e) => handleCourseSelect(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none"
-                  >
-                    {courses.map((c) => (
-                      <option key={c.code} value={c.code}>
-                        {c.code} - {c.title}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Marks Inputs */}
-              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-600 mb-1">
-                      Asg (20)
-                    </label>
-                    <input
-                      type="number"
-                      min={0}
-                      max={20}
-                      value={formData.assignmentMarks}
-                      onChange={(e) =>
-                        setFormData({ ...formData, assignmentMarks: parseFloat(e.target.value) || 0 })
-                      }
-                      className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-center font-bold"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-600 mb-1">
-                      Quiz (15)
-                    </label>
-                    <input
-                      type="number"
-                      min={0}
-                      max={15}
-                      value={formData.quizMarks}
-                      onChange={(e) =>
-                        setFormData({ ...formData, quizMarks: parseFloat(e.target.value) || 0 })
-                      }
-                      className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-center font-bold"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-600 mb-1">
-                      Midterm (25)
-                    </label>
-                    <input
-                      type="number"
-                      min={0}
-                      max={25}
-                      value={formData.midtermMarks}
-                      onChange={(e) =>
-                        setFormData({ ...formData, midtermMarks: parseFloat(e.target.value) || 0 })
-                      }
-                      className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-center font-bold"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-600 mb-1">
-                      Final (35)
-                    </label>
-                    <input
-                      type="number"
-                      min={0}
-                      max={35}
-                      value={formData.finalMarks}
-                      onChange={(e) =>
-                        setFormData({ ...formData, finalMarks: parseFloat(e.target.value) || 0 })
-                      }
-                      className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-center font-bold"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-600 mb-1">Att (5)</label>
-                    <input
-                      type="number"
-                      min={0}
-                      max={5}
-                      value={formData.attendanceMarks}
-                      onChange={(e) =>
-                        setFormData({ ...formData, attendanceMarks: parseFloat(e.target.value) || 0 })
-                      }
-                      className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-center font-bold"
-                    />
-                  </div>
-                </div>
-
-                {/* Real-time Calculation Display */}
-                <div className="p-3 rounded-xl bg-gradient-to-r from-iqra-navy-950 to-iqra-navy-900 text-white flex items-center justify-between">
-                  <div>
-                    <span className="text-[10px] text-slate-400 uppercase font-bold block">
-                      Total Calculated
-                    </span>
-                    <span className="text-xl font-black text-white">{previewTotal} / 100</span>
-                  </div>
-
-                  <div className="text-right">
-                    <span className="text-[10px] text-slate-400 uppercase font-bold block">
-                      Assigned Grade
-                    </span>
-                    <span className="text-xl font-black text-iqra-gold-400">
-                      {previewScale.grade} ({previewScale.gp} GP)
-                    </span>
-                  </div>
-                </div>
-              </div>
-
+            {/* Calculated Scale */}
+            <div
+              className="p-3 rounded-[4px] border flex items-center justify-between"
+              style={{
+                borderColor: "var(--card-border, #4a4335)",
+                backgroundColor: "rgba(255,255,255,0.03)",
+              }}
+            >
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Initial Status *</label>
-                <select
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none"
-                >
-                  <option value="Draft">Draft (Private, not visible to student)</option>
-                  <option value="Submitted">Submitted (For departmental review)</option>
-                  <option value="Reviewed">Reviewed</option>
-                  <option value="Approved">Approved (Ready for publishing)</option>
-                  <option value="Published">Published (Immediately visible to student)</option>
-                </select>
+                <span className="text-[10px] font-semibold uppercase tracking-[0.12em] block" style={{ color: "var(--text-muted, #8a8272)" }}>
+                  Total Computed
+                </span>
+                <span className="font-serif text-[22px] font-[500]" style={{ color: "var(--text-heading, #F2EEE4)" }}>
+                  {previewTotal} / 100
+                </span>
               </div>
 
-              <div className="flex justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsEntryModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="px-5 py-2 rounded-xl bg-iqra-blue-600 text-white text-xs font-bold shadow-md shadow-blue-600/20 disabled:opacity-50"
-                >
-                  {isSubmitting ? "Saving Marks..." : "Save Academic Result"}
-                </button>
+              <div className="text-right">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.12em] block" style={{ color: "var(--text-muted, #8a8272)" }}>
+                  HEC Grade Point
+                </span>
+                <span className="font-serif text-[22px] font-[500]" style={{ color: "var(--text-heading, #F2EEE4)" }}>
+                  {previewScale.grade} ({previewScale.gp.toFixed(2)} GP)
+                </span>
               </div>
-            </form>
+            </div>
           </div>
-        </div>
-      )}
+
+          <CredentialSelect
+            label="Initial Workflow Status *"
+            value={formData.status}
+            onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+          >
+            <option value="Draft">Draft (Private, not visible)</option>
+            <option value="Submitted">Submitted (Department review)</option>
+            <option value="Reviewed">Reviewed</option>
+            <option value="Approved">Approved (Ready for publish)</option>
+            <option value="Published">Published (Live on transcript)</option>
+          </CredentialSelect>
+        </form>
+      </CredentialModal>
     </div>
   );
 };
+

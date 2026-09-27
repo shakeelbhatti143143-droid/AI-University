@@ -1808,10 +1808,215 @@ export const facultyPostAnnouncement = mutation({
 // ----------------------------------------------------------------------------
 // COURSES & COURSE SECTIONS
 // ----------------------------------------------------------------------------
+export function parseTimeToMinutes(timeStr: string): number {
+  if (!timeStr) return 0;
+  const cleaned = timeStr.trim().toUpperCase();
+  const match = cleaned.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+  if (!match) return 0;
+  let hours = parseInt(match[1], 10);
+  const minutes = parseInt(match[2], 10);
+  const meridiem = match[3]?.toUpperCase();
+
+  if (meridiem === "PM" && hours < 12) hours += 12;
+  if (meridiem === "AM" && hours === 12) hours = 0;
+
+  return hours * 60 + minutes;
+}
+
+export function parseDays(daysInput: string[] | string): string[] {
+  if (Array.isArray(daysInput)) {
+    return Array.from(new Set(daysInput.flatMap((d) => parseDays(d))));
+  }
+  if (!daysInput) return [];
+  const normalized = daysInput.toLowerCase();
+  const res: string[] = [];
+  if (normalized.includes("mon")) res.push("Monday");
+  if (normalized.includes("tue")) res.push("Tuesday");
+  if (normalized.includes("wed")) res.push("Wednesday");
+  if (normalized.includes("thu")) res.push("Thursday");
+  if (normalized.includes("fri")) res.push("Friday");
+  if (normalized.includes("sat")) res.push("Saturday");
+  if (normalized.includes("sun")) res.push("Sunday");
+  return res;
+}
+
+export function parseScheduleString(scheduleStr: string): { days: string[]; startTime: string; endTime: string } {
+  if (!scheduleStr) return { days: [], startTime: "", endTime: "" };
+  const days = parseDays(scheduleStr);
+  const timeMatch = scheduleStr.match(/(\d{1,2}:\d{2}\s*(?:AM|PM)?)\s*[-–—to]+\s*(\d{1,2}:\d{2}\s*(?:AM|PM)?)/i);
+  let startTime = "";
+  let endTime = "";
+  if (timeMatch) {
+    startTime = timeMatch[1].trim();
+    endTime = timeMatch[2].trim();
+    if (!startTime.toUpperCase().includes("AM") && !startTime.toUpperCase().includes("PM")) {
+      if (endTime.toUpperCase().includes("AM")) startTime += " AM";
+      else if (endTime.toUpperCase().includes("PM")) {
+        const startH = parseInt(startTime.split(":")[0], 10);
+        if (startH < 12 && startH >= 8) startTime += " AM";
+        else startTime += " PM";
+      }
+    }
+  }
+  return { days, startTime, endTime };
+}
+
+export function doTimesOverlap(startA: number, endA: number, startB: number, endB: number): boolean {
+  return startA < endB && startB < endA;
+}
+
+export async function checkSchedulingConflict(
+  ctx: any,
+  params: {
+    courseCode: string;
+    courseTitle?: string;
+    instructorName?: string;
+    instructorId?: string;
+    room: string;
+    days?: string[] | string;
+    startTime?: string;
+    endTime?: string;
+    schedule?: string;
+    excludeSectionId?: string;
+    excludeCourseId?: string;
+  }
+) {
+  let days: string[] = [];
+  let startTime = params.startTime || "";
+  let endTime = params.endTime || "";
+
+  if (params.schedule) {
+    const parsed = parseScheduleString(params.schedule);
+    if (parsed.days.length > 0) days = parsed.days;
+    if (parsed.startTime) startTime = parsed.startTime;
+    if (parsed.endTime) endTime = parsed.endTime;
+  }
+
+  if (params.days) {
+    const parsedDays = parseDays(params.days);
+    if (parsedDays.length > 0) days = parsedDays;
+  }
+
+  if (days.length === 0 || !startTime || !endTime) {
+    return;
+  }
+
+  const startMin = parseTimeToMinutes(startTime);
+  const endMin = parseTimeToMinutes(endTime);
+  if (startMin >= endMin) return;
+
+  const activeSections = await ctx.db
+    .query("courseSections")
+    .filter((q: any) => q.eq(q.field("status"), "Active"))
+    .collect();
+
+  for (const s of activeSections) {
+    if (params.excludeSectionId && String(s._id) === String(params.excludeSectionId)) continue;
+    if (params.excludeCourseId && (String(s.courseId) === String(params.excludeCourseId) || s.courseCode === params.courseCode)) {
+      if (s.section === "A" && !params.excludeSectionId) continue;
+    }
+
+    const sDays = parseDays(s.days);
+    const sharedDays = days.filter((d) => sDays.includes(d));
+    if (sharedDays.length === 0) continue;
+
+    const sStartMin = parseTimeToMinutes(s.startTime);
+    const sEndMin = parseTimeToMinutes(s.endTime);
+    if (!doTimesOverlap(startMin, endMin, sStartMin, sEndMin)) continue;
+
+    const dayText = sharedDays.join("/");
+
+    // 1. Check Room Conflict
+    if (
+      params.room &&
+      s.room &&
+      params.room.trim().toLowerCase() === s.room.trim().toLowerCase() &&
+      params.courseCode !== s.courseCode
+    ) {
+      throw new Error(
+        `Scheduling Conflict: Venue "${s.room}" is already booked on ${dayText} (${s.startTime}–${s.endTime}) for ${s.courseCode} (${s.courseName}).`
+      );
+    }
+
+    // 2. Check Instructor Conflict
+    const normInstructor = (params.instructorName || "").trim().toLowerCase();
+    const sNormInstructor = (s.facultyName || "").trim().toLowerCase();
+    const isTba = !normInstructor || normInstructor === "tba" || normInstructor.includes("unassigned");
+    const sIsTba = !sNormInstructor || sNormInstructor === "tba" || sNormInstructor.includes("unassigned");
+
+    const instructorMatches =
+      (!isTba && !sIsTba && (normInstructor === sNormInstructor || (params.instructorId && params.instructorId === s.facultyId))) ||
+      (params.instructorId && s.facultyId && params.instructorId === s.facultyId);
+
+    if (instructorMatches && params.courseCode !== s.courseCode) {
+      throw new Error(
+        `Scheduling Conflict: ${s.facultyName} is already scheduled on ${dayText} (${s.startTime}–${s.endTime}) for ${s.courseCode} (${s.courseName}).`
+      );
+    }
+  }
+}
+
+export async function syncSectionEnrolledCount(ctx: any, courseCode: string, sectionId?: string) {
+  const approved = await ctx.db
+    .query("courseRegistrations")
+    .filter((q: any) =>
+      q.and(
+        q.eq(q.field("courseCode"), courseCode),
+        q.eq(q.field("status"), "Approved")
+      )
+    )
+    .collect();
+
+  const sections = await ctx.db
+    .query("courseSections")
+    .withIndex("by_courseCode", (q: any) => q.eq("courseCode", courseCode))
+    .collect();
+
+  for (const sec of sections) {
+    const secApproved = approved.filter(
+      (r: any) => r.sectionId === sec._id || r.sectionId === sec.section || !r.sectionId
+    );
+    await ctx.db.patch(sec._id, {
+      enrolledCount: secApproved.length,
+      updatedAt: Date.now(),
+    });
+  }
+}
+
 export const getCourses = query({
   args: {},
   handler: async (ctx) => {
-    return await ctx.db.query("courses").collect();
+    const courses = await ctx.db.query("courses").collect();
+    const approvedRegistrations = await ctx.db
+      .query("courseRegistrations")
+      .filter((q) => q.eq(q.field("status"), "Approved"))
+      .collect();
+    const courseSections = await ctx.db.query("courseSections").collect();
+
+    const countsByCode: Record<string, number> = {};
+    const countsById: Record<string, number> = {};
+
+    for (const reg of approvedRegistrations) {
+      if (reg.courseCode) {
+        countsByCode[reg.courseCode] = (countsByCode[reg.courseCode] || 0) + 1;
+      }
+      if (reg.courseId) {
+        countsById[reg.courseId] = (countsById[reg.courseId] || 0) + 1;
+      }
+    }
+
+    return courses.map((c) => {
+      const liveEnrolled = countsById[c._id] || countsByCode[c.code] || 0;
+      const section = courseSections.find((s) => s.courseId === c._id || s.courseCode === c.code);
+      return {
+        ...c,
+        enrolledCount: Math.max(liveEnrolled, section?.enrolledCount || 0),
+        capacity: section?.capacity || 45,
+        schedule: section ? `${section.days.join(", ")} • ${section.startTime} - ${section.endTime}` : "Mon, Wed • 10:00 AM - 11:30 AM",
+        classroom: section?.room || "Lab 204",
+        building: section?.building || "Computing Department",
+      };
+    });
   },
 });
 
@@ -1832,6 +2037,14 @@ export const createCourse = mutation({
     instructorId: v.optional(v.string()),
     facultyName: v.optional(v.string()),
     status: v.union(v.literal("Active"), v.literal("Inactive")),
+    schedule: v.optional(v.string()),
+    classroom: v.optional(v.string()),
+    room: v.optional(v.string()),
+    building: v.optional(v.string()),
+    capacity: v.optional(v.number()),
+    days: v.optional(v.array(v.string())),
+    startTime: v.optional(v.string()),
+    endTime: v.optional(v.string()),
     adminName: v.string(),
     adminEmail: v.string(),
   },
@@ -1925,6 +2138,26 @@ export const createCourse = mutation({
       throw new Error(`Course with code "${code}" already exists in the academic catalog.`);
     }
 
+    // 6. Scheduling Conflict Validation
+    const roomToBook = args.room || args.classroom || "Lab 201";
+    const scheduleToBook = args.schedule || "Mon, Wed • 10:00 AM - 11:30 AM";
+    const parsed = parseScheduleString(scheduleToBook);
+    const daysToBook = (args.days && args.days.length > 0) ? args.days : (parsed.days.length > 0 ? parsed.days : ["Monday", "Wednesday"]);
+    const startTimeToBook = args.startTime || parsed.startTime || "10:00 AM";
+    const endTimeToBook = args.endTime || parsed.endTime || "11:30 AM";
+
+    await checkSchedulingConflict(ctx, {
+      courseCode: code,
+      courseTitle: name,
+      instructorName: facultyName,
+      instructorId: instructorId,
+      room: roomToBook,
+      days: daysToBook,
+      startTime: startTimeToBook,
+      endTime: endTimeToBook,
+      schedule: scheduleToBook,
+    });
+
     const now = Date.now();
     const id = await ctx.db.insert("courses", {
       code,
@@ -1942,6 +2175,29 @@ export const createCourse = mutation({
       instructorId: instructorId,
       facultyName: facultyName || undefined,
       status: args.status,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    // Also auto-create Section A
+    await ctx.db.insert("courseSections", {
+      courseId: id,
+      courseCode: code,
+      courseName: name,
+      section: "A",
+      semester: "Fall 2026",
+      academicYear: "2026-2027",
+      facultyId: instructorId,
+      facultyName: facultyName || undefined,
+      room: roomToBook,
+      building: args.building || "Computing Department",
+      campus: "Chak Shehzad Campus, Islamabad",
+      days: daysToBook,
+      startTime: startTimeToBook,
+      endTime: endTimeToBook,
+      capacity: args.capacity || 45,
+      enrolledCount: 0,
+      status: "Active",
       createdAt: now,
       updatedAt: now,
     });
@@ -1977,6 +2233,14 @@ export const updateCourse = mutation({
     facultyId: v.optional(v.string()),
     facultyName: v.optional(v.string()),
     status: v.optional(v.union(v.literal("Active"), v.literal("Inactive"))),
+    schedule: v.optional(v.string()),
+    classroom: v.optional(v.string()),
+    room: v.optional(v.string()),
+    building: v.optional(v.string()),
+    capacity: v.optional(v.number()),
+    days: v.optional(v.array(v.string())),
+    startTime: v.optional(v.string()),
+    endTime: v.optional(v.string()),
     adminName: v.string(),
     adminEmail: v.string(),
   },
@@ -2026,7 +2290,52 @@ export const updateCourse = mutation({
       updates.facultyName = args.facultyName;
     }
 
+    // Find matching Section A
+    const sec = await ctx.db
+      .query("courseSections")
+      .filter((q) => q.or(q.eq(q.field("courseId"), args.courseId), q.eq(q.field("courseCode"), course.code)))
+      .first();
+
+    const roomToBook = args.room || args.classroom || sec?.room || "Lab 201";
+    const scheduleToBook = args.schedule || (sec ? `${sec.days.join(", ")} • ${sec.startTime} - ${sec.endTime}` : undefined);
+    const parsed = scheduleToBook ? parseScheduleString(scheduleToBook) : { days: [], startTime: "", endTime: "" };
+    const daysToBook = (args.days && args.days.length > 0) ? args.days : (parsed.days.length > 0 ? parsed.days : sec?.days);
+    const startTimeToBook = args.startTime || parsed.startTime || sec?.startTime;
+    const endTimeToBook = args.endTime || parsed.endTime || sec?.endTime;
+
+    if (roomToBook && daysToBook && startTimeToBook && endTimeToBook) {
+      await checkSchedulingConflict(ctx, {
+        courseCode: updates.code || course.code,
+        courseTitle: updates.name || course.name,
+        instructorName: updates.facultyName || course.facultyName,
+        instructorId: updates.instructorId || course.instructorId,
+        room: roomToBook,
+        days: daysToBook,
+        startTime: startTimeToBook,
+        endTime: endTimeToBook,
+        schedule: scheduleToBook,
+        excludeCourseId: String(args.courseId),
+        excludeSectionId: sec ? String(sec._id) : undefined,
+      });
+    }
+
     await ctx.db.patch(args.courseId, updates);
+
+    // Sync Section A if exists
+    if (sec) {
+      const secUpdates: any = { updatedAt: Date.now() };
+      if (updates.code) secUpdates.courseCode = updates.code;
+      if (updates.name) secUpdates.courseName = updates.name;
+      if (updates.instructorId) secUpdates.facultyId = updates.instructorId;
+      if (updates.facultyName) secUpdates.facultyName = updates.facultyName;
+      if (args.room || args.classroom) secUpdates.room = roomToBook;
+      if (args.building) secUpdates.building = args.building;
+      if (args.capacity) secUpdates.capacity = args.capacity;
+      if (daysToBook) secUpdates.days = daysToBook;
+      if (startTimeToBook) secUpdates.startTime = startTimeToBook;
+      if (endTimeToBook) secUpdates.endTime = endTimeToBook;
+      await ctx.db.patch(sec._id, secUpdates);
+    }
 
     await ctx.db.insert("auditLogs", {
       adminId: "admin",
@@ -2523,6 +2832,89 @@ export const getCourseSections = query({
   },
 });
 
+// ---------------------------------------------------------------------------
+// COURSE-SECTION SCHEDULING HELPERS
+// ---------------------------------------------------------------------------
+// The shared time and day parsers above are also used when scheduling a
+// course section. Keep the section-specific helpers distinct so the Convex
+// module has no duplicate top-level declarations.
+function doSectionTimesOverlap(
+  startA: string, endA: string, daysA: string[],
+  startB: string, endB: string, daysB: string[]
+): boolean {
+  const normA = parseDays(daysA);
+  const normB = parseDays(daysB);
+  const sharedDays = normA.some((d) => normB.includes(d));
+  if (!sharedDays) return false;
+  const sA = parseTimeToMinutes(startA);
+  const eA = parseTimeToMinutes(endA);
+  const sB = parseTimeToMinutes(startB);
+  const eB = parseTimeToMinutes(endB);
+  return sA < eB && sB < eA;
+}
+
+async function findSectionSchedulingConflict(
+  ctx: any,
+  days: string[],
+  startTime: string,
+  endTime: string,
+  room: string,
+  building: string,
+  facultyId: string | undefined,
+  excludeSectionId?: any
+): Promise<string | null> {
+  const allSections = await ctx.db.query("courseSections").collect();
+  for (const sec of allSections) {
+    if (excludeSectionId && sec._id === excludeSectionId) continue;
+    if (sec.status !== "Active") continue;
+    const overlap = doSectionTimesOverlap(
+      startTime, endTime, days,
+      sec.startTime, sec.endTime, sec.days || []
+    );
+    if (!overlap) continue;
+    if (sec.room === room && sec.building === building) {
+      return `Room conflict: ${room} (${building}) is already booked by ${sec.courseCode} Section ${sec.section} at that time.`;
+    }
+    if (facultyId && sec.facultyId && sec.facultyId === facultyId) {
+      return `Instructor conflict: Faculty is already teaching ${sec.courseCode} Section ${sec.section} at that time.`;
+    }
+  }
+  return null;
+}
+
+async function syncCourseSectionEnrollmentCount(
+  ctx: any,
+  courseCode: string,
+  sectionId?: string
+): Promise<void> {
+  const approved = await ctx.db
+    .query("courseRegistrations")
+    .filter((q: any) => q.and(
+      q.eq(q.field("courseCode"), courseCode),
+      q.eq(q.field("status"), "Approved")
+    ))
+    .collect();
+  const count = approved.length;
+
+  if (sectionId) {
+    try {
+      const section = await ctx.db.get(sectionId as any);
+      if (section) {
+        await ctx.db.patch(sectionId as any, { enrolledCount: count, updatedAt: Date.now() });
+        return;
+      }
+    } catch (_) { /* not a valid Id */ }
+  }
+
+  const sections = await ctx.db
+    .query("courseSections")
+    .filter((q: any) => q.eq(q.field("courseCode"), courseCode))
+    .collect();
+  for (const sec of sections) {
+    await ctx.db.patch(sec._id, { enrolledCount: count, updatedAt: Date.now() });
+  }
+}
+
 export const createCourseSection = mutation({
   args: {
     courseId: v.string(),
@@ -2545,6 +2937,14 @@ export const createCourseSection = mutation({
   },
   handler: async (ctx, args) => {
     const now = Date.now();
+    // Validate scheduling conflicts before creating
+    const conflict = await findSectionSchedulingConflict(
+      ctx, args.days, args.startTime, args.endTime,
+      args.room.trim(), args.building.trim(), args.facultyId
+    );
+    if (conflict) {
+      throw new Error(conflict);
+    }
     const id = await ctx.db.insert("courseSections", {
       courseId: args.courseId,
       courseCode: args.courseCode.trim().toUpperCase(),
@@ -2874,18 +3274,9 @@ export const updateRegistrationStatus = mutation({
 
     await ctx.db.patch(args.registrationId, patchData);
 
-    // Update course section enrolled count if approved
-    if (args.decision === "Approved" && reg.sectionId) {
-      try {
-        const section = await ctx.db.get(reg.sectionId as any);
-        if (section) {
-          await ctx.db.patch(reg.sectionId as any, {
-            enrolledCount: ((section as any).enrolledCount || 0) + 1,
-          });
-        }
-      } catch (e) {
-        // Ignored if sectionId is not an Id
-      }
+    // Sync section enrolled count on any status change
+    if (args.decision === "Approved" || args.decision === "Rejected") {
+      await syncCourseSectionEnrollmentCount(ctx, reg.courseCode, reg.sectionId);
     }
 
     await ctx.db.insert("auditLogs", {
@@ -2919,6 +3310,9 @@ export const dropCourseRegistration = mutation({
       reviewedBy: args.adminName,
       updatedAt: now,
     });
+
+    // Sync section enrolled count after dropping
+    await syncCourseSectionEnrollmentCount(ctx, reg.courseCode, (reg as any).sectionId);
 
     await ctx.db.insert("auditLogs", {
       adminId: "student",

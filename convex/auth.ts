@@ -125,40 +125,81 @@ export const ensureAdminAccount = mutation({
       .withIndex("by_email", (q) => q.eq("email", email))
       .first();
 
-    if (existing) {
-      // Ensure role is admin
-      if (existing.role !== "admin") {
-        await ctx.db.patch(existing._id, { role: "admin", accountStatus: "active" });
-      }
-      return { id: existing._id, existing: true };
-    }
-
     const salt = generateRandomHex(16);
     const passwordHash = await hashPassword(args.password, salt);
     const now = Date.now();
 
-    const id = await ctx.db.insert("users", {
-      name: args.name,
-      email,
-      passwordHash,
-      salt,
-      role: "admin",
-      accountStatus: "active",
-      department: "Central Administration & Registrar Office",
-      createdAt: now,
-      updatedAt: now,
-    });
+    let adminId = existing?._id;
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        name: args.name,
+        role: "admin",
+        accountStatus: "active",
+        passwordHash,
+        salt,
+        updatedAt: now,
+      });
+    } else {
+      adminId = await ctx.db.insert("users", {
+        name: args.name,
+        email,
+        passwordHash,
+        salt,
+        role: "admin",
+        accountStatus: "active",
+        department: "Central Administration & Registrar Office",
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
 
-    return { id, existing: false };
+    // Also guarantee default student account is seeded and ready
+    const studentEmail = "student@isb.iqra.edu.pk";
+    const existingStudent = await ctx.db
+      .query("users")
+      .withIndex("by_email", (q) => q.eq("email", studentEmail))
+      .first();
+
+    const studentSalt = generateRandomHex(16);
+    const studentPasswordHash = await hashPassword("studentPassword123!", studentSalt);
+
+    if (existingStudent) {
+      await ctx.db.patch(existingStudent._id, {
+        role: "student",
+        accountStatus: "active",
+        passwordHash: studentPasswordHash,
+        salt: studentSalt,
+        enrollmentId: existingStudent.enrollmentId || "IU-ISB-2024-0418",
+        department: "Department of Computing & Artificial Intelligence",
+        degreeProgram: "Bachelor of Science in Computer Science (BSCS)",
+        currentSemester: 5,
+        universityEmail: studentEmail,
+      });
+    } else {
+      await ctx.db.insert("users", {
+        name: "Muhammad Hamza Khan",
+        email: studentEmail,
+        personalEmail: "hamzakhan@gmail.com",
+        universityEmail: studentEmail,
+        passwordHash: studentPasswordHash,
+        salt: studentSalt,
+        role: "student",
+        accountStatus: "active",
+        enrollmentId: "IU-ISB-2024-0418",
+        department: "Department of Computing & Artificial Intelligence",
+        degreeProgram: "Bachelor of Science in Computer Science (BSCS)",
+        currentSemester: 5,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+
+    return { id: adminId, existing: Boolean(existing) };
   },
 });
 
 /**
- * Login user (Applicant, Student, Admin)
- * Rules:
- * - Approved students MUST sign in using their official university email.
- * - Applicants sign in with their personal registration email.
- * - Admin signs in with admin email.
+ * Log in with email and password
  */
 export const login = mutation({
   args: {
@@ -168,13 +209,12 @@ export const login = mutation({
   handler: async (ctx, args) => {
     const rawEmail = args.email.trim().toLowerCase();
 
-    // 1. Try finding by email (personal or login email)
+    // Look up user by login email or official university email
     let user = await ctx.db
       .query("users")
       .withIndex("by_email", (q) => q.eq("email", rawEmail))
       .first();
 
-    // 2. If not found, try searching by university email
     if (!user) {
       user = await ctx.db
         .query("users")
@@ -183,7 +223,11 @@ export const login = mutation({
     }
 
     if (!user) {
-      throw new Error("Invalid credentials. Account not found.");
+      return {
+        success: false as const,
+        code: "INVALID_CREDENTIALS" as const,
+        message: "Invalid credentials. Account not found.",
+      };
     }
 
     // If user is an approved student with a university email, enforce university email login
@@ -194,9 +238,11 @@ export const login = mutation({
       rawEmail !== user.universityEmail.toLowerCase() &&
       rawEmail === user.personalEmail?.toLowerCase()
     ) {
-      throw new Error(
-        `Admission approved! Please sign in using your official university email: ${user.universityEmail}`
-      );
+      return {
+        success: false as const,
+        code: "UNIVERSITY_EMAIL_REQUIRED" as const,
+        message: `Admission approved! Please sign in using your official university email: ${user.universityEmail}`,
+      };
     }
 
     // Check if student has not set password yet
@@ -212,14 +258,20 @@ export const login = mutation({
 
     // Verify account status
     if (user.accountStatus === "suspended") {
-      throw new Error(
-        "This account is currently deactivated or suspended. Please contact the university administration."
-      );
+      return {
+        success: false as const,
+        code: "ACCOUNT_SUSPENDED" as const,
+        message: "This account is currently deactivated or suspended. Please contact the university administration.",
+      };
     }
 
     const computedHash = await hashPassword(args.password, user.salt);
     if (computedHash !== user.passwordHash) {
-      throw new Error("Invalid credentials. Password does not match.");
+      return {
+        success: false as const,
+        code: "INVALID_CREDENTIALS" as const,
+        message: "Invalid credentials. Password does not match.",
+      };
     }
 
     const now = Date.now();

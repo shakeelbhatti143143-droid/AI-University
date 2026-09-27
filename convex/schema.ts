@@ -585,6 +585,7 @@ export default defineSchema({
     .index("by_module", ["module"]),
 
   // --------------------------------------------------------------------------
+<<<<<<< Updated upstream
   // UNIVERSITY PUBLIC PORTAL & WEBSITE MANAGEMENT
   // --------------------------------------------------------------------------
 
@@ -748,5 +749,296 @@ export default defineSchema({
     officeHours: v.optional(v.string()),
     updatedAt: v.number(),
   }),
+=======
+  // CAMPUS LIFE, RESOURCES & CAREERS
+  // --------------------------------------------------------------------------
+
+  learningResources: defineTable({
+    title: v.string(),
+    category: v.string(), // "Research Paper", "Digital Book", "AI & Data", "Cheat Sheet", "Development Tool"
+    description: v.string(),
+    link: v.string(),
+    storageId: v.optional(v.string()),
+    fileType: v.string(), // "PDF", "EPUB", "WEB", "ZIP"
+    fileSize: v.optional(v.string()),
+    tags: v.array(v.string()),
+    department: v.optional(v.string()),
+    author: v.optional(v.string()),
+    publisher: v.optional(v.string()),
+    downloadsCount: v.number(),
+    status: v.union(v.literal("Active"), v.literal("Archived")),
+    createdAt: v.number(),
+  })
+    .index("by_category", ["category"])
+    .index("by_department", ["department"])
+    .index("by_status", ["status"]),
+
+  courseMaterials: defineTable({
+    courseId: v.optional(v.string()),
+    courseCode: v.string(),
+    courseTitle: v.string(),
+    weekNumber: v.number(), // 1 - 16
+    topicTitle: v.string(),
+    title: v.string(),
+    description: v.optional(v.string()),
+    materialType: v.union(
+      v.literal("Lecture Slides"),
+      v.literal("Reading Notes"),
+      v.literal("Lab Manual"),
+      v.literal("Source Code"),
+      v.literal("Reference Material")
+    ),
+    fileUrl: v.string(),
+    fileType: v.string(), // "PDF", "PPTX", "ZIP", "DOCX"
+    fileSize: v.string(),
+    uploadedBy: v.string(),
+    status: v.union(v.literal("Published"), v.literal("Draft")),
+    createdAt: v.number(),
+  })
+    .index("by_courseCode", ["courseCode"])
+    .index("by_course_and_week", ["courseCode", "weekNumber"])
+    .index("by_materialType", ["materialType"]),
+
+  campusEvents: defineTable({
+    title: v.string(),
+    category: v.union(
+      v.literal("Hackathon"),
+      v.literal("Seminar"),
+      v.literal("Workshop"),
+      v.literal("Sports"),
+      v.literal("Cultural"),
+      v.literal("Career Fair")
+    ),
+    description: v.string(),
+    date: v.string(), // YYYY-MM-DD
+    time: v.string(), // e.g. "10:00 AM - 04:00 PM"
+    venue: v.string(),
+    campus: v.string(),
+    organizer: v.string(),
+    capacity: v.number(),
+    registeredCount: v.number(),
+    registeredStudents: v.array(
+      v.object({
+        studentId: v.string(),
+        studentName: v.string(),
+        studentEmail: v.string(),
+        registeredAt: v.number(),
+      })
+    ),
+    bannerUrl: v.optional(v.string()),
+    status: v.union(v.literal("Upcoming"), v.literal("Ongoing"), v.literal("Completed"), v.literal("Cancelled")),
+    registrationDeadline: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_category", ["category"])
+    .index("by_status", ["status"])
+    .index("by_date", ["date"]),
+
+  careerOpportunities: defineTable({
+    title: v.string(),
+    company: v.string(),
+    companyLogo: v.optional(v.string()),
+    roleType: v.union(
+      v.literal("Internship"),
+      v.literal("Full-Time"),
+      v.literal("Part-Time"),
+      v.literal("Contract")
+    ),
+    workModel: v.union(v.literal("On-Site"), v.literal("Hybrid"), v.literal("Remote")),
+    location: v.string(),
+    stipendSalary: v.string(),
+    department: v.string(), // e.g. "Computer Science", "Software Engineering", "AI & DS"
+    description: v.string(),
+    requirements: v.array(v.string()),
+    skills: v.array(v.string()),
+    deadline: v.string(), // YYYY-MM-DD
+    applyUrl: v.optional(v.string()),
+    contactEmail: v.optional(v.string()),
+    applicantsCount: v.number(),
+    status: v.union(v.literal("Active"), v.literal("Closed")),
+    createdAt: v.number(),
+  })
+    .index("by_roleType", ["roleType"])
+    .index("by_status", ["status"])
+    .index("by_deadline", ["deadline"]),
+
+  // --------------------------------------------------------------------------
+  // 1. ACADEMIC INTELLIGENCE & EARLY WARNING ALERTS
+  // --------------------------------------------------------------------------
+  academicAlerts: defineTable({
+    studentId: v.string(),
+    enrollmentId: v.string(),
+    studentName: v.string(),
+    studentEmail: v.string(),
+    department: v.string(),
+    degreeProgram: v.string(),
+    currentSemester: v.number(),
+    riskLevel: v.union(v.literal("High"), v.literal("Moderate"), v.literal("Low")),
+    riskScore: v.number(), // 0 - 100
+    triggerFactors: v.array(v.string()),
+    currentAttendance: v.number(),
+    cgpa: v.number(),
+    interventionStatus: v.union(
+      v.literal("Pending"),
+      v.literal("Notice Sent"),
+      v.literal("Counseling Scheduled"),
+      v.literal("Resolved")
+    ),
+    aiRecommendation: v.optional(v.string()),
+    advisorNotes: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_studentId", ["studentId"])
+    .index("by_riskLevel", ["riskLevel"])
+    .index("by_interventionStatus", ["interventionStatus"]),
+
+  // --------------------------------------------------------------------------
+  // 2. FINANCIAL SIS & FEE CHALLANS
+  // --------------------------------------------------------------------------
+  feeChallans: defineTable({
+    challanNo: v.string(), // e.g. "IU-2026-FEE-88219"
+    studentId: v.string(),
+    studentName: v.string(),
+    enrollmentId: v.string(),
+    department: v.string(),
+    degreeProgram: v.string(),
+    semester: v.string(), // "Fall 2026"
+    issueDate: v.string(), // "2026-09-01"
+    dueDate: v.string(), // "2026-09-25"
+    breakdown: v.object({
+      tuitionFee: v.number(),
+      labCharges: v.number(),
+      libraryFee: v.number(),
+      examinationFee: v.number(),
+      scholarshipDiscount: v.number(),
+      lateFine: v.number(),
+      totalPayable: v.number(),
+    }),
+    status: v.union(
+      v.literal("Unpaid"),
+      v.literal("Paid"),
+      v.literal("Overdue"),
+      v.literal("Installment")
+    ),
+    paymentMethod: v.optional(
+      v.union(
+        v.literal("Kuickpay"),
+        v.literal("1-Link"),
+        v.literal("Bank Branch"),
+        v.literal("JazzCash"),
+        v.literal("Online Card")
+      )
+    ),
+    transactionReference: v.optional(v.string()),
+    paidAt: v.optional(v.number()),
+    createdAt: v.number(),
+  })
+    .index("by_challanNo", ["challanNo"])
+    .index("by_studentId", ["studentId"])
+    .index("by_status", ["status"])
+    .index("by_semester", ["semester"]),
+
+  // --------------------------------------------------------------------------
+  // 3. VERIFIABLE DIGITAL CREDENTIALS & DEGREES
+  // --------------------------------------------------------------------------
+  verifiableCredentials: defineTable({
+    credentialId: v.string(), // e.g. "IU-DEG-2026-1042"
+    studentId: v.string(),
+    studentName: v.string(),
+    enrollmentId: v.string(),
+    degreeProgram: v.string(),
+    department: v.string(),
+    cgpa: v.number(),
+    conferralDate: v.string(),
+    verificationHash: v.string(), // SHA-256 fingerprint
+    status: v.union(v.literal("Valid"), v.literal("Revoked"), v.literal("Suspended")),
+    hecAttestationStatus: v.string(), // e.g. "HEC-Recognized & Verified"
+    issuedBy: v.string(),
+    issuedAt: v.number(),
+  })
+    .index("by_credentialId", ["credentialId"])
+    .index("by_studentId", ["studentId"])
+    .index("by_status", ["status"]),
+
+  // --------------------------------------------------------------------------
+  // 4. EXAMINATION SEATING PLANS
+  // --------------------------------------------------------------------------
+  examSeatingPlans: defineTable({
+    examId: v.optional(v.id("examinations")),
+    courseCode: v.string(),
+    courseTitle: v.string(),
+    hallRoom: v.string(),
+    building: v.string(),
+    campus: v.string(),
+    examDate: v.string(),
+    startTime: v.string(),
+    endTime: v.string(),
+    capacity: v.number(),
+    allocatedSeats: v.array(
+      v.object({
+        seatNumber: v.string(), // e.g. "R1-C1"
+        row: v.number(),
+        col: v.number(),
+        studentId: v.string(),
+        studentName: v.string(),
+        enrollmentId: v.string(),
+        courseCode: v.string(),
+        department: v.string(),
+      })
+    ),
+    generatedAt: v.number(),
+  })
+    .index("by_courseCode", ["courseCode"])
+    .index("by_hallRoom", ["hallRoom"]),
+
+  // --------------------------------------------------------------------------
+  // 5. COURSE DISCUSSION FORUMS & ACADEMIC Q&A
+  // --------------------------------------------------------------------------
+  courseDiscussions: defineTable({
+    courseId: v.string(),
+    courseCode: v.string(),
+    authorId: v.string(),
+    authorName: v.string(),
+    authorRole: v.union(
+      v.literal("student"),
+      v.literal("faculty"),
+      v.literal("admin")
+    ),
+    title: v.string(),
+    content: v.string(),
+    tag: v.union(
+      v.literal("#Assignment"),
+      v.literal("#Lecture"),
+      v.literal("#ExamPrep"),
+      v.literal("#Project"),
+      v.literal("#General")
+    ),
+    upvotes: v.array(v.string()), // user IDs
+    isResolved: v.boolean(),
+    hasInstructorEndorsed: v.boolean(),
+    replyCount: v.number(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_courseCode", ["courseCode"])
+    .index("by_tag", ["tag"]),
+
+  discussionReplies: defineTable({
+    discussionId: v.id("courseDiscussions"),
+    authorId: v.string(),
+    authorName: v.string(),
+    authorRole: v.union(
+      v.literal("student"),
+      v.literal("faculty"),
+      v.literal("admin")
+    ),
+    content: v.string(),
+    isInstructorEndorsed: v.boolean(),
+    upvotes: v.array(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_discussionId", ["discussionId"]),
+>>>>>>> Stashed changes
 });
 

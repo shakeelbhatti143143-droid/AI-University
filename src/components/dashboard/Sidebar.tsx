@@ -24,6 +24,12 @@ import {
   LineChart,
   Bot,
   BrainCircuit,
+  Layers,
+  Library,
+  PartyPopper,
+  Briefcase,
+  Receipt,
+  MessageSquare,
 } from "lucide-react";
 import { StudentProfile } from "@/lib/dashboard-data";
 import { cn } from "@/lib/utils";
@@ -33,6 +39,9 @@ export type DashboardTab =
   | "profile"
   | "academics"
   | "courses"
+  | "course-materials"
+  | "resources"
+  | "discussions"
   | "registration"
   | "schedule"
   | "attendance"
@@ -40,7 +49,10 @@ export type DashboardTab =
   | "examinations"
   | "results"
   | "transcript"
+  | "finances"
   | "analytics"
+  | "events"
+  | "careers"
   | "ai-assistant"
   | "study-planner";
 
@@ -69,7 +81,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   registeredCoursesCount,
   onLogout,
 }) => {
-  // STRICTLY ALL 14 SECTIONS IN SYSTEMATIC ORDER
+  // SYSTEMATIC DASHBOARD NAVIGATION WITH CAMPUS LIFE EXTENSIONS
   const navItems: Array<{
     id: DashboardTab;
     label: string;
@@ -105,6 +117,30 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: BookOpen,
       badge: registeredCoursesCount,
       badgeColor: "bg-slate-100 text-slate-700 font-semibold",
+    },
+    {
+      id: "course-materials",
+      label: "Course Materials",
+      sublabel: "Slides, Labs & Handouts",
+      icon: Layers,
+      badge: "Weekly",
+      badgeColor: "bg-indigo-100 text-indigo-800 font-bold",
+    },
+    {
+      id: "resources",
+      label: "Learning Resources",
+      sublabel: "Digital Library & IEEE",
+      icon: Library,
+      badge: "Library",
+      badgeColor: "bg-blue-100 text-blue-800 font-bold",
+    },
+    {
+      id: "discussions",
+      label: "Course Discussions",
+      sublabel: "Academic Q&A & Forums",
+      icon: MessageSquare,
+      badge: "Community",
+      badgeColor: "bg-amber-100 text-amber-800 font-bold",
     },
     {
       id: "registration",
@@ -155,12 +191,36 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: ScrollText,
     },
     {
+      id: "finances",
+      label: "Fee & Challans",
+      sublabel: "Bursar & Accounts SIS",
+      icon: Receipt,
+      badge: "Invoices",
+      badgeColor: "bg-emerald-100 text-emerald-800 font-bold",
+    },
+    {
       id: "analytics",
       label: "GPA & CGPA Analytics",
       sublabel: "Trajectory & Metrics",
       icon: LineChart,
       badge: "Analytics",
       badgeColor: "bg-cyan-100 text-cyan-800 font-bold",
+    },
+    {
+      id: "events",
+      label: "Events & Activities",
+      sublabel: "Hackathons & Seminars",
+      icon: PartyPopper,
+      badge: "Campus",
+      badgeColor: "bg-amber-100 text-amber-800 font-bold",
+    },
+    {
+      id: "careers",
+      label: "Career & Internships",
+      sublabel: "Jobs & Placement Cell",
+      icon: Briefcase,
+      badge: "Hiring",
+      badgeColor: "bg-emerald-100 text-emerald-800 font-bold",
     },
     {
       id: "ai-assistant",
