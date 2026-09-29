@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Outfit, Newsreader } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { ConvexClientProvider } from "@/lib/convex";
 import { AuthProvider } from "@/lib/auth-context";
@@ -51,6 +52,11 @@ export default function RootLayout({
             <main className="flex-1 w-full flex flex-col">{children}</main>
           </AuthProvider>
         </ConvexClientProvider>
+        <Script
+          src="https://online-store-gilt-gamma.vercel.app//chatbot.js"
+          data-chatbot-id="cb_e0x88ns4"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );
