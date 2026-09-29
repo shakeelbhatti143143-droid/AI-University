@@ -111,6 +111,11 @@ export const ExploreFooter: React.FC = () => {
                 </Link>
               </li>
               <li>
+                <Link href="/explore/scholarships" className="hover:text-blue-400 transition-colors">
+                  Merit Scholarships
+                </Link>
+              </li>
+              <li>
                 <Link href="/explore/campus" className="hover:text-blue-400 transition-colors">
                   Campus Facilities
                 </Link>

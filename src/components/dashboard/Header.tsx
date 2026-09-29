@@ -17,6 +17,9 @@ import {
   ShieldCheck,
   BookOpen,
   GraduationCap,
+  Edit3,
+  Camera,
+  Settings,
 } from "lucide-react";
 import { StudentProfile, Announcement } from "@/lib/dashboard-data";
 import { DashboardTab } from "./Sidebar";
@@ -31,6 +34,7 @@ interface HeaderProps {
   announcements: Announcement[];
   onOpenMobileMenu: () => void;
   onLogout: () => void;
+  onOpenEditProfile?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -42,6 +46,7 @@ export const Header: React.FC<HeaderProps> = ({
   announcements,
   onOpenMobileMenu,
   onLogout,
+  onOpenEditProfile,
 }) => {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
@@ -226,96 +231,151 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="relative" ref={profileRef}>
             <button
               onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-              className="flex items-center gap-2 p-1.5 rounded-xl border border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition-colors"
+              className="flex items-center gap-2.5 p-1.5 pr-2.5 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all border border-transparent hover:border-slate-200"
+              aria-expanded={profileMenuOpen}
             >
-              <div className="w-7 h-7 rounded-lg bg-iqra-navy-900 text-white font-bold text-xs flex items-center justify-center overflow-hidden shrink-0">
+              <div className="w-8 h-8 rounded-full p-0.5 bg-gradient-to-tr from-cyan-400 to-blue-600 shadow-sm shrink-0 overflow-hidden">
                 {profile.avatarUrl ? (
                   <img
                     src={profile.avatarUrl}
                     alt={profile.name}
-                    className="w-full h-full object-cover rounded-lg"
+                    className="w-full h-full rounded-full object-cover"
                   />
                 ) : (
-                  profile.name
-                    .split(" ")
-                    .map((n) => n[0])
-                    .slice(0, 2)
-                    .join("")
+                  <div className="w-full h-full rounded-full bg-gradient-to-br from-[#0B1F3A] to-[#122B4E] text-cyan-300 font-bold flex items-center justify-center text-xs">
+                    {profile.name
+                      .split(" ")
+                      .filter(Boolean)
+                      .map((n) => n[0])
+                      .slice(0, 2)
+                      .join("")
+                      .toUpperCase()}
+                  </div>
                 )}
               </div>
               <div className="hidden md:block text-left pr-1">
-                <span className="block text-xs font-bold text-slate-800 leading-none">
-                  {profile.name.split(" ")[0]}
+                <span className="block text-xs font-bold text-slate-800 leading-tight truncate max-w-[130px]">
+                  {profile.name}
                 </span>
-                <span className="text-[10px] text-slate-500 font-mono leading-none">
-                  {profile.studentId.split("-").slice(2).join("-")}
+                <span className="text-[10px] text-blue-600 font-semibold font-mono leading-none block truncate max-w-[130px]">
+                  {profile.studentId}
                 </span>
               </div>
               <ChevronDown className="w-3.5 h-3.5 text-slate-400 hidden sm:block" />
             </button>
 
             {profileMenuOpen && (
-              <div className="absolute right-0 mt-2 w-64 rounded-2xl bg-white border border-slate-200 shadow-xl z-50 py-2 animate-in fade-in zoom-in-95 duration-150">
-                <div className="px-4 py-3 border-b border-slate-100">
-                  <p className="text-xs font-bold text-slate-900">{profile.name}</p>
-                  <p className="text-[11px] text-slate-500 font-mono">{profile.studentId}</p>
-                  <p className="text-[11px] text-iqra-blue-700 font-medium truncate mt-0.5">
-                    {profile.program}
-                  </p>
+              <div className="absolute right-0 mt-2 w-72 rounded-3xl bg-white border border-slate-200 shadow-2xl z-50 py-2 animate-in fade-in zoom-in-95 duration-150 overflow-hidden">
+                {/* User Summary Card inside Dropdown */}
+                <div className="p-4 bg-slate-50 border-b border-slate-100 flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full p-0.5 bg-gradient-to-tr from-cyan-400 to-blue-600 shadow-md shrink-0 overflow-hidden">
+                    {profile.avatarUrl ? (
+                      <img
+                        src={profile.avatarUrl}
+                        alt={profile.name}
+                        className="w-full h-full rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full rounded-full bg-gradient-to-br from-[#0B1F3A] to-[#122B4E] text-cyan-300 font-black flex items-center justify-center text-sm">
+                        {profile.name
+                          .split(" ")
+                          .filter(Boolean)
+                          .map((n) => n[0])
+                          .slice(0, 2)
+                          .join("")
+                          .toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h4 className="text-xs font-bold text-slate-900 truncate">
+                      {profile.name}
+                    </h4>
+                    <p className="text-[11px] font-semibold text-blue-600 truncate">
+                      {profile.program}
+                    </p>
+                    <p className="text-[10px] text-slate-500 font-mono truncate">
+                      ID: {profile.studentId}
+                    </p>
+                  </div>
                 </div>
 
-                <div className="py-1">
+                <div className="p-2 space-y-1">
+                  {/* 1. My Profile */}
                   <button
+                    type="button"
                     onClick={() => {
                       setProfileMenuOpen(false);
                       onSelectTab("profile");
                     }}
-                    className="w-full px-4 py-2 text-left text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2.5"
+                    className="w-full px-3.5 py-2 rounded-xl text-left text-xs font-semibold text-slate-700 hover:bg-slate-100 flex items-center gap-2.5 transition-colors"
                   >
-                    <UserIcon className="w-3.5 h-3.5 text-slate-500" />
-                    <span>My Profile & Record</span>
+                    <UserIcon className="w-4 h-4 text-blue-600" />
+                    <span>My Profile</span>
                   </button>
 
+                  {/* 2. Edit Profile */}
                   <button
+                    type="button"
                     onClick={() => {
                       setProfileMenuOpen(false);
-                      onSelectTab("academics");
+                      if (onOpenEditProfile) onOpenEditProfile();
+                      else onSelectTab("profile");
                     }}
-                    className="w-full px-4 py-2 text-left text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2.5"
+                    className="w-full px-3.5 py-2 rounded-xl text-left text-xs font-semibold text-slate-700 hover:bg-slate-100 flex items-center gap-2.5 transition-colors"
                   >
-                    <GraduationCap className="w-3.5 h-3.5 text-slate-500" />
-                    <span>Academic Transcript / GPA</span>
+                    <Edit3 className="w-4 h-4 text-blue-600" />
+                    <span>Edit Profile</span>
                   </button>
 
+                  {/* 3. Change Profile Picture */}
                   <button
+                    type="button"
                     onClick={() => {
                       setProfileMenuOpen(false);
-                      onSelectTab("courses");
+                      if (onOpenEditProfile) onOpenEditProfile();
+                      else onSelectTab("profile");
                     }}
-                    className="w-full px-4 py-2 text-left text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2.5"
+                    className="w-full px-3.5 py-2 rounded-xl text-left text-xs font-semibold text-slate-700 hover:bg-slate-100 flex items-center gap-2.5 transition-colors"
                   >
-                    <BookOpen className="w-3.5 h-3.5 text-slate-500" />
-                    <span>Enrolled Courses</span>
+                    <Camera className="w-4 h-4 text-cyan-600" />
+                    <span>Change Profile Picture</span>
                   </button>
 
+                  {/* 4. Settings */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProfileMenuOpen(false);
+                      onSelectTab("profile");
+                    }}
+                    className="w-full px-3.5 py-2 rounded-xl text-left text-xs font-semibold text-slate-700 hover:bg-slate-100 flex items-center gap-2.5 transition-colors"
+                  >
+                    <Settings className="w-4 h-4 text-slate-500" />
+                    <span>Settings & Account</span>
+                  </button>
+
+                  {/* 5. University Homepage */}
                   <Link
                     href="/"
-                    className="w-full px-4 py-2 text-left text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2.5"
+                    onClick={() => setProfileMenuOpen(false)}
+                    className="w-full px-3.5 py-2 rounded-xl text-left text-xs font-semibold text-slate-700 hover:bg-slate-100 flex items-center gap-2.5 transition-colors"
                   >
-                    <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
+                    <ExternalLink className="w-4 h-4 text-slate-500" />
                     <span>University Homepage</span>
                   </Link>
                 </div>
 
-                <div className="pt-1 border-t border-slate-100">
+                <div className="pt-2 border-t border-slate-100 px-2 pb-1">
                   <button
+                    type="button"
                     onClick={() => {
                       setProfileMenuOpen(false);
                       onLogout();
                     }}
-                    className="w-full px-4 py-2 text-left text-xs text-rose-600 hover:bg-rose-50 flex items-center gap-2.5 font-medium"
+                    className="w-full px-3.5 py-2 rounded-xl text-left text-xs font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-2.5 transition-colors"
                   >
-                    <LogOut className="w-3.5 h-3.5" />
+                    <LogOut className="w-4 h-4 text-rose-500" />
                     <span>Sign Out</span>
                   </button>
                 </div>

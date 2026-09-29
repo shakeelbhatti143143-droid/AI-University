@@ -25,6 +25,7 @@ import { AdminStudentsSection } from "@/components/admin/sections/AdminStudentsS
 import { AdminFacultySection } from "@/components/admin/sections/AdminFacultySection";
 import { AdminDepartmentsProgramsSection } from "@/components/admin/sections/AdminDepartmentsProgramsSection";
 import { AdminCoursesSection } from "@/components/admin/sections/AdminCoursesSection";
+import { AdminLmsSection } from "@/components/admin/sections/AdminLmsSection";
 import { AdminRegistrationSection } from "@/components/admin/sections/AdminRegistrationSection";
 import { AdminScheduleSection } from "@/components/admin/sections/AdminScheduleSection";
 import { AdminAttendanceSection } from "@/components/admin/sections/AdminAttendanceSection";
@@ -39,11 +40,8 @@ import { AdminSystemSection } from "@/components/admin/sections/AdminSystemSecti
 import { AdminProfileSection } from "@/components/admin/sections/AdminProfileSection";
 import { AdminPendingApplicationsSection } from "@/components/admin/sections/AdminPendingApplicationsSection";
 import { AdminVideosSection } from "@/components/admin/sections/AdminVideosSection";
-<<<<<<< Updated upstream
 import { AdminWebsiteManagementSection } from "@/components/admin/sections/AdminWebsiteManagementSection";
-=======
 import { AdminFinanceSection } from "@/components/admin/sections/AdminFinanceSection";
->>>>>>> Stashed changes
 
 import { getConvexClient, isConvexConfigured } from "@/lib/convex";
 import { api } from "../../../convex/_generated/api";
@@ -53,8 +51,11 @@ const ADMIN_TABS = new Set<AdminTab>([
   "dashboard", "finances", "students", "faculty", "administrators", "applications", "videos",
   "academics", "departments", "programs", "courses", "course-sections", "registration",
   "schedule", "attendance", "assignments", "exams", "exam-schedule", "exam-rooms", "results",
-  "transcripts", "gpa-cgpa", "reports", "announcements", "notifications", "ai-assistant",
-  "ai-planner", "ai-analytics", "user-management", "security", "audit-logs", "settings", "profile",
+  "progression", "transcripts", "gpa-cgpa", "reports", "scholarships",
+  "website-posts", "website-events", "website-gallery", "website-fees", "website-facilities", "website-location", "website-profile",
+  "announcements", "notifications",
+  "ai-academic-assistant", "ai-assistant", "ai-planner", "ai-analytics",
+  "user-management", "security", "audit-logs", "settings", "profile",
 ]);
 
 function isAdminTab(value: string | null): value is AdminTab {
@@ -841,6 +842,10 @@ function AdminPortalContent() {
               onNavigateTab={handleTabChange}
               onRefresh={refreshAllData}
             />
+          )}
+
+          {activeTab === "lms-lectures" && (
+            <AdminLmsSection subTab="lectures" />
           )}
 
           {activeTab === "registration" && (

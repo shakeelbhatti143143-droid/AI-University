@@ -30,9 +30,14 @@ import {
   Briefcase,
   Receipt,
   MessageSquare,
+  Video,
+  PlayCircle,
 } from "lucide-react";
 import { StudentProfile } from "@/lib/dashboard-data";
 import { cn } from "@/lib/utils";
+import { useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+import { useAuth } from "@/lib/auth-context";
 
 export type DashboardTab =
   | "dashboard"
@@ -42,6 +47,7 @@ export type DashboardTab =
   | "course-materials"
   | "resources"
   | "discussions"
+  | "lectures"
   | "registration"
   | "schedule"
   | "attendance"
@@ -81,7 +87,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
   registeredCoursesCount,
   onLogout,
 }) => {
-  // SYSTEMATIC DASHBOARD NAVIGATION WITH CAMPUS LIFE EXTENSIONS
+  const { user, token } = useAuth();
+
+  // Reactive subscription to LMS badge counts
+  const badgeCounts = useQuery(
+    api.lms.getStudentBadgeCounts,
+    user
+      ? {
+          token: token || undefined,
+          email: user.universityEmail || user.email,
+        }
+      : "skip"
+  );
+
+  const newLecturesBadge =
+    badgeCounts?.newLecturesCount && badgeCounts.newLecturesCount > 0
+      ? badgeCounts.newLecturesCount === 1
+        ? "1 New"
+        : `${badgeCounts.newLecturesCount} New Lectures`
+      : undefined;
+
+  // Navigation Items
   const navItems: Array<{
     id: DashboardTab;
     label: string;
@@ -103,20 +129,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: UserCheck,
     },
     {
-      id: "academics",
-      label: "Academic Overview",
-      sublabel: "Grades & CGPA Records",
-      icon: GraduationCap,
-      badge: `${profile.cgpa.toFixed(2)}`,
-      badgeColor: "bg-blue-100 text-iqra-blue-700 font-bold",
-    },
-    {
       id: "courses",
       label: "My Courses",
       sublabel: "Enrolled Subjects",
       icon: BookOpen,
       badge: registeredCoursesCount,
       badgeColor: "bg-slate-100 text-slate-700 font-semibold",
+    },
+    {
+      id: "lectures",
+      label: "Lectures",
+      sublabel: "Video Lessons & Slides",
+      icon: PlayCircle,
+      badge: newLecturesBadge,
+      badgeColor: "bg-blue-600 text-white font-bold animate-pulse",
     },
     {
       id: "course-materials",
@@ -141,6 +167,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: MessageSquare,
       badge: "Community",
       badgeColor: "bg-amber-100 text-amber-800 font-bold",
+    },
+    {
+      id: "academics",
+      label: "Academic Overview",
+      sublabel: "Grades & CGPA Records",
+      icon: GraduationCap,
+      badge: `${profile.cgpa.toFixed(2)}`,
+      badgeColor: "bg-blue-100 text-iqra-blue-700 font-bold",
     },
     {
       id: "registration",

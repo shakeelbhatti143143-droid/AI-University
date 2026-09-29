@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { UniversityLogo } from "../ui/UniversityLogo";
 import { useAuth } from "@/lib/auth-context";
 import {
@@ -18,6 +19,7 @@ import {
 
 export const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
+  const pathname = usePathname();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -29,17 +31,22 @@ export const Navbar: React.FC = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const isActive = (path: string) => {
+    if (path === "/") return pathname === "/";
+    return pathname.startsWith(path);
+  };
+
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 pointer-events-none px-3 sm:px-6 lg:px-8 ${
-        isScrolled ? "pt-2 sm:pt-3" : "pt-3 sm:pt-4"
+        isScrolled ? "pt-2 sm:pt-2.5" : "pt-3 sm:pt-4"
       }`}
     >
       <div
         className={`pointer-events-auto max-w-7xl mx-auto rounded-2xl transition-all duration-300 flex items-center justify-between px-4 sm:px-6 ${
           isScrolled
-            ? "py-2.5 bg-[#050e1d]/90 backdrop-blur-2xl border border-white/15 shadow-[0_16px_40px_rgba(0,0,0,0.6)]"
-            : "py-3 bg-[#050e1d]/60 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.3)]"
+            ? "py-2.5 bg-[#050e1d]/90 backdrop-blur-2xl border border-white/15 shadow-[0_16px_40px_rgba(0,0,0,0.55)]"
+            : "py-3 bg-[#050e1d]/75 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.35)]"
         }`}
       >
         {/* University Crest & Brand Lockup */}
@@ -48,30 +55,55 @@ export const Navbar: React.FC = () => {
         </div>
 
         {/* Center Desktop Navigation */}
-        <nav className="hidden lg:flex items-center gap-1 xl:gap-2">
+        <nav className="hidden lg:flex items-center gap-1 xl:gap-1.5">
           <Link
             href="/login"
-            className="text-xs font-medium text-slate-300 hover:text-white px-3 py-1.5 rounded-xl hover:bg-white/[0.07] transition-all"
+            className={`text-xs font-medium px-3 py-1.5 rounded-xl transition-all duration-200 ${
+              isActive("/login")
+                ? "text-white bg-white/[0.12] border border-white/20 shadow-xs"
+                : "text-slate-300 hover:text-white hover:bg-white/[0.07] border border-transparent"
+            }`}
           >
             Academic Portal
           </Link>
 
           <Link
             href="/status"
-            className="text-xs font-medium text-slate-300 hover:text-white px-3 py-1.5 rounded-xl hover:bg-white/[0.07] transition-all"
+            className={`text-xs font-medium px-3 py-1.5 rounded-xl transition-all duration-200 ${
+              isActive("/status")
+                ? "text-white bg-white/[0.12] border border-white/20 shadow-xs"
+                : "text-slate-300 hover:text-white hover:bg-white/[0.07] border border-transparent"
+            }`}
           >
             Track Status
           </Link>
 
           <Link
             href="/apply"
-            className="text-xs font-medium text-slate-200 hover:text-white px-3 py-1.5 rounded-xl hover:bg-white/[0.07] transition-all flex items-center gap-2 group"
+            className={`text-xs font-medium px-3 py-1.5 rounded-xl transition-all duration-200 flex items-center gap-2 group ${
+              isActive("/apply")
+                ? "text-white bg-white/[0.12] border border-white/20 shadow-xs"
+                : "text-slate-300 hover:text-white hover:bg-white/[0.07] border border-transparent"
+            }`}
           >
             <span>Admissions 2026</span>
             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
               Open
             </span>
+          </Link>
+
+          {/* Premium "Explore University" Navigation Item */}
+          <Link
+            href="/explore"
+            className={`text-xs font-semibold px-3 py-1.5 rounded-xl transition-all duration-200 flex items-center gap-1.5 group ${
+              isActive("/explore")
+                ? "text-white bg-white/[0.14] border border-white/25 shadow-xs"
+                : "text-slate-200 hover:text-white hover:bg-white/[0.08] border border-white/10 hover:border-white/20 bg-white/[0.03]"
+            }`}
+          >
+            <Compass className="w-3.5 h-3.5 text-sky-400 group-hover:rotate-45 transition-transform duration-300" />
+            <span>Explore University</span>
           </Link>
 
           {user && (
@@ -183,6 +215,18 @@ export const Navbar: React.FC = () => {
               className="py-2.5 px-2 text-sm font-medium text-slate-200 hover:text-white flex items-center justify-between"
             >
               <span>Track Application Status</span>
+              <ChevronRight className="w-4 h-4 text-slate-500" />
+            </Link>
+
+            <Link
+              href="/explore"
+              onClick={() => setMobileMenuOpen(false)}
+              className="py-2.5 px-2 text-sm font-medium text-slate-200 hover:text-white flex items-center justify-between"
+            >
+              <div className="flex items-center gap-2.5">
+                <Compass className="w-4 h-4 text-sky-400" />
+                <span>Explore University</span>
+              </div>
               <ChevronRight className="w-4 h-4 text-slate-500" />
             </Link>
 

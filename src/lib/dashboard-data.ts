@@ -32,6 +32,7 @@ export interface StudentProfile {
   completedCreditHours: number;
   remainingCreditHours: number;
   academicStanding: string;
+  bio?: string;
 }
 
 export interface EnrolledCourse {

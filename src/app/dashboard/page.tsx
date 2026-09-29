@@ -10,6 +10,7 @@ import { DashboardOverview } from "@/components/dashboard/sections/DashboardOver
 import { MyProfileSection } from "@/components/dashboard/sections/MyProfileSection";
 import { AcademicOverviewSection } from "@/components/dashboard/sections/AcademicOverviewSection";
 import { MyCoursesSection } from "@/components/dashboard/sections/MyCoursesSection";
+import { StudentLecturesSection } from "@/components/dashboard/sections/StudentLecturesSection";
 import { CourseRegistrationSection } from "@/components/dashboard/sections/CourseRegistrationSection";
 import { ClassScheduleSection } from "@/components/dashboard/sections/ClassScheduleSection";
 import { AttendanceSection } from "@/components/dashboard/sections/AttendanceSection";
@@ -62,7 +63,7 @@ import { api } from "../../../convex/_generated/api";
 function DashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, logout, refreshUser } = useAuth();
+  const { user, token, logout, refreshUser, updateUserLocally } = useAuth();
 
   // Tab State
   const initialTab = (searchParams?.get("tab") as DashboardTab) || "dashboard";
@@ -105,6 +106,10 @@ function DashboardContent() {
       name: user?.name || "Student",
       email: user?.universityEmail || user?.email || "",
       studentId: user?.enrollmentId || "Pending",
+      avatarUrl: user?.profilePhoto || initialStudentProfile.avatarUrl,
+      bio: user?.bio || "",
+      phone: user?.phone || initialStudentProfile.phone,
+      department: user?.department || initialStudentProfile.department,
     };
   });
 
@@ -211,19 +216,27 @@ function DashboardContent() {
           setProfile((prev) => ({
             ...prev,
             avatarUrl: photoUrl || prev.avatarUrl,
-            name: app.personalInformation?.fullName || user.name,
+            name: freshUser?.name || app.personalInformation?.fullName || user.name,
+            bio: freshUser?.bio || user.bio || prev.bio || "",
             email: user.universityEmail || app.generatedUniversityEmail || user.email,
-            personalEmail: app.personalInformation?.email || user.personalEmail || "",
-            phone: app.personalInformation?.phone || "",
+            personalEmail: freshUser?.personalEmail || app.personalInformation?.email || user.personalEmail || "",
+            phone: freshUser?.phone || app.personalInformation?.phone || "",
+            address: freshUser?.address || app.personalInformation?.address || prev.address || "",
+            emergencyContact: freshUser?.emergencyContact || prev.emergencyContact || "",
             cnic: app.personalInformation?.cnic || "",
             studentId: user.enrollmentId || app.applicationId,
             program: app.academicInformation?.degreeApplyingFor || app.programPreferences?.firstChoice || "BS Computer Science",
             status: app.status === "Approved" ? "Active" : "Probation",
           }));
-        } else if (photoUrl) {
+        } else {
           setProfile((prev) => ({
             ...prev,
-            avatarUrl: photoUrl,
+            ...(freshUser?.name ? { name: freshUser.name } : {}),
+            ...(photoUrl ? { avatarUrl: photoUrl } : {}),
+            ...(freshUser?.bio !== undefined ? { bio: freshUser.bio } : {}),
+            ...(freshUser?.phone ? { phone: freshUser.phone } : {}),
+            ...(freshUser?.address ? { address: freshUser.address } : {}),
+            ...(freshUser?.emergencyContact ? { emergencyContact: freshUser.emergencyContact } : {}),
           }));
         }
       } catch (e) {
@@ -538,7 +551,10 @@ function DashboardContent() {
         photoUrl,
       });
 
-      // 5. Update local profile state and refresh session
+      // 5. Update local profile state and session for zero lag
+      updateUserLocally({
+        profilePhoto: photoUrl,
+      });
       setProfile((prev) => ({
         ...prev,
         avatarUrl: photoUrl,
@@ -551,12 +567,41 @@ function DashboardContent() {
     }
   };
 
-  // Profile Save Action
-  const handleSaveProfile = (updatedFields: Partial<StudentProfile>) => {
+  // Profile Save Action with persistent Convex database storage
+  const handleSaveProfile = async (updatedFields: Partial<StudentProfile>) => {
+    // 1. Instant optimistic UI update
     setProfile((prev) => ({
       ...prev,
       ...updatedFields,
     }));
+
+    updateUserLocally({
+      name: updatedFields.name || user?.name,
+      phone: updatedFields.phone,
+      bio: updatedFields.bio,
+      profilePhoto: updatedFields.avatarUrl || user?.profilePhoto,
+    });
+
+    // 2. Persist to Convex database
+    try {
+      const client = getConvexClient();
+      if (client && isConvexConfigured && user) {
+        await client.mutation(api.users.updateStudentProfile, {
+          token: token || undefined,
+          userId: user.id as any,
+          name: updatedFields.name,
+          personalEmail: updatedFields.personalEmail,
+          phone: updatedFields.phone,
+          bio: updatedFields.bio,
+          address: updatedFields.address,
+          emergencyContact: updatedFields.emergencyContact,
+          profilePhoto: updatedFields.avatarUrl,
+        });
+        await refreshUser();
+      }
+    } catch (err) {
+      console.warn("Failed to persist student profile update:", err);
+    }
   };
 
   // Logout action
@@ -616,6 +661,7 @@ function DashboardContent() {
           announcements={announcements}
           onOpenMobileMenu={() => setMobileMenuOpen(true)}
           onLogout={handleLogout}
+          onOpenEditProfile={() => setIsEditProfileOpen(true)}
         />
 
         {/* Dynamic Section Content Area */}
@@ -674,6 +720,10 @@ function DashboardContent() {
 
           {activeTab === "discussions" && (
             <CourseDiscussionsSection profile={profile} />
+          )}
+
+          {activeTab === "lectures" && (
+            <StudentLecturesSection onNavigateTab={handleSelectTab} />
           )}
 
           {activeTab === "registration" && (

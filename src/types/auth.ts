@@ -28,6 +28,13 @@ export interface User {
   degreeProgramId?: string;
   currentSemester?: number;
   profilePhoto?: string;
+  designation?: string;
+  bio?: string;
+  phone?: string;
+  officeLocation?: string;
+  officeHours?: string;
+  specialization?: string;
+  qualification?: string;
   createdAt: number;
 }
 
@@ -49,4 +56,5 @@ export interface AuthContextType {
   register: (name: string, email: string, password: string, role?: UserRole) => Promise<{ success: boolean; error?: string; user?: User }>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  updateUserLocally: (updated: Partial<User>) => void;
 }

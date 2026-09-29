@@ -35,11 +35,11 @@ import {
   Lock,
   DoorOpen,
   ScrollText,
-<<<<<<< Updated upstream
   Image as ImageIcon,
-=======
   Receipt,
->>>>>>> Stashed changes
+  Radio,
+  Sparkles,
+  MapPin,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -56,6 +56,7 @@ export type AdminTab =
   | "programs"
   | "courses"
   | "course-sections"
+  | "lms-lectures"
   | "registration"
   | "schedule"
   | "attendance"
@@ -64,12 +65,12 @@ export type AdminTab =
   | "exam-schedule"
   | "exam-rooms"
   | "results"
-<<<<<<< Updated upstream
   // Academic Records
   | "progression"
   | "transcripts"
   | "gpa-cgpa"
   | "reports"
+  | "scholarships"
   // University Website
   | "website-posts"
   | "website-events"
@@ -84,13 +85,6 @@ export type AdminTab =
   | "videos"
   // AI & Learning
   | "ai-academic-assistant"
-=======
-  | "transcripts"
-  | "gpa-cgpa"
-  | "reports"
-  | "announcements"
-  | "notifications"
->>>>>>> Stashed changes
   | "ai-assistant"
   | "ai-planner"
   | "ai-analytics"
@@ -164,6 +158,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
         { id: "programs", label: "Programs", icon: GraduationCap, iconColor: "text-blue-500" },
         { id: "courses", label: "Courses", icon: BookOpen, iconColor: "text-emerald-500" },
         { id: "course-sections", label: "Course Sections", icon: Layers, iconColor: "text-teal-500" },
+        { id: "lms-lectures", label: "LMS Lectures", icon: Video, iconColor: "text-purple-500" },
         {
           id: "registration",
           label: "Course Registration",
@@ -191,17 +186,11 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
       title: "ACADEMIC RECORDS",
       accentColor: "text-purple-600",
       items: [
-<<<<<<< Updated upstream
-        { id: "progression", label: "Academic Progression", icon: Sparkles },
-        { id: "transcripts", label: "Transcripts", icon: ScrollText },
-        { id: "gpa-cgpa", label: "GPA & CGPA", icon: Award },
-        { id: "reports", label: "Academic Reports", icon: FileSpreadsheet },
-=======
+        { id: "progression", label: "Academic Progression", icon: Sparkles, iconColor: "text-amber-500" },
         { id: "transcripts", label: "Transcripts", icon: ScrollText, iconColor: "text-purple-500" },
         { id: "gpa-cgpa", label: "GPA & CGPA", icon: Award, iconColor: "text-indigo-500" },
         { id: "reports", label: "Academic Reports", icon: FileSpreadsheet, iconColor: "text-blue-500" },
         { id: "finances", label: "Fee & Finances", icon: Receipt, iconColor: "text-emerald-500" },
->>>>>>> Stashed changes
       ],
     },
     {
@@ -217,22 +206,17 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
       title: "AI & LEARNING",
       accentColor: "text-violet-600",
       items: [
-<<<<<<< Updated upstream
         {
           id: "ai-academic-assistant",
           label: "AI Academic Assistant",
           icon: Sparkles,
+          iconColor: "text-indigo-500",
           badge: "AI DATA",
           badgeColor: "bg-indigo-600 text-white font-bold",
         },
-        { id: "ai-assistant", label: "AI Campus Assistant", icon: Bot },
-        { id: "ai-planner", label: "AI Study Planner", icon: Brain },
-        { id: "ai-analytics", label: "AI Usage Analytics", icon: BarChart3 },
-=======
         { id: "ai-assistant", label: "AI Assistant", icon: Bot, iconColor: "text-violet-500" },
         { id: "ai-planner", label: "AI Study Planner", icon: Brain, iconColor: "text-indigo-500" },
         { id: "ai-analytics", label: "AI Usage Analytics", icon: BarChart3, iconColor: "text-cyan-500" },
->>>>>>> Stashed changes
       ],
     },
     {

@@ -8,6 +8,7 @@ import { useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { isConvexConfigured } from "@/lib/convex";
 import { Breadcrumbs } from "@/components/explore/Breadcrumbs";
+import { ScholarshipsSection } from "@/components/explore/ScholarshipsSection";
 import {
   Building2,
   MapPin,
@@ -52,8 +53,8 @@ export default function ExploreCampusPage() {
     api.website.getCampusFacilities,
     isConvexConfigured
       ? {
-          category: selectedCategory === "All" ? undefined : selectedCategory,
-        }
+        category: selectedCategory === "All" ? undefined : selectedCategory,
+      }
       : "skip"
   );
 
@@ -111,7 +112,7 @@ export default function ExploreCampusPage() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         if (document.fullscreenElement) {
-          document.exitFullscreen().catch(() => {});
+          document.exitFullscreen().catch(() => { });
         } else {
           setActiveVideo(null);
         }
@@ -219,6 +220,14 @@ export default function ExploreCampusPage() {
               <MapPin className="w-4 h-4" />
               <span>Campus Map</span>
             </Link>
+
+            <a
+              href="#scholarships"
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-xs sm:text-sm font-bold text-white bg-emerald-500/20 hover:bg-emerald-500/30 active:scale-[0.98] border border-emerald-400/40 backdrop-blur-md transition-all shadow-sm"
+            >
+              <Award className="w-4 h-4 text-emerald-400" />
+              <span>Scholarships</span>
+            </a>
           </div>
         </div>
       </section>
@@ -243,40 +252,76 @@ export default function ExploreCampusPage() {
 
         {/* Editorial Architecture Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="p-7 rounded-3xl bg-white border border-slate-200/90 shadow-xs space-y-3 hover:border-[#0b1f3a]/40 transition-all group">
-            <div className="w-11 h-11 rounded-2xl bg-[#f0f4fa] border border-[#0b1f3a]/15 text-[#0b1f3a] flex items-center justify-center">
-              <Building2 className="w-5 h-5 text-[#0b1f3a]" />
+          {/* Card 1: High-Performance Labs (First Uploaded Image) */}
+          <div className="relative overflow-hidden p-7 rounded-3xl bg-slate-950 border border-slate-200/20 shadow-md hover:border-slate-300/40 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 group">
+            <div
+              className="absolute inset-0 bg-cover bg-center transition-transform duration-300 ease-out will-change-transform group-hover:scale-[1.02] pointer-events-none"
+              style={{
+                backgroundImage: "url('/images/card-high-performance-labs.png')",
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+              }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/55 to-black/30 group-hover:from-black/75 group-hover:via-black/45 group-hover:to-black/20 backdrop-blur-[0.5px] transition-colors duration-300 pointer-events-none" />
+            <div className="relative z-10 space-y-3">
+              <div className="w-11 h-11 rounded-2xl bg-white/90 backdrop-blur-xs border border-white/40 text-[#0b1f3a] flex items-center justify-center shadow-xs">
+                <Cpu className="w-5 h-5 text-[#0b1f3a]" />
+              </div>
+              <h3 className="font-heading font-bold text-lg text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] transition-colors">
+                High-Performance Labs
+              </h3>
+              <p className="text-xs sm:text-sm text-white leading-relaxed drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+                Equipped with high-performance workstations, machine learning clusters, robotics testbeds, and Gigabit campus networking.
+              </p>
             </div>
-            <h3 className="font-heading font-bold text-lg text-slate-900 group-hover:text-[#0b1f3a] transition-colors">
-              Academic & Research Blocks
-            </h3>
-            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-              Designed with spacious lecture theatres, multimedia smart classrooms, and dedicated faculty research consultation suites.
-            </p>
           </div>
 
-          <div className="p-7 rounded-3xl bg-white border border-slate-200/90 shadow-xs space-y-3 hover:border-[#0b1f3a]/40 transition-all group">
-            <div className="w-11 h-11 rounded-2xl bg-[#f0f4fa] border border-[#0b1f3a]/15 text-[#0b1f3a] flex items-center justify-center">
-              <Cpu className="w-5 h-5 text-[#0b1f3a]" />
+          {/* Card 2: Green Courtyards & Student Life (Second Uploaded Image) */}
+          <div className="relative overflow-hidden p-7 rounded-3xl bg-slate-950 border border-slate-200/20 shadow-md hover:border-slate-300/40 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 group">
+            <div
+              className="absolute inset-0 bg-cover bg-center transition-transform duration-300 ease-out will-change-transform group-hover:scale-[1.02] pointer-events-none"
+              style={{
+                backgroundImage: "url('/images/card-green-courtyards.jpg')",
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+              }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/55 to-black/30 group-hover:from-black/75 group-hover:via-black/45 group-hover:to-black/20 backdrop-blur-[0.5px] transition-colors duration-300 pointer-events-none" />
+            <div className="relative z-10 space-y-3">
+              <div className="w-11 h-11 rounded-2xl bg-white/90 backdrop-blur-xs border border-white/40 text-[#0b1f3a] flex items-center justify-center shadow-xs">
+                <Users className="w-5 h-5 text-[#0b1f3a]" />
+              </div>
+              <h3 className="font-heading font-bold text-lg text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] transition-colors">
+                Green Courtyards & Student Life
+              </h3>
+              <p className="text-xs sm:text-sm text-white leading-relaxed drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+                Lush lawns and open-air courtyards fostering collaborative debate, student society activities, and tranquil academic study.
+              </p>
             </div>
-            <h3 className="font-heading font-bold text-lg text-slate-900 group-hover:text-[#0b1f3a] transition-colors">
-              High-Performance Labs
-            </h3>
-            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-              Equipped with high-performance workstations, machine learning clusters, robotics testbeds, and Gigabit campus networking.
-            </p>
           </div>
 
-          <div className="p-7 rounded-3xl bg-white border border-slate-200/90 shadow-xs space-y-3 hover:border-[#0b1f3a]/40 transition-all group">
-            <div className="w-11 h-11 rounded-2xl bg-[#f0f4fa] border border-[#0b1f3a]/15 text-[#0b1f3a] flex items-center justify-center">
-              <Users className="w-5 h-5 text-[#0b1f3a]" />
+          {/* Card 3: Academic & Research Blocks (Third Uploaded Image) */}
+          <div className="relative overflow-hidden p-7 rounded-3xl bg-slate-950 border border-slate-200/20 shadow-md hover:border-slate-300/40 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 group">
+            <div
+              className="absolute inset-0 bg-cover bg-center transition-transform duration-300 ease-out will-change-transform group-hover:scale-[1.02] pointer-events-none"
+              style={{
+                backgroundImage: "url('/images/card-academic-blocks.png')",
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+              }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/55 to-black/30 group-hover:from-black/75 group-hover:via-black/45 group-hover:to-black/20 backdrop-blur-[0.5px] transition-colors duration-300 pointer-events-none" />
+            <div className="relative z-10 space-y-3">
+              <div className="w-11 h-11 rounded-2xl bg-white/90 backdrop-blur-xs border border-white/40 text-[#0b1f3a] flex items-center justify-center shadow-xs">
+                <Building2 className="w-5 h-5 text-[#0b1f3a]" />
+              </div>
+              <h3 className="font-heading font-bold text-lg text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] transition-colors">
+                Academic & Research Blocks
+              </h3>
+              <p className="text-xs sm:text-sm text-white leading-relaxed drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+                Designed with spacious lecture theatres, multimedia smart classrooms, and dedicated faculty research consultation suites.
+              </p>
             </div>
-            <h3 className="font-heading font-bold text-lg text-slate-900 group-hover:text-[#0b1f3a] transition-colors">
-              Green Courtyards & Student Life
-            </h3>
-            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-              Lush lawns and open-air courtyards fostering collaborative debate, student society activities, and tranquil academic study.
-            </p>
           </div>
         </div>
       </section>
@@ -389,11 +434,10 @@ export default function ExploreCampusPage() {
                 key={cat}
                 type="button"
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                  selectedCategory === cat
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${selectedCategory === cat
                     ? "bg-[#0b1f3a] text-white shadow-xs"
                     : "bg-white text-slate-600 hover:text-[#0b1f3a] hover:bg-[#f0f4fa] border border-slate-200"
-                }`}
+                  }`}
               >
                 {cat}
               </button>
@@ -474,7 +518,12 @@ export default function ExploreCampusPage() {
       </section>
 
       {/* ========================================================================= */}
-      {/* 5. LOCATION & DIRECTIONS CALLOUT */}
+      {/* 5. MERIT SCHOLARSHIPS SECTION */}
+      {/* ========================================================================= */}
+      <ScholarshipsSection id="scholarships" />
+
+      {/* ========================================================================= */}
+      {/* 6. LOCATION & DIRECTIONS CALLOUT */}
       {/* ========================================================================= */}
       <section className="w-full max-w-[1600px] mx-auto pb-20 px-4 sm:px-8 lg:px-16">
         <div className="p-8 sm:p-12 rounded-3xl bg-white border border-slate-200/90 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-6">
@@ -520,13 +569,12 @@ export default function ExploreCampusPage() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
               transition={{ duration: 0.22, ease: "easeOut" }}
-              className={`relative z-10 flex flex-col bg-[#081426] border border-white/20 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden transition-all duration-300 ${
-                videoAspectRatio && videoAspectRatio < 0.85
+              className={`relative z-10 flex flex-col bg-[#081426] border border-white/20 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden transition-all duration-300 ${videoAspectRatio && videoAspectRatio < 0.85
                   ? "w-full max-w-[min(92vw,480px)]"
                   : videoAspectRatio && videoAspectRatio < 1.15
-                  ? "w-full max-w-[min(92vw,680px)]"
-                  : "w-full max-w-[min(94vw,1120px)]"
-              } max-h-[calc(100vh-1rem)] sm:max-h-[calc(100vh-2rem)] md:max-h-[calc(100vh-3rem)] max-h-[calc(100dvh-1rem)] sm:max-h-[calc(100dvh-2rem)] md:max-h-[calc(100dvh-3rem)]`}
+                    ? "w-full max-w-[min(92vw,680px)]"
+                    : "w-full max-w-[min(94vw,1120px)]"
+                } max-h-[calc(100vh-1rem)] sm:max-h-[calc(100vh-2rem)] md:max-h-[calc(100vh-3rem)] max-h-[calc(100dvh-1rem)] sm:max-h-[calc(100dvh-2rem)] md:max-h-[calc(100dvh-3rem)]`}
             >
               <div className="shrink-0 p-3 sm:p-4 bg-[#050e1d]/90 border-b border-white/10 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5 overflow-hidden min-w-0">

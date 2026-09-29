@@ -24,10 +24,91 @@ import {
 } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-import { Iqra3DWordmark } from "@/components/ui/Iqra3DWordmark";
+import { HeroSection } from "@/components/landing/HeroSection";
 
-// Campus hero photography path
-const CAMPUS_HERO_IMAGE = "/images/campus-hero.jpg";
+// Academic Faculties & Disciplines Data
+const FACULTIES_DATA = [
+  {
+    id: "computing",
+    title: "Computing & Artificial Intelligence",
+    discipline: "Faculty of Technology",
+    description: "AI, Computer Science, and Software Engineering calibrated for industry innovation.",
+    icon: Cpu,
+    badge: "Flagship AI",
+    badgeIcon: Sparkles,
+    programs: ["BS AI", "BS CS", "BS SE", "MS • PhD"],
+    feature: "Neural GPU Research Labs",
+    gradient: "from-blue-600 via-indigo-600 to-cyan-500",
+    glowColor: "rgba(37, 99, 235, 0.12)",
+    accentText: "text-blue-600",
+    badgeBg: "bg-blue-50 text-blue-700 border-blue-200/80",
+    chipBg: "bg-blue-50/70 hover:bg-blue-100/90 text-blue-900 border-blue-200/60",
+    iconBoxBg: "bg-gradient-to-br from-blue-500/10 via-indigo-500/10 to-blue-500/5",
+    iconBoxBorder: "border-blue-500/20 group-hover:border-blue-500/40",
+    iconColor: "text-blue-600 group-hover:text-blue-700",
+    href: "/explore/programs",
+  },
+  {
+    id: "management",
+    title: "Management Sciences",
+    discipline: "Faculty of Business",
+    description: "Strategic business acumen, fintech analytics, and corporate executive leadership.",
+    icon: Briefcase,
+    badge: "Leadership Track",
+    badgeIcon: Award,
+    programs: ["BBA", "MBA", "FinTech", "PhD Mgt"],
+    feature: "Corporate Incubation Hub",
+    gradient: "from-amber-500 via-orange-500 to-amber-600",
+    glowColor: "rgba(217, 119, 6, 0.12)",
+    accentText: "text-amber-600",
+    badgeBg: "bg-amber-50 text-amber-700 border-amber-200/80",
+    chipBg: "bg-amber-50/70 hover:bg-amber-100/90 text-amber-900 border-amber-200/60",
+    iconBoxBg: "bg-gradient-to-br from-amber-500/10 via-orange-500/10 to-amber-500/5",
+    iconBoxBorder: "border-amber-500/20 group-hover:border-amber-500/40",
+    iconColor: "text-amber-600 group-hover:text-amber-700",
+    href: "/explore/programs",
+  },
+  {
+    id: "engineering",
+    title: "Engineering & Technology",
+    discipline: "Faculty of Engineering",
+    description: "Electrical and computer engineering backed by high-tech laboratory infrastructure.",
+    icon: Layers,
+    badge: "PEC Accredited",
+    badgeIcon: ShieldCheck,
+    programs: ["BE Electrical", "Robotics", "IoT", "Embedded"],
+    feature: "Advanced Electronics Testbeds",
+    gradient: "from-emerald-500 via-teal-500 to-emerald-600",
+    glowColor: "rgba(16, 185, 129, 0.12)",
+    accentText: "text-emerald-600",
+    badgeBg: "bg-emerald-50 text-emerald-700 border-emerald-200/80",
+    chipBg: "bg-emerald-50/70 hover:bg-emerald-100/90 text-emerald-900 border-emerald-200/60",
+    iconBoxBg: "bg-gradient-to-br from-emerald-500/10 via-teal-500/10 to-emerald-500/5",
+    iconBoxBorder: "border-emerald-500/20 group-hover:border-emerald-500/40",
+    iconColor: "text-emerald-600 group-hover:text-emerald-700",
+    href: "/explore/programs",
+  },
+  {
+    id: "social-sciences",
+    title: "Social Sciences & Media",
+    discipline: "Faculty of Media",
+    description: "Media studies, digital journalism, and economics focused on societal transformation.",
+    icon: Users,
+    badge: "Broadcast Hub",
+    badgeIcon: Sparkles,
+    programs: ["Media", "DigiComms", "Broadcast", "Economics"],
+    feature: "4K Digital Broadcast Suite",
+    gradient: "from-rose-500 via-pink-500 to-purple-600",
+    glowColor: "rgba(244, 63, 94, 0.12)",
+    accentText: "text-rose-600",
+    badgeBg: "bg-rose-50 text-rose-700 border-rose-200/80",
+    chipBg: "bg-rose-50/70 hover:bg-rose-100/90 text-rose-900 border-rose-200/60",
+    iconBoxBg: "bg-gradient-to-br from-rose-500/10 via-purple-500/10 to-rose-500/5",
+    iconBoxBorder: "border-rose-500/20 group-hover:border-rose-500/40",
+    iconColor: "text-rose-600 group-hover:text-rose-700",
+    href: "/explore/programs",
+  },
+];
 
 export default function LandingPage() {
   return (
@@ -36,177 +117,9 @@ export default function LandingPage() {
       <Navbar />
 
       {/* ========================================================================= */}
-      {/* HERO SECTION: Full-Screen Cinematic Campus Background & Institutional Typography */}
+      {/* HERO SECTION: Editorial Left-Aligned Architecture & Authentic Campus Focal Point */}
       {/* ========================================================================= */}
-      <section className="relative w-full min-h-screen flex items-center justify-center pt-28 pb-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
-        {/* Full-bleed Campus Background Image */}
-        <div className="absolute inset-0 w-full h-full z-0 overflow-hidden pointer-events-none">
-          <Image
-            src={CAMPUS_HERO_IMAGE}
-            alt="Iqra University Chak Shehzad Campus Islamabad"
-            fill
-            priority
-            quality={92}
-            className="object-cover object-center transition-transform duration-1000 ease-out"
-          />
-
-          {/* Controlled Cinematic Navy Overlay: Subtle so campus photography is clearly visible */}
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage:
-                "linear-gradient(180deg, rgba(5, 14, 29, 0.55) 0%, rgba(5, 14, 29, 0.35) 40%, rgba(5, 14, 29, 0.7) 80%, rgba(5, 14, 29, 0.95) 100%)",
-            }}
-          />
-        </div>
-
-        {/* Hero Content Area */}
-        <div className="relative z-10 max-w-5xl mx-auto w-full flex flex-col items-center text-center my-auto">
-          {/* Institutional Eyebrow Pill */}
-          <motion.div
-            initial={{ opacity: 0, y: -15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-semibold text-slate-200 mb-6 shadow-sm"
-          >
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Chartered by Federal Government • HEC Highest W4 Category</span>
-          </motion.div>
-
-          {/* University Name & Campus Branding */}
-          <motion.div
-            initial={{ opacity: 0, y: 18, filter: "blur(6px)" }}
-            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            transition={{ duration: 0.95, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-            className="space-y-3"
-          >
-            <h1 className="text-[clamp(2.5rem,7.2vw,5.75rem)] font-black font-heading tracking-tight uppercase leading-[1.05] flex flex-wrap items-baseline justify-center gap-x-3.5 sm:gap-x-5 select-none text-center">
-              {/* Ultra-Premium 3D Animated Deep-Blue IQRA Brand Wordmark */}
-              <Iqra3DWordmark />
-
-              {/* Supporting Institutional Suffix */}
-              <span
-                className="font-bold sm:font-extrabold tracking-[0.04em] sm:tracking-[0.06em] text-slate-100/95 inline-block"
-                style={{
-                  filter: "drop-shadow(0 2px 8px rgba(5, 14, 29, 0.75))",
-                }}
-              >
-                UNIVERSITY
-              </span>
-            </h1>
-
-            <div className="flex items-center justify-center gap-3">
-              <span className="h-px w-10 sm:w-20 bg-white/30" />
-              <h2 className="text-lg sm:text-2xl lg:text-3xl font-bold font-heading tracking-widest uppercase text-slate-200">
-                CHAK SHEHZAD CAMPUS
-              </h2>
-              <span className="h-px w-10 sm:w-20 bg-white/30" />
-            </div>
-          </motion.div>
-
-          {/* Primary Tagline Headline */}
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.22, ease: "easeOut" }}
-            className="mt-6 text-2xl sm:text-4xl lg:text-5xl font-extrabold text-white max-w-4xl leading-tight tracking-tight"
-          >
-            &ldquo;Where Your Future Begins.&rdquo;
-          </motion.p>
-
-          {/* Concise Academic Subtitle */}
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.32, ease: "easeOut" }}
-            className="mt-4 text-sm sm:text-base lg:text-lg text-slate-200 max-w-2xl leading-relaxed font-normal"
-          >
-            Islamabad&apos;s premier seat of academic distinction, research excellence, and technological innovation. Empowering the next generation of leaders along scenic Park Road.
-          </motion.p>
-
-          {/* Primary & Secondary Action CTAs */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.42, ease: "easeOut" }}
-            className="mt-8 flex flex-wrap items-center justify-center gap-3.5 z-20"
-          >
-            {/* Primary CTA: Start Your Journey */}
-            <Link
-              href="/apply"
-              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl text-xs sm:text-sm font-bold text-[#0b1f3a] bg-white hover:bg-slate-100 active:bg-slate-200 active:scale-[0.98] shadow-xl shadow-black/30 hover:shadow-2xl hover:scale-[1.01] transition-all duration-200"
-            >
-              <span>Start Your Journey</span>
-              <ArrowRight className="w-4 h-4 text-[#0b1f3a]" />
-            </Link>
-
-            {/* Secondary CTA: Already Have an Account */}
-            <Link
-              href="/login"
-              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl text-xs sm:text-sm font-semibold text-white bg-white/10 hover:bg-white/15 active:bg-white/20 active:scale-[0.98] border border-white/20 backdrop-blur-md hover:scale-[1.01] transition-all duration-200"
-            >
-              <span>Already Have an Account</span>
-            </Link>
-
-            {/* Dedicated Portal Link: Explore University */}
-            <Link
-              href="/explore"
-              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl text-xs sm:text-sm font-semibold text-slate-200 hover:text-white bg-[#0b1f3a]/80 hover:bg-[#0b1f3a] active:scale-[0.98] border border-white/15 backdrop-blur-md transition-all duration-200"
-            >
-              <Compass className="w-4 h-4 text-slate-300" />
-              <span>Explore University</span>
-            </Link>
-          </motion.div>
-
-          {/* Verified Institutional Pillars */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.55, ease: "easeOut" }}
-            className="mt-14 w-full max-w-4xl grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 text-left"
-          >
-            {/* Pillar 1: Federal Charter */}
-            <div className="p-4 rounded-2xl bg-white/[0.07] backdrop-blur-md border border-white/15 hover:border-white/25 transition-colors">
-              <div className="flex items-center gap-2 text-slate-300 mb-1">
-                <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                <span className="text-[11px] font-bold uppercase tracking-wider">Charter</span>
-              </div>
-              <div className="text-lg sm:text-xl font-black font-heading text-white">Federal</div>
-              <div className="text-[11px] text-slate-300">Government of Pakistan</div>
-            </div>
-
-            {/* Pillar 2: HEC Recognition */}
-            <div className="p-4 rounded-2xl bg-white/[0.07] backdrop-blur-md border border-white/15 hover:border-white/25 transition-colors">
-              <div className="flex items-center gap-2 text-slate-300 mb-1">
-                <Award className="w-4 h-4 text-slate-200" />
-                <span className="text-[11px] font-bold uppercase tracking-wider">HEC W4</span>
-              </div>
-              <div className="text-lg sm:text-xl font-black font-heading text-white">Category</div>
-              <div className="text-[11px] text-slate-300">Highest Recognition</div>
-            </div>
-
-            {/* Pillar 3: Campus Location */}
-            <div className="p-4 rounded-2xl bg-white/[0.07] backdrop-blur-md border border-white/15 hover:border-white/25 transition-colors">
-              <div className="flex items-center gap-2 text-slate-300 mb-1">
-                <Building2 className="w-4 h-4 text-slate-200" />
-                <span className="text-[11px] font-bold uppercase tracking-wider">Location</span>
-              </div>
-              <div className="text-lg sm:text-xl font-black font-heading text-white">Chak Shezad</div>
-              <div className="text-[11px] text-slate-300">Park Road, Islamabad</div>
-            </div>
-
-            {/* Pillar 4: Alumni Network */}
-            <div className="p-4 rounded-2xl bg-white/[0.07] backdrop-blur-md border border-white/15 hover:border-white/25 transition-colors">
-              <div className="flex items-center gap-2 text-slate-300 mb-1">
-                <Users className="w-4 h-4 text-slate-200" />
-                <span className="text-[11px] font-bold uppercase tracking-wider">Scholars</span>
-              </div>
-              <div className="text-lg sm:text-xl font-black font-heading text-white">15,000+</div>
-              <div className="text-[11px] text-slate-300">Alumni & Graduates</div>
-            </div>
-          </motion.div>
-        </div>
-      </section>
+      <HeroSection />
 
       {/* ========================================================================= */}
       {/* SECTION 2: EXECUTIVE ACADEMIC OVERVIEW & INSTITUTIONAL PHILOSOPHY */}
@@ -318,134 +231,137 @@ export default function LandingPage() {
       {/* ========================================================================= */}
       {/* SECTION 3: ACADEMIC DISCIPLINES & FACULTIES */}
       {/* ========================================================================= */}
-      <section className="relative w-full py-24 sm:py-32 px-4 sm:px-6 lg:px-8 bg-[#f8fafc] text-slate-900 border-t border-slate-200">
-        <div className="max-w-7xl mx-auto w-full space-y-16">
+      <section className="relative w-full py-16 sm:py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-[#f8fafc] via-[#f1f5f9]/70 to-[#f8fafc] text-slate-900 border-t border-slate-200/90 overflow-hidden">
+        {/* Subtle Decorative Background Ambient Grid */}
+        <div
+          className="absolute inset-0 pointer-events-none opacity-[0.035]"
+          style={{
+            backgroundImage: "radial-gradient(#0b1f3a 1.2px, transparent 1.2px)",
+            backgroundSize: "28px 28px",
+          }}
+        />
+
+        {/* Ambient Top Glow */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 max-w-4xl h-48 bg-gradient-to-b from-blue-200/25 via-indigo-100/15 to-transparent blur-3xl pointer-events-none" />
+
+        <div className="relative max-w-7xl mx-auto w-full space-y-12">
           {/* Section Header */}
           <div className="text-center max-w-3xl mx-auto space-y-3">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#f0f4fa] text-[#0b1f3a] border border-[#0b1f3a]/15 text-xs font-semibold">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/95 backdrop-blur-md text-[#0b1f3a] border border-[#0b1f3a]/15 text-xs font-semibold shadow-xs">
               <BookOpen className="w-3.5 h-3.5 text-[#0b1f3a]" />
               <span className="uppercase tracking-wider text-[11px] font-bold">Academic Faculties</span>
             </div>
 
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black font-heading tracking-tight text-[#0b1f3a]">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black font-heading tracking-tight text-[#0b1f3a]">
               Disciplines of Contemporary Distinction
             </h2>
 
-            <p className="text-sm sm:text-base text-slate-600 leading-relaxed font-normal">
+            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal max-w-2xl mx-auto">
               Accredited degree programs combining rigorous foundational theories with advanced artificial intelligence, machine learning, and executive leadership.
             </p>
           </div>
 
           {/* 4 Faculties Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* Faculty 1: Computing & AI */}
-            <div className="p-6 rounded-2xl bg-white border border-slate-200 hover:border-[#0b1f3a]/40 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-5">
-              <div className="space-y-3">
-                <div className="w-12 h-12 rounded-xl bg-[#f0f4fa] border border-[#0b1f3a]/15 text-[#0b1f3a] flex items-center justify-center">
-                  <Cpu className="w-6 h-6 text-[#0b1f3a]" />
-                </div>
-                <h3 className="text-lg font-bold font-heading text-slate-900">
-                  Computing & Artificial Intelligence
-                </h3>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Degree programs in Artificial Intelligence, Computer Science, and Software Engineering calibrated for industry innovation.
-                </p>
-              </div>
-
-              <div className="pt-3 border-t border-slate-100">
-                <Link
-                  href="/explore/programs"
-                  className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0b1f3a] hover:text-[#122b4e] transition-colors"
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch">
+            {FACULTIES_DATA.map((faculty, idx) => {
+              const IconComponent = faculty.icon;
+              const BadgeIcon = faculty.badgeIcon;
+              return (
+                <motion.div
+                  key={faculty.id}
+                  initial={{ opacity: 0, y: 18 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-30px" }}
+                  transition={{ duration: 0.45, delay: idx * 0.08, ease: [0.16, 1, 0.3, 1] }}
+                  className="group relative flex flex-col justify-between rounded-2xl bg-white/95 backdrop-blur-sm border border-slate-200/80 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.05)] hover:shadow-[0_16px_36px_-10px_rgba(11,31,58,0.14)] hover:-translate-y-1.5 hover:border-slate-300 transition-all duration-300 overflow-hidden"
                 >
-                  <span>Explore Programs</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
-              </div>
-            </div>
+                  {/* Top Ambient Accent Gradient Line */}
+                  <div
+                    className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${faculty.gradient} opacity-80 group-hover:opacity-100 group-hover:h-1.5 transition-all duration-300`}
+                  />
 
-            {/* Faculty 2: Management Sciences */}
-            <div className="p-6 rounded-2xl bg-white border border-slate-200 hover:border-[#0b1f3a]/40 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-5">
-              <div className="space-y-3">
-                <div className="w-12 h-12 rounded-xl bg-[#f0f4fa] border border-[#0b1f3a]/15 text-[#0b1f3a] flex items-center justify-center">
-                  <Briefcase className="w-6 h-6 text-[#0b1f3a]" />
-                </div>
-                <h3 className="text-lg font-bold font-heading text-slate-900">
-                  Management Sciences
-                </h3>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  BBA, MBA, and graduate research cultivating strategic business acumen, data-driven finance, and executive leadership.
-                </p>
-              </div>
+                  {/* Subtle Top-Right Ambient Radial Glow (Fires on Hover) */}
+                  <div
+                    className="pointer-events-none absolute -top-12 -right-12 w-32 h-32 rounded-full blur-2xl opacity-0 group-hover:opacity-35 transition-opacity duration-500"
+                    style={{ backgroundColor: faculty.glowColor }}
+                  />
 
-              <div className="pt-3 border-t border-slate-100">
-                <Link
-                  href="/explore/programs"
-                  className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0b1f3a] hover:text-[#122b4e] transition-colors"
-                >
-                  <span>Explore Programs</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
-              </div>
-            </div>
+                  {/* Main Card Content */}
+                  <div className="p-5 space-y-3 relative z-10 flex-1 flex flex-col">
+                    {/* Header: Floating Icon Badge + Credential Pill */}
+                    <div className="flex items-center justify-between gap-2.5">
+                      <div
+                        className={`w-10 h-10 rounded-xl ${faculty.iconBoxBg} border ${faculty.iconBoxBorder} flex items-center justify-center shadow-2xs transition-all duration-300 group-hover:scale-105 group-hover:rotate-1`}
+                      >
+                        <IconComponent className={`w-5 h-5 ${faculty.iconColor} transition-colors duration-300`} />
+                      </div>
 
-            {/* Faculty 3: Engineering & Technology */}
-            <div className="p-6 rounded-2xl bg-white border border-slate-200 hover:border-[#0b1f3a]/40 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-5">
-              <div className="space-y-3">
-                <div className="w-12 h-12 rounded-xl bg-[#f0f4fa] border border-[#0b1f3a]/15 text-[#0b1f3a] flex items-center justify-center">
-                  <Layers className="w-6 h-6 text-[#0b1f3a]" />
-                </div>
-                <h3 className="text-lg font-bold font-heading text-slate-900">
-                  Engineering & Technology
-                </h3>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Electrical and Computer Engineering degrees backed by high-tech laboratory infrastructure and hardware prototypes.
-                </p>
-              </div>
+                      <div
+                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border shadow-2xs ${faculty.badgeBg}`}
+                      >
+                        <BadgeIcon className="w-2.5 h-2.5 shrink-0" />
+                        <span>{faculty.badge}</span>
+                      </div>
+                    </div>
 
-              <div className="pt-3 border-t border-slate-100">
-                <Link
-                  href="/explore/programs"
-                  className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0b1f3a] hover:text-[#122b4e] transition-colors"
-                >
-                  <span>Explore Programs</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
-              </div>
-            </div>
+                    {/* Title & Category */}
+                    <div className="space-y-0.5 pt-0.5">
+                      <span className="text-[9.5px] font-bold uppercase tracking-widest text-slate-400 block">
+                        {faculty.discipline}
+                      </span>
+                      <h3 className="text-[15px] sm:text-base font-bold font-heading text-slate-900 group-hover:text-[#0b1f3a] tracking-tight leading-snug transition-colors min-h-[2.5rem] flex items-center">
+                        {faculty.title}
+                      </h3>
+                    </div>
 
-            {/* Faculty 4: Social Sciences */}
-            <div className="p-6 rounded-2xl bg-white border border-slate-200 hover:border-[#0b1f3a]/40 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-5">
-              <div className="space-y-3">
-                <div className="w-12 h-12 rounded-xl bg-[#f0f4fa] border border-[#0b1f3a]/15 text-[#0b1f3a] flex items-center justify-center">
-                  <Users className="w-6 h-6 text-[#0b1f3a]" />
-                </div>
-                <h3 className="text-lg font-bold font-heading text-slate-900">
-                  Social Sciences & Media
-                </h3>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Degrees in Media Studies, Communications, and Economics focused on digital broadcast media and societal transformation.
-                </p>
-              </div>
+                    {/* Description */}
+                    <p className="text-xs text-slate-600 leading-relaxed font-normal line-clamp-2">
+                      {faculty.description}
+                    </p>
 
-              <div className="pt-3 border-t border-slate-100">
-                <Link
-                  href="/explore/programs"
-                  className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0b1f3a] hover:text-[#122b4e] transition-colors"
-                >
-                  <span>Explore Programs</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
-              </div>
-            </div>
+                    {/* Key Programs Chips */}
+                    <div className="pt-1 mt-auto">
+                      <div className="flex flex-wrap gap-1">
+                        {faculty.programs.map((prog, pIdx) => (
+                          <span
+                            key={pIdx}
+                            className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border transition-all duration-200 ${faculty.chipBg}`}
+                          >
+                            {prog}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Hallmark Feature Ribbon */}
+                    <div className="pt-2 border-t border-slate-100 flex items-center gap-1.5 text-[10.5px] font-medium text-slate-500">
+                      <CheckCircle2 className={`w-3 h-3 shrink-0 ${faculty.accentText}`} />
+                      <span className="truncate">{faculty.feature}</span>
+                    </div>
+                  </div>
+
+                  {/* Compact Interactive Action Footer */}
+                  <div className="px-5 pb-4 pt-0 relative z-10">
+                    <Link
+                      href={faculty.href}
+                      className="group/btn w-full inline-flex items-center justify-between px-3.5 py-2 rounded-xl bg-slate-50 hover:bg-[#0b1f3a] group-hover:bg-[#0b1f3a] text-slate-700 hover:text-white group-hover:text-white transition-all duration-200 font-bold text-xs shadow-2xs group-hover:shadow-xs border border-slate-200/80 group-hover:border-[#0b1f3a]"
+                    >
+                      <span>Explore Programs</span>
+                      <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-1" />
+                    </Link>
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
 
-          <div className="text-center pt-4">
+          <div className="text-center pt-2">
             <Link
               href="/explore/programs"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#0b1f3a] hover:bg-[#122b4e] active:bg-[#071426] text-white text-xs sm:text-sm font-bold tracking-wide shadow-md transition-all"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#0b1f3a] hover:bg-[#122b4e] active:bg-[#071426] text-white text-xs sm:text-sm font-bold tracking-wide shadow-md shadow-[#0b1f3a]/15 hover:shadow-lg hover:shadow-[#0b1f3a]/25 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
             >
               <span>View All Degree Programs & Curricula</span>
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
         </div>

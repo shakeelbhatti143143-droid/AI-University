@@ -88,6 +88,7 @@ export const ExploreSidebar: React.FC<ExploreSidebarProps> = ({
         { label: "Departments", href: "/explore/departments", icon: Layers },
         { label: "Degree Programs", href: "/explore/programs", icon: GraduationCap },
         { label: "Fee Structure", href: "/explore/fees", icon: DollarSign },
+        { label: "Scholarships", href: "/explore/scholarships", icon: Award, badge: "Merit", badgeColor: "bg-emerald-50 text-emerald-800 border-emerald-300" },
       ],
     },
     {

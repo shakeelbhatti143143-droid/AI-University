@@ -14,7 +14,6 @@ import {
   XCircle,
   BarChart3,
   Sparkles,
-<<<<<<< Updated upstream
   GraduationCap,
   Lock,
   Unlock,
@@ -23,20 +22,18 @@ import {
   Filter,
   X,
   ChevronRight,
-=======
   QrCode,
   ExternalLink,
   AlertTriangle,
   Send,
   Check,
->>>>>>> Stashed changes
+  ShieldCheck,
+  Percent,
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-<<<<<<< Updated upstream
 import { useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
-=======
 import {
   CredentialCard,
   CredentialHeader,
@@ -47,7 +44,7 @@ import {
   CredentialButton,
   CredentialModal,
 } from "@/components/admin/credential";
->>>>>>> Stashed changes
+import { calculateScholarship, SCHOLARSHIP_TIERS } from "@/lib/scholarship";
 
 interface StudentAcademicRecord {
   id: string;
@@ -72,11 +69,7 @@ interface StudentAcademicRecord {
 }
 
 interface AdminAcademicRecordsSectionProps {
-<<<<<<< Updated upstream
-  initialTab?: "transcripts" | "gpa-cgpa" | "reports" | "progression";
-=======
-  initialTab?: "transcripts" | "gpa-cgpa" | "reports" | "early-warning";
->>>>>>> Stashed changes
+  initialTab?: "transcripts" | "gpa-cgpa" | "reports" | "progression" | "early-warning" | "scholarships";
   students: StudentAcademicRecord[];
 }
 
@@ -84,18 +77,13 @@ export const AdminAcademicRecordsSection: React.FC<AdminAcademicRecordsSectionPr
   initialTab = "transcripts",
   students,
 }) => {
-<<<<<<< Updated upstream
   const [activeSubTab, setActiveSubTab] = useState<
-    "transcripts" | "gpa-cgpa" | "reports" | "progression"
+    "transcripts" | "gpa-cgpa" | "reports" | "progression" | "early-warning" | "scholarships"
   >(initialTab);
-=======
-  const [activeSubTab, setActiveSubTab] = useState<"transcripts" | "gpa-cgpa" | "reports" | "early-warning">(
-    initialTab
-  );
->>>>>>> Stashed changes
   const [searchQuery, setSearchQuery] = useState("");
   const [progressionFilterDepartment, setProgressionFilterDepartment] = useState("All");
   const [progressionFilterStatus, setProgressionFilterStatus] = useState("All");
+  const [scholarshipTierFilter, setScholarshipTierFilter] = useState("All");
   const [auditStudentDetail, setAuditStudentDetail] = useState<any | null>(null);
 
   const [selectedStudent, setSelectedStudent] = useState<StudentAcademicRecord | null>(
@@ -107,6 +95,12 @@ export const AdminAcademicRecordsSection: React.FC<AdminAcademicRecordsSectionPr
   // Live institutional academic progression data from Convex
   const liveProgressionOverview = useQuery(
     api.academicManagement.getAdminAcademicProgressionOverview,
+    {}
+  );
+
+  // Live institutional scholarships data from Convex
+  const liveScholarshipsOverview = useQuery(
+    api.academicManagement.getAdminScholarshipsOverview,
     {}
   );
 
@@ -200,75 +194,34 @@ export const AdminAcademicRecordsSection: React.FC<AdminAcademicRecordsSectionPr
               <AlertTriangle className="w-3.5 h-3.5 text-[#B8963E]" />
               <span>At-Risk Early Warning</span>
             </button>
+            <button
+              onClick={() => setActiveSubTab("progression")}
+              className={cn(
+                "px-3 py-1.5 rounded-[4px] text-xs font-medium transition-all flex items-center gap-1.5",
+                activeSubTab === "progression"
+                  ? "bg-[#23201b] text-[#F2EEE4] border border-[#4a4335] font-semibold"
+                  : "text-[#8a8272] hover:text-[#F2EEE4]"
+              )}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
+              <span>Progression Audit</span>
+            </button>
+
+            <button
+              onClick={() => setActiveSubTab("scholarships")}
+              className={cn(
+                "px-3 py-1.5 rounded-[4px] text-xs font-medium transition-all flex items-center gap-1.5",
+                activeSubTab === "scholarships"
+                  ? "bg-[#23201b] text-[#F2EEE4] border border-[#4a4335] font-semibold"
+                  : "text-[#8a8272] hover:text-[#F2EEE4]"
+              )}
+            >
+              <GraduationCap className="w-3.5 h-3.5 text-emerald-500" />
+              <span>Merit Scholarships</span>
+            </button>
           </div>
-<<<<<<< Updated upstream
-          <h2 className="text-2xl font-black font-heading text-slate-900 tracking-tight">
-            Transcripts, GPA & Academic Progression
-          </h2>
-          <p className="text-xs text-slate-500">
-            Official verifiable web transcripts, cumulative GPA distributions, automatic semester progression audits, and institutional reports.
-          </p>
-        </div>
-
-        {/* Sub-tab Switcher */}
-        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-2xl border border-slate-200 self-start md:self-auto flex-wrap">
-          <button
-            onClick={() => setActiveSubTab("progression")}
-            className={cn(
-              "px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5",
-              activeSubTab === "progression"
-                ? "bg-white text-slate-900 shadow-xs font-black"
-                : "text-slate-600 hover:text-slate-900"
-            )}
-          >
-            <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Academic Progression</span>
-          </button>
-
-          <button
-            onClick={() => setActiveSubTab("transcripts")}
-            className={cn(
-              "px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5",
-              activeSubTab === "transcripts"
-                ? "bg-white text-slate-900 shadow-xs font-black"
-                : "text-slate-600 hover:text-slate-900"
-            )}
-          >
-            <ScrollText className="w-3.5 h-3.5 text-iqra-blue-600" />
-            <span>Transcripts</span>
-          </button>
-
-          <button
-            onClick={() => setActiveSubTab("gpa-cgpa")}
-            className={cn(
-              "px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5",
-              activeSubTab === "gpa-cgpa"
-                ? "bg-white text-slate-900 shadow-xs font-black"
-                : "text-slate-600 hover:text-slate-900"
-            )}
-          >
-            <Award className="w-3.5 h-3.5 text-amber-600" />
-            <span>GPA & CGPA</span>
-          </button>
-
-          <button
-            onClick={() => setActiveSubTab("reports")}
-            className={cn(
-              "px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5",
-              activeSubTab === "reports"
-                ? "bg-white text-slate-900 shadow-xs font-black"
-                : "text-slate-600 hover:text-slate-900"
-            )}
-          >
-            <FileSpreadsheet className="w-3.5 h-3.5 text-purple-600" />
-            <span>Academic Reports</span>
-          </button>
-        </div>
-      </div>
-=======
         </div>
       </CredentialCard>
->>>>>>> Stashed changes
 
       {/* ------------------------------------------------------------- */}
       {/* 0. ACADEMIC PROGRESSION AUDIT ROSTER (REGISTRAR OVERVIEW) */}
@@ -985,7 +938,6 @@ export const AdminAcademicRecordsSection: React.FC<AdminAcademicRecordsSectionPr
         </div>
       )}
 
-      {/* ------------------------------------------------------------- */}
       {/* 4. AT-RISK EARLY WARNING & INTERVENTION ENGINE */}
       {/* ------------------------------------------------------------- */}
       {activeSubTab === "early-warning" && (
@@ -1251,6 +1203,298 @@ export const AdminAcademicRecordsSection: React.FC<AdminAcademicRecordsSectionPr
           </div>
         </CredentialModal>
       )}
+
+      {/* ------------------------------------------------------------- */}
+      {/* 5. MERIT SCHOLARSHIPS OVERSIGHT (ADMIN DASHBOARD) */}
+      {/* ------------------------------------------------------------- */}
+      {activeSubTab === "scholarships" && (() => {
+        // Resolve student records: prefer live Convex query, fall back to props
+        const studentList =
+          liveScholarshipsOverview?.students && liveScholarshipsOverview.students.length > 0
+            ? liveScholarshipsOverview.students
+            : students.map((s) => {
+                const evalRes = calculateScholarship(s.cgpa);
+                return {
+                  id: s.id,
+                  student: s.name,
+                  academicId: s.studentId,
+                  email: s.email,
+                  department: s.department,
+                  program: s.program,
+                  currentSemester: 1,
+                  cgpa: s.cgpa,
+                  scholarshipPercentage: evalRes.percentage,
+                  eligibilityStatus: evalRes.status,
+                  tier: evalRes.tier,
+                  tierId: evalRes.tierId,
+                  explanation: evalRes.explanation,
+                  academicStanding: s.cgpa >= 3.5 ? "Dean's Honor Roll" : s.cgpa >= 2.0 ? "Good Standing" : "Academic Warning",
+                };
+              });
+
+        const filteredScholarships = studentList.filter((s: any) => {
+          const matchesSearch =
+            s.student.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            s.academicId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            s.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            s.program.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            s.department.toLowerCase().includes(searchQuery.toLowerCase());
+
+          if (!matchesSearch) return false;
+
+          if (scholarshipTierFilter === "Eligible") return s.scholarshipPercentage > 0;
+          if (scholarshipTierFilter === "Ineligible") return s.scholarshipPercentage === 0;
+          if (scholarshipTierFilter === "85") return s.scholarshipPercentage === 85;
+          if (scholarshipTierFilter === "60") return s.scholarshipPercentage === 60;
+          if (scholarshipTierFilter === "40") return s.scholarshipPercentage === 40;
+          if (scholarshipTierFilter === "20") return s.scholarshipPercentage === 20;
+
+          return true;
+        });
+
+        const totalStudentsCount = studentList.length;
+        const eligibleCount = studentList.filter((s: any) => s.scholarshipPercentage > 0).length;
+        const topTierCount = studentList.filter((s: any) => s.scholarshipPercentage >= 60).length;
+        const avgPercentage =
+          eligibleCount > 0
+            ? Number(
+                (
+                  studentList.reduce((acc: number, s: any) => acc + s.scholarshipPercentage, 0) /
+                  eligibleCount
+                ).toFixed(1)
+              )
+            : 0.0;
+
+        return (
+          <div className="space-y-6">
+            {/* KPI Metrics Ribbon */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs">
+                <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">
+                  Total Active Students
+                </span>
+                <span className="text-2xl font-black font-heading text-slate-900 mt-1 block">
+                  {totalStudentsCount}
+                </span>
+                <span className="text-[10px] text-slate-500 block mt-0.5">Enrolled Roster</span>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200/80 shadow-xs">
+                <span className="text-[10px] uppercase font-bold text-emerald-800 block tracking-wider">
+                  Scholarship Eligible
+                </span>
+                <span className="text-2xl font-black font-heading text-emerald-700 mt-1 block">
+                  {eligibleCount}
+                </span>
+                <span className="text-[10px] text-emerald-700 block mt-0.5">
+                  {totalStudentsCount > 0
+                    ? `${Math.round((eligibleCount / totalStudentsCount) * 100)}% of Student Body`
+                    : "CGPA ≥ 3.50"}
+                </span>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200/80 shadow-xs">
+                <span className="text-[10px] uppercase font-bold text-amber-800 block tracking-wider">
+                  High Honors (60%–85%)
+                </span>
+                <span className="text-2xl font-black font-heading text-amber-700 mt-1 block">
+                  {topTierCount}
+                </span>
+                <span className="text-[10px] text-amber-700 block mt-0.5">Presidential & Chancellor</span>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-blue-50/70 border border-blue-200/80 shadow-xs">
+                <span className="text-[10px] uppercase font-bold text-blue-800 block tracking-wider">
+                  Average Awarded Discount
+                </span>
+                <span className="text-2xl font-black font-heading text-blue-700 mt-1 block">
+                  {avgPercentage}%
+                </span>
+                <span className="text-[10px] text-blue-700 block mt-0.5">Across Eligible Recipients</span>
+              </div>
+            </div>
+
+            {/* Filter & Search Toolbar */}
+            <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex flex-col md:flex-row gap-3 items-center justify-between">
+              <div className="relative w-full md:w-80">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Search student, Academic ID, program..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-iqra-blue-500/20"
+                />
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="text-slate-400 font-medium">Tier Filter:</span>
+                  <select
+                    value={scholarshipTierFilter}
+                    onChange={(e) => setScholarshipTierFilter(e.target.value)}
+                    className="py-1.5 px-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 focus:outline-none"
+                  >
+                    <option value="All">All Tiers ({studentList.length})</option>
+                    <option value="Eligible">All Eligible (CGPA ≥ 3.50)</option>
+                    <option value="85">4.00 → 85% Platinum</option>
+                    <option value="60">3.90–3.95 → 60% Gold</option>
+                    <option value="40">3.75–3.89 → 40% Silver</option>
+                    <option value="20">3.50–3.74 → 20% Bronze</option>
+                    <option value="Ineligible">Not Eligible (&lt; 3.50)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Master Institutional Scholarships Ledger */}
+            <div className="bg-white rounded-3xl border border-slate-200/90 p-6 shadow-xs space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div>
+                  <h3 className="text-sm font-black font-heading text-slate-900 uppercase tracking-wider">
+                    Official Student Merit Scholarships Ledger ({filteredScholarships.length})
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Calculated strictly from official published semester results in the university database.
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => window.print()}
+                  className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Print Ledger</span>
+                </button>
+              </div>
+
+              {filteredScholarships.length === 0 ? (
+                <div className="p-10 text-center text-slate-400 text-xs bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                  <GraduationCap className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                  <p className="font-bold text-slate-600">No student records match this filter query.</p>
+                  <p className="text-[11px] text-slate-400">Try adjusting your search keywords or tier filter dropdown.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto rounded-2xl border border-slate-200">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-slate-50 text-[10px] uppercase font-black text-slate-500 border-b border-slate-200">
+                      <tr>
+                        <th className="py-3 px-4">Student</th>
+                        <th className="py-3 px-4">Academic ID</th>
+                        <th className="py-3 px-4">Department / Program</th>
+                        <th className="py-3 px-3 text-center">CGPA</th>
+                        <th className="py-3 px-4 text-center">Scholarship %</th>
+                        <th className="py-3 px-4 text-center">Eligibility Status</th>
+                        <th className="py-3 px-4">Scholarship Tier & Criteria</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 font-medium">
+                      {filteredScholarships.map((s: any) => {
+                        const isEligible = s.scholarshipPercentage > 0;
+                        const cgpaFormatted = typeof s.cgpa === "number" ? s.cgpa.toFixed(2) : Number(s.cgpa || 0).toFixed(2);
+
+                        return (
+                          <tr key={s.id || s.academicId} className="hover:bg-slate-50/60 transition-colors">
+                            {/* 1. Student */}
+                            <td className="py-3 px-4">
+                              <div className="flex items-center gap-2.5">
+                                <div className="w-8 h-8 rounded-full bg-[#0b1f3a] text-white flex items-center justify-center font-bold text-xs shrink-0">
+                                  {s.student.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                  <span className="font-bold text-slate-900 block">{s.student}</span>
+                                  <span className="text-[10px] text-slate-400 block truncate max-w-[170px]">
+                                    {s.email}
+                                  </span>
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* 2. Academic ID */}
+                            <td className="py-3 px-4 font-mono font-bold text-slate-700">
+                              {s.academicId}
+                            </td>
+
+                            {/* 3. Department / Program */}
+                            <td className="py-3 px-4">
+                              <span className="font-bold text-slate-800 block text-[11px]">{s.program}</span>
+                              <span className="text-[10px] text-slate-500 block truncate max-w-[190px]">
+                                {s.department}
+                              </span>
+                            </td>
+
+                            {/* 4. CGPA */}
+                            <td className="py-3 px-3 text-center">
+                              <span
+                                className={`inline-block px-2.5 py-1 rounded-lg font-mono font-black text-xs ${
+                                  isEligible
+                                    ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                                    : "bg-slate-100 text-slate-700"
+                                }`}
+                              >
+                                {cgpaFormatted}
+                              </span>
+                            </td>
+
+                            {/* 5. Scholarship Percentage */}
+                            <td className="py-3 px-4 text-center">
+                              {isEligible ? (
+                                <span
+                                  className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black shadow-2xs ${
+                                    s.scholarshipPercentage === 85
+                                      ? "bg-emerald-100 text-emerald-900 border border-emerald-300"
+                                      : s.scholarshipPercentage === 60
+                                      ? "bg-amber-100 text-amber-900 border border-amber-300"
+                                      : s.scholarshipPercentage === 40
+                                      ? "bg-sky-100 text-sky-900 border border-sky-300"
+                                      : "bg-indigo-100 text-indigo-900 border border-indigo-300"
+                                  }`}
+                                >
+                                  <Percent className="w-3 h-3 shrink-0" />
+                                  <span>{s.scholarshipPercentage}% Support</span>
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold text-slate-400 bg-slate-100">
+                                  0%
+                                </span>
+                              )}
+                            </td>
+
+                            {/* 6. Eligibility Status */}
+                            <td className="py-3 px-4 text-center">
+                              {isEligible ? (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                  <span>Eligible</span>
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                                  <XCircle className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                  <span>Not Eligible</span>
+                                </span>
+                              )}
+                            </td>
+
+                            {/* 7. Scholarship Tier & Criteria */}
+                            <td className="py-3 px-4">
+                              <span className="font-bold text-slate-900 block text-xs">
+                                {s.tier}
+                              </span>
+                              <span className="text-[10px] text-slate-500 block leading-tight mt-0.5">
+                                {s.explanation}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 };

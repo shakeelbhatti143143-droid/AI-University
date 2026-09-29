@@ -7,6 +7,7 @@ import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { isConvexConfigured } from "@/lib/convex";
 import { CampusEditorialGallery } from "@/components/explore/CampusEditorialGallery";
+import { ScholarshipsSection } from "@/components/explore/ScholarshipsSection";
 import {
   Compass,
   GraduationCap,
@@ -47,6 +48,70 @@ interface PublishedVideo {
   displayOrder: number;
   createdAt: number;
 }
+
+// Baseline Featured Degree Programs for authoritative academic preview
+const DEFAULT_FEATURED_PROGRAMS = [
+  {
+    _id: "bsai",
+    code: "BSAI",
+    name: "Bachelor of Science in Artificial Intelligence",
+    degreeLevel: "Undergraduate",
+    duration: "4 Years (8 Semesters)",
+    totalCreditHours: 134,
+    department: "Department of Computing & Artificial Intelligence",
+    description: "Deep learning, neural architectures, computer vision, and cognitive systems calibrated for modern technological frontiers.",
+  },
+  {
+    _id: "bsse",
+    code: "BSSE",
+    name: "Bachelor of Science in Software Engineering",
+    degreeLevel: "Undergraduate",
+    duration: "4 Years (8 Semesters)",
+    totalCreditHours: 134,
+    department: "Department of Software Engineering",
+    description: "Enterprise application architectures, cloud native microservices, CI/CD pipelines, and high-reliability software systems.",
+  },
+  {
+    _id: "bscy",
+    code: "BSCY",
+    name: "Bachelor of Science in Cyber Security",
+    degreeLevel: "Undergraduate",
+    duration: "4 Years (8 Semesters)",
+    totalCreditHours: 134,
+    department: "Department of Cyber Security",
+    description: "Threat vector intelligence, ethical penetration testing, network forensics, cryptography, and mission-critical cloud defense.",
+  },
+  {
+    _id: "bscs",
+    code: "BSCS",
+    name: "Bachelor of Science in Computer Science",
+    degreeLevel: "Undergraduate",
+    duration: "4 Years (8 Semesters)",
+    totalCreditHours: 134,
+    department: "Department of Computing & Artificial Intelligence",
+    description: "Algorithmic computation, operating systems design, database systems, distributed computing, and artificial intelligence.",
+  },
+  {
+    _id: "fcasu",
+    code: "FCASU",
+    name: "BS Artificial Intelligence & Autonomous Systems",
+    degreeLevel: "Undergraduate",
+    duration: "4 Years (8 Semesters)",
+    totalCreditHours: 134,
+    department: "Department of Computing & Artificial Intelligence",
+    description: "Robotics automation, sensor fusion, autonomous decision pipelines, and edge-AI machine learning models.",
+  },
+  {
+    _id: "bba",
+    code: "BBA",
+    name: "Bachelor of Business Administration",
+    degreeLevel: "Undergraduate",
+    duration: "4 Years (8 Semesters)",
+    totalCreditHours: 134,
+    department: "Department of Management Sciences",
+    description: "Strategic executive leadership, quantitative fintech analytics, international business governance, and digital enterprise scaling.",
+  },
+];
 
 export default function ExploreUniversityPage() {
   // Modal states
@@ -100,8 +165,8 @@ export default function ExploreUniversityPage() {
     api.website.getGalleryImages,
     isConvexConfigured
       ? {
-          category: selectedGalleryCategory === "All" ? undefined : selectedGalleryCategory,
-        }
+        category: selectedGalleryCategory === "All" ? undefined : selectedGalleryCategory,
+      }
       : "skip"
   );
   const galleryList = galleryImages || [];
@@ -111,6 +176,10 @@ export default function ExploreUniversityPage() {
     api.website.getPublicAcademicPrograms,
     isConvexConfigured ? {} : "skip"
   );
+  const displayPrograms =
+    programs && programs.length > 0
+      ? programs.slice(0, 6)
+      : DEFAULT_FEATURED_PROGRAMS;
 
   // Campus location
   const location = useQuery(
@@ -141,7 +210,7 @@ export default function ExploreUniversityPage() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         if (isVideoFullscreen && document.fullscreenElement) {
-          document.exitFullscreen().catch(() => {});
+          document.exitFullscreen().catch(() => { });
         } else if (activeVideo) {
           setActiveVideo(null);
         } else if (selectedAnnouncement) {
@@ -258,6 +327,14 @@ export default function ExploreUniversityPage() {
               </a>
             )}
 
+            <a
+              href="#scholarships"
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-xs sm:text-sm font-bold text-white bg-emerald-500/20 hover:bg-emerald-500/30 active:scale-[0.98] border border-emerald-400/40 backdrop-blur-md transition-all shadow-sm"
+            >
+              <Award className="w-4 h-4 text-emerald-400" />
+              <span>Scholarships</span>
+            </a>
+
             <Link
               href="/apply"
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-xs sm:text-sm font-bold text-white bg-[#0b1f3a] hover:bg-[#122b4e] active:scale-[0.98] border border-white/20 transition-all shadow-md ml-auto sm:ml-0"
@@ -303,78 +380,150 @@ export default function ExploreUniversityPage() {
 
           {/* Right Column: Distinctive Vision & Mission Statement Cards */}
           <div className="lg:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <div className="p-6 sm:p-7 rounded-3xl bg-white border border-slate-200/90 shadow-xs space-y-3 hover:border-[#0b1f3a]/30 transition-all">
-              <div className="w-10 h-10 rounded-xl bg-[#f0f4fa] border border-[#0b1f3a]/15 text-[#0b1f3a] flex items-center justify-center">
-                <Award className="w-5 h-5 text-[#0b1f3a]" />
+            {/* Card 1: Institutional Vision */}
+            <div className="relative overflow-hidden p-6 sm:p-7 rounded-3xl bg-slate-950 border border-slate-200/20 shadow-md hover:border-slate-300/40 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 group">
+              <div
+                className="absolute inset-0 bg-cover bg-center transition-transform duration-500 ease-out will-change-transform group-hover:scale-[1.02] pointer-events-none grayscale-[25%]"
+                style={{
+                  backgroundImage: "url('/images/card-institutional-vision.png')",
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/55 to-black/35 group-hover:from-black/75 group-hover:via-black/45 group-hover:to-black/25 backdrop-blur-[0.5px] transition-colors duration-300 pointer-events-none" />
+              <div className="relative z-10 space-y-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-500/25 border border-blue-400/40">
+                  <Award className="w-5 h-5 text-white" />
+                </div>
+                <h3 className="font-heading font-black text-base text-white uppercase tracking-wider drop-shadow-[0_1px_2px_rgba(0,0,0,0.85)]">
+                  Institutional Vision
+                </h3>
+                <p className="text-xs sm:text-sm text-white leading-relaxed drop-shadow-[0_1px_2px_rgba(0,0,0,0.85)]">
+                  {profile?.vision ||
+                    "To be an internationally recognized center of academic excellence and research that equips future generations with cutting-edge artificial intelligence, technological proficiency, entrepreneurial spirit, and human-centric values."}
+                </p>
               </div>
-              <h3 className="font-heading font-black text-base text-slate-900 uppercase tracking-wider">
-                Institutional Vision
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                {profile?.vision ||
-                  "To be an internationally recognized center of academic excellence and research that equips future generations with cutting-edge artificial intelligence, technological proficiency, entrepreneurial spirit, and human-centric values."}
-              </p>
             </div>
 
-            <div className="p-6 sm:p-7 rounded-3xl bg-white border border-slate-200/90 shadow-xs space-y-3 hover:border-[#0b1f3a]/30 transition-all">
-              <div className="w-10 h-10 rounded-xl bg-[#f0f4fa] border border-[#0b1f3a]/15 text-[#0b1f3a] flex items-center justify-center">
-                <CheckCircle2 className="w-5 h-5 text-[#0b1f3a]" />
+            {/* Card 2: Our Mission */}
+            <div className="relative overflow-hidden p-6 sm:p-7 rounded-3xl bg-slate-950 border border-slate-200/20 shadow-md hover:border-slate-300/40 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 group">
+              <div
+                className="absolute inset-0 bg-cover bg-center transition-transform duration-500 ease-out will-change-transform group-hover:scale-[1.02] pointer-events-none grayscale-[25%]"
+                style={{
+                  backgroundImage: "url('/images/card-our-mission.png')",
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/55 to-black/35 group-hover:from-black/75 group-hover:via-black/45 group-hover:to-black/25 backdrop-blur-[0.5px] transition-colors duration-300 pointer-events-none" />
+              <div className="relative z-10 space-y-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-500/25 border border-emerald-400/40">
+                  <CheckCircle2 className="w-5 h-5 text-white" />
+                </div>
+                <h3 className="font-heading font-black text-base text-white uppercase tracking-wider drop-shadow-[0_1px_2px_rgba(0,0,0,0.85)]">
+                  Our Mission
+                </h3>
+                <p className="text-xs sm:text-sm text-white leading-relaxed drop-shadow-[0_1px_2px_rgba(0,0,0,0.85)]">
+                  {profile?.mission ||
+                    "To impart state-of-the-art education, foster ground-breaking scientific and technological research, and nurture ethical leaders capable of navigating complex global challenges through critical thinking, interdisciplinary innovation, and public service."}
+                </p>
               </div>
-              <h3 className="font-heading font-black text-base text-slate-900 uppercase tracking-wider">
-                Our Mission
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                {profile?.mission ||
-                  "To impart state-of-the-art education, foster ground-breaking scientific and technological research, and nurture ethical leaders capable of navigating complex global challenges through critical thinking, interdisciplinary innovation, and public service."}
-              </p>
             </div>
           </div>
         </div>
 
-        {/* Live Institutional Metrics (Unified Iqra Navy Palette) */}
+        {/* Live Institutional Metrics (Slide Background Cards with High-Contrast Overlays) */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 pt-4">
-          <div className="p-5 sm:p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs hover:shadow-md hover:border-[#0b1f3a]/40 transition-all space-y-1">
-            <div className="flex items-center gap-2 text-[#0b1f3a] font-bold text-xs uppercase tracking-wider">
-              <Building2 className="w-4 h-4" />
-              <span>Departments</span>
+          {/* 1st: Departments */}
+          <div className="relative overflow-hidden p-5 sm:p-6 rounded-2xl bg-slate-950 border border-white/20 hover:border-white/50 shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
+            <div
+              className="absolute inset-0 bg-cover bg-center transition-transform duration-500 ease-out will-change-transform group-hover:scale-105 pointer-events-none"
+              style={{
+                backgroundImage: "url('/images/departments-bg.png')",
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/75 to-slate-900/65 group-hover:from-slate-950/85 group-hover:via-slate-950/65 group-hover:to-slate-900/50 transition-colors duration-300 pointer-events-none" />
+            <div className="relative z-10 space-y-1.5">
+              <div className="flex items-center gap-2 text-white font-bold text-xs uppercase tracking-wider drop-shadow-sm">
+                <Building2 className="w-4 h-4 text-white" />
+                <span>Departments</span>
+              </div>
+              <div className="text-2xl sm:text-3xl lg:text-4xl font-black font-heading text-white drop-shadow-md tracking-tight">
+                {stats !== undefined ? stats.departmentsCount : "—"}
+              </div>
+              <p className="text-[11px] sm:text-xs text-white/90 font-medium drop-shadow-sm">Active Academic Departments</p>
             </div>
-            <div className="text-2xl sm:text-3xl lg:text-4xl font-black font-heading text-slate-900">
-              {stats !== undefined ? stats.departmentsCount : "—"}
-            </div>
-            <p className="text-[11px] text-slate-500">Active Academic Departments</p>
           </div>
 
-          <div className="p-5 sm:p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs hover:shadow-md hover:border-[#0b1f3a]/40 transition-all space-y-1">
-            <div className="flex items-center gap-2 text-[#0b1f3a] font-bold text-xs uppercase tracking-wider">
-              <GraduationCap className="w-4 h-4" />
-              <span>Degree Programs</span>
+          {/* 2nd: Degree Programs */}
+          <div className="relative overflow-hidden p-5 sm:p-6 rounded-2xl bg-slate-950 border border-white/20 hover:border-white/50 shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
+            <div
+              className="absolute inset-0 bg-cover bg-center transition-transform duration-500 ease-out will-change-transform group-hover:scale-105 pointer-events-none"
+              style={{
+                backgroundImage: "url('/images/programs-bg.png')",
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/75 to-slate-900/65 group-hover:from-slate-950/85 group-hover:via-slate-950/65 group-hover:to-slate-900/50 transition-colors duration-300 pointer-events-none" />
+            <div className="relative z-10 space-y-1.5">
+              <div className="flex items-center gap-2 text-white font-bold text-xs uppercase tracking-wider drop-shadow-sm">
+                <GraduationCap className="w-4 h-4 text-white" />
+                <span>Degree Programs</span>
+              </div>
+              <div className="text-2xl sm:text-3xl lg:text-4xl font-black font-heading text-white drop-shadow-md tracking-tight">
+                {stats !== undefined ? stats.programsCount : "—"}
+              </div>
+              <p className="text-[11px] sm:text-xs text-white/90 font-medium drop-shadow-sm">BS, MS, and PhD Programs</p>
             </div>
-            <div className="text-2xl sm:text-3xl lg:text-4xl font-black font-heading text-slate-900">
-              {stats !== undefined ? stats.programsCount : "—"}
-            </div>
-            <p className="text-[11px] text-slate-500">BS, MS, and PhD Programs</p>
           </div>
 
-          <div className="p-5 sm:p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs hover:shadow-md hover:border-[#0b1f3a]/40 transition-all space-y-1">
-            <div className="flex items-center gap-2 text-[#0b1f3a] font-bold text-xs uppercase tracking-wider">
-              <Users className="w-4 h-4" />
-              <span>Distinguished Faculty</span>
+          {/* 3rd: Accreditation (HEC W4) */}
+          <div className="relative overflow-hidden p-5 sm:p-6 rounded-2xl bg-slate-950 border border-white/20 hover:border-white/50 shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
+            <div
+              className="absolute inset-0 bg-cover bg-center transition-transform duration-500 ease-out will-change-transform group-hover:scale-105 pointer-events-none"
+              style={{
+                backgroundImage: "url('/images/hec-w4-bg.png')",
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/75 to-slate-900/65 group-hover:from-slate-950/85 group-hover:via-slate-950/65 group-hover:to-slate-900/50 transition-colors duration-300 pointer-events-none" />
+            <div className="relative z-10 space-y-1.5">
+              <div className="flex items-center gap-2 text-white font-bold text-xs uppercase tracking-wider drop-shadow-sm">
+                <ShieldCheck className="w-4 h-4 text-white" />
+                <span>Accreditation</span>
+              </div>
+              <div className="text-2xl sm:text-3xl lg:text-4xl font-black font-heading text-white drop-shadow-md tracking-tight">
+                HEC W4
+              </div>
+              <p className="text-[11px] sm:text-xs text-white/90 font-medium drop-shadow-sm">Federal Chartered Status</p>
             </div>
-            <div className="text-2xl sm:text-3xl lg:text-4xl font-black font-heading text-slate-900">
-              {stats !== undefined ? stats.facultyCount : "—"}
-            </div>
-            <p className="text-[11px] text-slate-500">Active Professors & Researchers</p>
           </div>
 
-          <div className="p-5 sm:p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs hover:shadow-md hover:border-[#0b1f3a]/40 transition-all space-y-1">
-            <div className="flex items-center gap-2 text-[#0b1f3a] font-bold text-xs uppercase tracking-wider">
-              <ShieldCheck className="w-4 h-4" />
-              <span>Accreditation</span>
+          {/* 4th: Distinguished Faculty */}
+          <div className="relative overflow-hidden p-5 sm:p-6 rounded-2xl bg-slate-950 border border-white/20 hover:border-white/50 shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
+            <div
+              className="absolute inset-0 bg-cover bg-center transition-transform duration-500 ease-out will-change-transform group-hover:scale-105 pointer-events-none"
+              style={{
+                backgroundImage: "url('/images/faculty-bg.png')",
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/75 to-slate-900/65 group-hover:from-slate-950/85 group-hover:via-slate-950/65 group-hover:to-slate-900/50 transition-colors duration-300 pointer-events-none" />
+            <div className="relative z-10 space-y-1.5">
+              <div className="flex items-center gap-2 text-white font-bold text-xs uppercase tracking-wider drop-shadow-sm">
+                <Users className="w-4 h-4 text-white" />
+                <span>Distinguished Faculty</span>
+              </div>
+              <div className="text-2xl sm:text-3xl lg:text-4xl font-black font-heading text-white drop-shadow-md tracking-tight">
+                {stats !== undefined ? stats.facultyCount : "—"}
+              </div>
+              <p className="text-[11px] sm:text-xs text-white/90 font-medium drop-shadow-sm">Active Professors & Researchers</p>
             </div>
-            <div className="text-2xl sm:text-3xl lg:text-4xl font-black font-heading text-slate-900">
-              HEC W4
-            </div>
-            <p className="text-[11px] text-slate-500">Federal Chartered Status</p>
           </div>
         </div>
       </section>
@@ -416,61 +565,63 @@ export default function ExploreUniversityPage() {
           </Link>
         </div>
 
-        {programs && programs.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {programs.slice(0, 6).map((prog) => (
-              <div
-                key={prog._id}
-                className="group p-6 rounded-2xl bg-white hover:bg-slate-50/70 border border-slate-200/90 hover:border-[#0b1f3a]/40 transition-all duration-300 flex flex-col justify-between shadow-xs hover:shadow-md"
-              >
-                <div className="space-y-2.5">
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="px-2.5 py-0.5 rounded-full bg-[#f0f4fa] text-[#0b1f3a] border border-[#0b1f3a]/20 font-bold">
-                      {prog.degreeLevel}
-                    </span>
-                    <span className="text-slate-500 font-mono text-[11px]">{prog.code}</span>
-                  </div>
-
-                  <h3 className="font-heading font-black text-lg text-slate-900 group-hover:text-[#0b1f3a] transition-colors">
-                    {prog.name}
-                  </h3>
-
-                  <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
-                    {prog.description || `Offered by ${prog.department}. Total credit hours: ${prog.totalCreditHours}.`}
-                  </p>
-
-                  <div className="pt-2 text-xs text-slate-500 flex items-center justify-between">
-                    <span>Duration: <strong className="text-slate-700">{prog.duration}</strong></span>
-                    <span>{prog.totalCreditHours} Credit Hours</span>
-                  </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {displayPrograms.map((prog) => (
+            <div
+              key={prog._id}
+              className="group p-6 sm:p-7 rounded-2xl bg-white border border-slate-200/80 hover:border-slate-300 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_1px_2px_rgba(0,0,0,0.02)] hover:shadow-[0_12px_28px_-6px_rgba(15,23,42,0.08),0_4px_8px_-4px_rgba(15,23,42,0.03)] hover:-translate-y-1 transition-all duration-300 ease-out flex flex-col justify-between"
+            >
+              <div>
+                {/* Top Row: Program Level Badge + Program Code */}
+                <div className="flex items-center justify-between">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-slate-100 border border-slate-200/90 text-[11px] font-semibold text-slate-700 tracking-wide">
+                    {prog.degreeLevel}
+                  </span>
+                  <span className="font-mono text-xs font-semibold text-slate-400 tracking-wider uppercase">
+                    {prog.code}
+                  </span>
                 </div>
 
-                <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-xs">
-                  <Link
-                    href={`/explore/programs/${prog._id}`}
-                    className="font-semibold text-[#0b1f3a] hover:text-[#122b4e] transition-colors"
-                  >
-                    Program Details
-                  </Link>
-                  <Link
-                    href="/apply"
-                    className="font-bold text-slate-900 hover:text-[#0b1f3a] flex items-center gap-1 group-hover:translate-x-0.5 transition-transform"
-                  >
-                    Apply Now <ArrowRight className="w-3.5 h-3.5" />
-                  </Link>
+                {/* Program Title */}
+                <h3 className="font-heading font-bold text-lg sm:text-[19px] text-slate-900 tracking-[-0.015em] leading-snug group-hover:text-[#0b1f3a] transition-colors duration-200 mt-4 mb-2.5">
+                  {prog.name}
+                </h3>
+
+                {/* Program Description */}
+                <p className="text-xs sm:text-[13px] text-slate-500 line-clamp-2 leading-relaxed mb-5">
+                  {prog.description || `Offered by ${prog.department}. Total credit hours: ${prog.totalCreditHours}.`}
+                </p>
+
+                {/* Duration & Credit Hours */}
+                <div className="flex items-center justify-between text-xs text-slate-500 pt-1">
+                  <span className="font-normal text-slate-500">
+                    Duration: <span className="font-semibold text-slate-700">{prog.duration}</span>
+                  </span>
+                  <span className="font-semibold text-slate-700">
+                    {prog.totalCreditHours} <span className="font-normal text-slate-500">Credit Hours</span>
+                  </span>
                 </div>
               </div>
-            ))}
-          </div>
-        ) : (
-          <div className="p-8 rounded-2xl bg-white border border-slate-200 text-center space-y-2">
-            <GraduationCap className="w-8 h-8 text-slate-400 mx-auto" />
-            <p className="text-sm font-semibold text-slate-900">Academic Programs Under Update</p>
-            <p className="text-xs text-slate-500">
-              Degree programs configured by administration will appear here dynamically.
-            </p>
-          </div>
-        )}
+
+              {/* Bottom Action Area */}
+              <div className="pt-4 mt-5 border-t border-slate-100 flex items-center justify-between text-xs">
+                <Link
+                  href={`/explore/programs/${prog._id}`}
+                  className="font-semibold text-slate-600 hover:text-[#0b1f3a] transition-colors"
+                >
+                  Program Details
+                </Link>
+                <Link
+                  href="/apply"
+                  className="font-bold text-slate-900 hover:text-[#0b1f3a] inline-flex items-center gap-1.5 transition-colors group/apply"
+                >
+                  <span>Apply Now</span>
+                  <ArrowRight className="w-3.5 h-3.5 text-slate-500 group-hover/apply:text-[#0b1f3a] group-hover/apply:translate-x-1 transition-all duration-200" />
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
       </section>
 
       {/* ===================================================================== */}
@@ -806,7 +957,12 @@ export default function ExploreUniversityPage() {
       </section>
 
       {/* ===================================================================== */}
-      {/* 8. CAMPUS MAP & DIRECTIONS PREVIEW */}
+      {/* 8. MERIT SCHOLARSHIPS SECTION */}
+      {/* ===================================================================== */}
+      <ScholarshipsSection id="scholarships" />
+
+      {/* ===================================================================== */}
+      {/* 9. CAMPUS MAP & DIRECTIONS PREVIEW */}
       {/* ===================================================================== */}
       <section className="w-full max-w-[1600px] mx-auto py-16 sm:py-20 px-4 sm:px-8 lg:px-16 space-y-6">
         <div className="p-6 sm:p-10 rounded-3xl bg-white border border-slate-200/90 shadow-sm space-y-6">

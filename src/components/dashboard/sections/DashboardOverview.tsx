@@ -21,6 +21,7 @@ import {
   ChevronRight,
   ShieldCheck,
   ExternalLink,
+  User,
 } from "lucide-react";
 import {
   StudentProfile,
@@ -60,53 +61,152 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
     courses.reduce((acc, c) => acc + c.attendancePercentage, 0) / (courses.length || 1)
   ).toFixed(1);
 
+  const getInitials = (nameStr?: string) => {
+    if (!nameStr) return "ST";
+    return nameStr
+      .split(" ")
+      .filter(Boolean)
+      .map((n) => n[0])
+      .slice(0, 2)
+      .join("")
+      .toUpperCase();
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* ========================================================================= */}
-      {/* 1. WELCOME BANNER WITH STUDENT NAME, SEMESTER & ACADEMIC SESSION */}
+      {/* 1. DYNAMIC STUDENT HERO BANNER WITH CIRCULAR AVATAR & ACADEMIC INFO */}
       {/* ========================================================================= */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#050e1d] via-[#0a192f] to-[#0f274a] text-white p-6 sm:p-8 shadow-xl shadow-slate-900/10 border border-slate-800">
-        {/* Decorative background glows */}
-        <div className="absolute -right-16 -top-16 w-64 h-64 rounded-full bg-blue-600/15 blur-3xl pointer-events-none" />
-        <div className="absolute right-1/3 -bottom-16 w-52 h-52 rounded-full bg-amber-500/10 blur-3xl pointer-events-none" />
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#050e1d] via-[#0a192f] to-[#0f274a] text-white p-6 sm:p-8 shadow-2xl border border-white/10 ring-1 ring-cyan-500/20"
+      >
+        {/* Animated Iridescent Top Hairline */}
+        <div className="absolute top-0 inset-x-0 h-[2.5px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent opacity-90 animate-pulse" />
 
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-xs font-semibold text-blue-200">
-              <Sparkles className="w-3.5 h-3.5 text-iqra-gold-400" />
-              <span>Iqra University Chak Shehzad Portal</span>
-              <span className="text-white/40">•</span>
-              <span className="text-iqra-gold-300 font-bold">{profile.academicSession}</span>
+        {/* Ambient Subtle Cyber Geometric Mesh Grid */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#38bdf80a_1px,transparent_1px),linear-gradient(to_bottom,#38bdf80a_1px,transparent_1px)] bg-[size:28px_28px] pointer-events-none opacity-40" />
+
+        {/* Animated Aurora Glow Orbs */}
+        <motion.div
+          animate={{ scale: [1, 1.2, 1], x: [0, 20, 0], y: [0, -15, 0] }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute -right-16 -top-16 w-80 h-80 rounded-full bg-cyan-500/15 blur-3xl pointer-events-none"
+        />
+        <motion.div
+          animate={{ scale: [1.15, 1, 1.15], x: [0, -25, 0], y: [0, 15, 0] }}
+          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute right-1/3 -bottom-16 w-72 h-72 rounded-full bg-blue-600/20 blur-3xl pointer-events-none"
+        />
+
+        <div className="relative z-10 flex flex-col xl:flex-row xl:items-center justify-between gap-6">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-5 sm:gap-6">
+            {/* CIRCULAR PROFILE IMAGE WITH ROTATING HALO */}
+            <div className="relative group shrink-0">
+              <div className="absolute -inset-1 rounded-full bg-gradient-to-tr from-cyan-400 via-blue-500 to-indigo-500 opacity-75 blur-md group-hover:opacity-100 transition-opacity duration-500 animate-pulse" />
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                className="absolute -inset-0.5 rounded-full bg-gradient-to-tr from-cyan-400 via-transparent to-indigo-400 opacity-90"
+              />
+              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full p-[3px] bg-gradient-to-tr from-cyan-400 via-blue-500 to-indigo-600 shadow-2xl ring-4 ring-[#050e1d] overflow-hidden relative">
+                {profile.avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={profile.avatarUrl}
+                    alt={profile.name}
+                    className="w-full h-full object-cover rounded-full transition-transform duration-300 group-hover:scale-105"
+                  />
+                ) : (
+                  <div className="w-full h-full rounded-full bg-gradient-to-br from-[#071326] to-[#0d2347] flex items-center justify-center text-cyan-300 font-black text-xl sm:text-2xl tracking-wider">
+                    {getInitials(profile.name)}
+                  </div>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => onNavigateTab("profile")}
+                title="View Student Profile"
+                className="absolute -bottom-1 -right-1 p-1.5 rounded-full bg-cyan-400 hover:bg-cyan-300 text-slate-950 shadow-md transition-all border-2 border-[#0a192f] hover:scale-110 cursor-pointer"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+              </button>
             </div>
 
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black font-heading tracking-tight text-white">
-              Welcome back,{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-blue-200 to-iqra-gold-400">
-                {profile.name}
-              </span>
-            </h2>
+            {/* DYNAMIC STUDENT PROFILE INFORMATION */}
+            <div className="space-y-2 min-w-0">
+              <div className="inline-flex flex-wrap items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-[11px] font-semibold text-cyan-200 shadow-2xs">
+                <Sparkles className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
+                <span>OFFICIAL ENROLLED STUDENT</span>
+                <span className="text-white/40">•</span>
+                <span className="font-mono text-cyan-300 font-bold">{profile.studentId}</span>
+                <span className="text-white/40">•</span>
+                <span className="text-emerald-400 font-medium flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  {profile.academicSession || "Active Session"}
+                </span>
+              </div>
 
-            <p className="text-xs sm:text-sm text-slate-300 max-w-2xl font-normal leading-relaxed">
-              {profile.program} • <span className="font-semibold text-white">{profile.currentSemester}</span> (Roll:{" "}
-              <span className="font-mono text-blue-300">{profile.studentId}</span>)
-            </p>
+              <h2 className="text-2xl sm:text-3xl font-black font-heading tracking-tight text-white">
+                Welcome back,{" "}
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-100 to-cyan-300">
+                  {profile.name}
+                </span>
+                !
+              </h2>
 
-            <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-medium">
-                <ShieldCheck className="w-3.5 h-3.5" />
-                {profile.status} Enrolled
-              </span>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-500/15 border border-blue-500/30 text-blue-300 font-medium">
-                <Building2 className="w-3.5 h-3.5" />
-                Chak Shehzad Campus, Islamabad
-              </span>
+              <div className="flex flex-wrap items-center gap-2 text-xs text-slate-300 font-medium">
+                <span className="px-2.5 py-0.5 rounded-lg bg-white/[0.06] border border-white/10 text-white font-semibold">{profile.program}</span>
+                <span className="px-2.5 py-0.5 rounded-lg bg-white/[0.06] border border-white/10 text-cyan-300">{profile.department || "Computing & Artificial Intelligence"}</span>
+                <span className="px-2.5 py-0.5 rounded-lg bg-white/[0.06] border border-white/10 text-slate-300">{profile.currentSemester}</span>
+                <span className="px-2.5 py-0.5 rounded-lg bg-white/[0.06] border border-white/10 text-slate-300">{profile.campus || "Chak Shehzad Campus, Islamabad"}</span>
+              </div>
+
+              {profile.bio && (
+                <p className="text-xs text-slate-300/90 italic line-clamp-2 max-w-2xl pt-0.5">
+                  &ldquo;{profile.bio}&rdquo;
+                </p>
+              )}
+
+              {/* ACTION SHORTCUT BUTTONS */}
+              <div className="flex flex-wrap items-center gap-2.5 pt-2 text-xs">
+                <motion.button
+                  whileHover={{ scale: 1.03, y: -1 }}
+                  whileTap={{ scale: 0.97 }}
+                  type="button"
+                  onClick={() => onNavigateTab("profile")}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-600 hover:from-cyan-300 hover:to-blue-500 text-slate-950 font-black shadow-md shadow-cyan-500/25 transition-all cursor-pointer"
+                >
+                  <User className="w-3.5 h-3.5" />
+                  <span>My Profile</span>
+                </motion.button>
+
+                <motion.button
+                  whileHover={{ scale: 1.03, y: -1 }}
+                  whileTap={{ scale: 0.97 }}
+                  type="button"
+                  onClick={() => onNavigateTab("registration")}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/15 border border-white/20 hover:border-cyan-400/40 text-white font-semibold transition-all cursor-pointer backdrop-blur-md"
+                >
+                  <BookOpen className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>Course Registration</span>
+                </motion.button>
+
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-medium">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                  {profile.status} Enrolled
+                </span>
+              </div>
             </div>
           </div>
 
           {/* Academic Standing Card Widget */}
           <div className="bg-white/10 backdrop-blur-md border border-white/15 p-4 rounded-2xl flex flex-col justify-between min-w-[220px]">
             <div className="flex items-center justify-between gap-2 text-xs text-slate-300 mb-2">
-              <span className="uppercase tracking-wider font-semibold text-[10px] text-blue-200">
+              <span className="uppercase tracking-wider font-semibold text-[10px] text-cyan-200">
                 Academic Standing
               </span>
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -116,142 +216,293 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             </div>
             <div className="mt-3 pt-3 border-t border-white/10 flex items-center justify-between text-xs">
               <span className="text-slate-300">Degree Progress</span>
-              <span className="font-bold text-iqra-gold-400">
-                {Math.round((profile.completedCreditHours / profile.totalCreditHours) * 100)}%
+              <span className="font-bold text-cyan-300">
+                {Math.round((profile.completedCreditHours / (profile.totalCreditHours || 134)) * 100)}%
               </span>
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* ========================================================================= */}
-      {/* 2. GPA/CGPA SUMMARY & CORE METRIC CARDS */}
+      {/* 2. GPA/CGPA SUMMARY & CORE METRIC CARDS - COMPACT LUXURY EXECUTIVE CARDS */}
       {/* ========================================================================= */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-3.5">
         {/* Card 1: CGPA & Semester GPA */}
         <motion.div
-          whileHover={{ y: -2 }}
-          transition={{ duration: 0.15 }}
+          whileHover={{ y: -2, transition: { duration: 0.15 } }}
           onClick={() => onNavigateTab("academics")}
-          className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition-all cursor-pointer group"
+          className="relative overflow-hidden rounded-2xl p-3.5 sm:p-4 bg-gradient-to-br from-white via-white to-blue-50/30 border border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.03),0_8px_16px_-6px_rgba(37,99,235,0.08)] hover:shadow-[0_6px_22px_-4px_rgba(37,99,235,0.16)] hover:border-blue-300 transition-all duration-200 group cursor-pointer flex flex-col justify-between"
         >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Cumulative CGPA
-            </span>
-            <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-iqra-blue-600 group-hover:scale-105 transition-transform">
-              <GraduationCap className="w-5 h-5" />
+          {/* Top Hairline Accent */}
+          <div className="absolute top-0 inset-x-0 h-[2.5px] bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-400 opacity-90 group-hover:h-1 transition-all duration-200" />
+          <div className="absolute -right-6 -top-6 w-20 h-20 bg-blue-500/10 rounded-full blur-xl pointer-events-none group-hover:scale-125 transition-transform duration-500" />
+
+          {/* Top Row: Micro-Pill Tag & Squircle Icon */}
+          <div className="relative z-10 flex items-center justify-between gap-2 mb-2">
+            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-blue-50/90 border border-blue-200/70 text-[9.5px] font-black uppercase tracking-wider text-blue-700">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+              <span>Academic Merit</span>
+            </div>
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-500 text-white shadow-xs shadow-blue-500/25 ring-1 ring-white/30 flex items-center justify-center group-hover:scale-105 group-hover:-rotate-3 transition-transform shrink-0">
+              <GraduationCap className="w-4 h-4" />
             </div>
           </div>
 
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-black font-heading text-slate-900">
-              {profile.cgpa.toFixed(2)}
+          {/* Middle Block: Label + Primary Stat */}
+          <div className="relative z-10 space-y-0.5">
+            <span className="text-[9.5px] font-extrabold uppercase tracking-widest text-slate-400 block truncate">
+              Cumulative CGPA
             </span>
-            <span className="text-xs text-slate-400 font-semibold">/ 4.00</span>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-2xl sm:text-[26px] font-black font-heading text-slate-900 tracking-tight leading-none group-hover:text-blue-950 transition-colors">
+                {profile.cgpa.toFixed(2)}
+              </span>
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+                / 4.00 Scale
+              </span>
+            </div>
           </div>
 
-          <div className="mt-2 flex items-center justify-between text-xs pt-2 border-t border-slate-100">
-            <span className="text-slate-500 font-medium">Current Semester GPA:</span>
-            <span className="font-bold text-emerald-600 flex items-center gap-1">
-              <TrendingUp className="w-3.5 h-3.5" />
-              {profile.currentGpa.toFixed(2)}
+          {/* Sub-Context Row */}
+          <div className="relative z-10 mt-2 flex items-center gap-1.5 text-[10.5px] text-slate-500 font-medium">
+            <span className="inline-flex items-center gap-1 text-[9.5px] font-bold text-emerald-700 bg-emerald-50/80 border border-emerald-200/70 px-1.5 py-0.5 rounded-md shrink-0">
+              <TrendingUp className="w-2.5 h-2.5 text-emerald-600" />
+              GPA {profile.currentGpa.toFixed(2)}
             </span>
+            <span className="text-slate-300">•</span>
+            <span className="truncate text-slate-600 font-semibold">
+              Current Semester
+            </span>
+          </div>
+
+          {/* Footer Action Row */}
+          <div className="relative z-10 mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[10.5px] font-bold text-slate-500 group-hover:text-blue-600 transition-colors">
+            <span className="truncate">View academic history</span>
+            <div className="w-5 h-5 rounded-full bg-slate-100 group-hover:bg-blue-600 text-slate-400 group-hover:text-white flex items-center justify-center transition-all duration-200 shrink-0">
+              <ArrowRight className="w-2.5 h-2.5 group-hover:translate-x-0.5 transition-transform" />
+            </div>
           </div>
         </motion.div>
 
         {/* Card 2: Total Registered Courses */}
         <motion.div
-          whileHover={{ y: -2 }}
-          transition={{ duration: 0.15 }}
+          whileHover={{ y: -2, transition: { duration: 0.15 } }}
           onClick={() => onNavigateTab("courses")}
-          className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition-all cursor-pointer group"
+          className="relative overflow-hidden rounded-2xl p-3.5 sm:p-4 bg-gradient-to-br from-white via-white to-emerald-50/30 border border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.03),0_8px_16px_-6px_rgba(16,185,129,0.08)] hover:shadow-[0_6px_22px_-4px_rgba(16,185,129,0.16)] hover:border-emerald-300 transition-all duration-200 group cursor-pointer flex flex-col justify-between"
         >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Registered Courses
-            </span>
-            <div className="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 group-hover:scale-105 transition-transform">
-              <BookOpen className="w-5 h-5" />
+          {/* Top Hairline Accent */}
+          <div className="absolute top-0 inset-x-0 h-[2.5px] bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-400 opacity-90 group-hover:h-1 transition-all duration-200" />
+          <div className="absolute -right-6 -top-6 w-20 h-20 bg-emerald-500/10 rounded-full blur-xl pointer-events-none group-hover:scale-125 transition-transform duration-500" />
+
+          {/* Top Row: Micro-Pill Tag & Squircle Icon */}
+          <div className="relative z-10 flex items-center justify-between gap-2 mb-2">
+            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50/90 border border-emerald-200/70 text-[9.5px] font-black uppercase tracking-wider text-emerald-700">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Current Term</span>
+            </div>
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-500 text-white shadow-xs shadow-emerald-500/25 ring-1 ring-white/30 flex items-center justify-center group-hover:scale-105 group-hover:-rotate-3 transition-transform shrink-0">
+              <BookOpen className="w-4 h-4" />
             </div>
           </div>
 
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-black font-heading text-slate-900">
-              {courses.length}
+          {/* Middle Block: Label + Primary Stat */}
+          <div className="relative z-10 space-y-0.5">
+            <span className="text-[9.5px] font-extrabold uppercase tracking-widest text-slate-400 block truncate">
+              Registered Courses
             </span>
-            <span className="text-xs text-slate-400 font-semibold">Subjects</span>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-2xl sm:text-[26px] font-black font-heading text-slate-900 tracking-tight leading-none group-hover:text-emerald-950 transition-colors">
+                {courses.length}
+              </span>
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
+                Subjects
+              </span>
+            </div>
           </div>
 
-          <div className="mt-2 flex items-center justify-between text-xs pt-2 border-t border-slate-100">
-            <span className="text-slate-500 font-medium">Enrolled Credit Hours:</span>
-            <span className="font-bold text-slate-800">
+          {/* Sub-Context Row */}
+          <div className="relative z-10 mt-2 flex items-center gap-1.5 text-[10.5px] text-slate-500 font-medium">
+            <span className="inline-flex items-center gap-1 text-[9.5px] font-bold text-emerald-700 bg-emerald-50/80 border border-emerald-200/70 px-1.5 py-0.5 rounded-md shrink-0">
               {courses.reduce((sum, c) => sum + c.creditHours, 0)} Cr. Hrs
             </span>
+            <span className="text-slate-300">•</span>
+            <span className="truncate text-slate-600 font-semibold">
+              Spring 2026 Term
+            </span>
+          </div>
+
+          {/* Footer Action Row */}
+          <div className="relative z-10 mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[10.5px] font-bold text-slate-500 group-hover:text-emerald-600 transition-colors">
+            <span className="truncate">View enrolled classes</span>
+            <div className="w-5 h-5 rounded-full bg-slate-100 group-hover:bg-emerald-600 text-slate-400 group-hover:text-white flex items-center justify-center transition-all duration-200 shrink-0">
+              <ArrowRight className="w-2.5 h-2.5 group-hover:translate-x-0.5 transition-transform" />
+            </div>
           </div>
         </motion.div>
 
         {/* Card 3: Attendance Percentage */}
         <motion.div
-          whileHover={{ y: -2 }}
-          transition={{ duration: 0.15 }}
+          whileHover={{ y: -2, transition: { duration: 0.15 } }}
           onClick={() => onNavigateTab("attendance")}
-          className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition-all cursor-pointer group"
+          className="relative overflow-hidden rounded-2xl p-3.5 sm:p-4 bg-gradient-to-br from-white via-white to-purple-50/30 border border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.03),0_8px_16px_-6px_rgba(147,51,234,0.08)] hover:shadow-[0_6px_22px_-4px_rgba(147,51,234,0.16)] hover:border-purple-300 transition-all duration-200 group cursor-pointer flex flex-col justify-between"
         >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Overall Attendance
-            </span>
-            <div className="w-9 h-9 rounded-xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 group-hover:scale-105 transition-transform">
-              <CheckCircle2 className="w-5 h-5" />
+          {/* Top Hairline Accent */}
+          <div className="absolute top-0 inset-x-0 h-[2.5px] bg-gradient-to-r from-purple-600 via-indigo-500 to-pink-400 opacity-90 group-hover:h-1 transition-all duration-200" />
+          <div className="absolute -right-6 -top-6 w-20 h-20 bg-purple-500/10 rounded-full blur-xl pointer-events-none group-hover:scale-125 transition-transform duration-500" />
+
+          {/* Top Row: Micro-Pill Tag & Squircle Icon */}
+          <div className="relative z-10 flex items-center justify-between gap-2 mb-2">
+            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-purple-50/90 border border-purple-200/70 text-[9.5px] font-black uppercase tracking-wider text-purple-700">
+              <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse" />
+              <span>Campus Presence</span>
+            </div>
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-500 text-white shadow-xs shadow-purple-500/25 ring-1 ring-white/30 flex items-center justify-center group-hover:scale-105 group-hover:-rotate-3 transition-transform shrink-0">
+              <CheckCircle2 className="w-4 h-4" />
             </div>
           </div>
 
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-black font-heading text-slate-900">
-              {overallAttendance}%
+          {/* Middle Block: Label + Primary Stat */}
+          <div className="relative z-10 space-y-0.5">
+            <span className="text-[9.5px] font-extrabold uppercase tracking-widest text-slate-400 block truncate">
+              Overall Attendance
             </span>
-            <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
-              Safe (&gt;75%)
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-2xl sm:text-[26px] font-black font-heading text-slate-900 tracking-tight leading-none group-hover:text-purple-950 transition-colors">
+                {overallAttendance}%
+              </span>
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-600">
+                Cleared
+              </span>
+            </div>
+          </div>
+
+          {/* Sub-Context Row */}
+          <div className="relative z-10 mt-2 flex items-center gap-1.5 text-[10.5px] text-slate-500 font-medium">
+            <span className="inline-flex items-center gap-1 text-[9.5px] font-bold text-purple-700 bg-purple-50/80 border border-purple-200/70 px-1.5 py-0.5 rounded-md shrink-0">
+              HEC &ge; 75%
+            </span>
+            <span className="text-slate-300">•</span>
+            <span className="truncate text-slate-600 font-semibold">
+              Eligible for Finals
             </span>
           </div>
 
-          <div className="mt-2 flex items-center justify-between text-xs pt-2 border-t border-slate-100">
-            <span className="text-slate-500 font-medium">HEC Requirement:</span>
-            <span className="font-bold text-slate-800">75% Mandatory</span>
+          {/* Footer Action Row */}
+          <div className="relative z-10 mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[10.5px] font-bold text-slate-500 group-hover:text-purple-600 transition-colors">
+            <span className="truncate">Detailed class registers</span>
+            <div className="w-5 h-5 rounded-full bg-slate-100 group-hover:bg-purple-600 text-slate-400 group-hover:text-white flex items-center justify-center transition-all duration-200 shrink-0">
+              <ArrowRight className="w-2.5 h-2.5 group-hover:translate-x-0.5 transition-transform" />
+            </div>
           </div>
         </motion.div>
 
         {/* Card 4: Pending Assignments */}
         <motion.div
-          whileHover={{ y: -2 }}
-          transition={{ duration: 0.15 }}
+          whileHover={{ y: -2, transition: { duration: 0.15 } }}
           onClick={() => onNavigateTab("assignments")}
-          className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition-all cursor-pointer group"
+          className={`relative overflow-hidden rounded-2xl p-3.5 sm:p-4 border shadow-[0_1px_3px_rgba(0,0,0,0.03),0_8px_16px_-6px_rgba(0,0,0,0.06)] transition-all duration-200 group cursor-pointer flex flex-col justify-between ${
+            pendingAssignments.length === 0
+              ? "bg-gradient-to-br from-white via-white to-emerald-50/30 border-slate-200/90 hover:shadow-[0_6px_22px_-4px_rgba(16,185,129,0.16)] hover:border-emerald-300"
+              : "bg-gradient-to-br from-white via-white to-amber-50/30 border-slate-200/90 hover:shadow-[0_6px_22px_-4px_rgba(245,158,11,0.18)] hover:border-amber-300"
+          }`}
         >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Pending Tasks
-            </span>
-            <div className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 group-hover:scale-105 transition-transform">
-              <FileText className="w-5 h-5" />
+          {/* Top Hairline Accent */}
+          <div
+            className={`absolute top-0 inset-x-0 h-[2.5px] opacity-90 group-hover:h-1 transition-all duration-200 ${
+              pendingAssignments.length === 0
+                ? "bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-400"
+                : "bg-gradient-to-r from-amber-500 via-amber-600 to-orange-400"
+            }`}
+          />
+          <div
+            className={`absolute -right-6 -top-6 w-20 h-20 rounded-full blur-xl pointer-events-none group-hover:scale-125 transition-transform duration-500 ${
+              pendingAssignments.length === 0 ? "bg-emerald-500/10" : "bg-amber-500/10"
+            }`}
+          />
+
+          {/* Top Row: Micro-Pill Tag & Squircle Icon */}
+          <div className="relative z-10 flex items-center justify-between gap-2 mb-2">
+            {pendingAssignments.length === 0 ? (
+              <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50/90 border border-emerald-200/70 text-[9.5px] font-black uppercase tracking-wider text-emerald-700">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span>All Submitted</span>
+              </div>
+            ) : (
+              <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-50/90 border border-amber-200/70 text-[9.5px] font-black uppercase tracking-wider text-amber-700">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                <span>Action Required</span>
+              </div>
+            )}
+            <div
+              className={`w-8 h-8 rounded-xl text-white shadow-xs ring-1 ring-white/30 flex items-center justify-center group-hover:scale-105 group-hover:-rotate-3 transition-transform shrink-0 ${
+                pendingAssignments.length === 0
+                  ? "bg-gradient-to-br from-emerald-600 to-teal-500 shadow-emerald-500/25"
+                  : "bg-gradient-to-br from-amber-500 to-orange-500 shadow-amber-500/25"
+              }`}
+            >
+              <FileText className="w-4 h-4" />
             </div>
           </div>
 
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-black font-heading text-slate-900">
-              {pendingAssignments.length}
+          {/* Middle Block: Label + Primary Stat */}
+          <div className="relative z-10 space-y-0.5">
+            <span className="text-[9.5px] font-extrabold uppercase tracking-widest text-slate-400 block truncate">
+              Pending Tasks
             </span>
-            <span className="text-xs text-amber-700 font-bold bg-amber-50 px-2 py-0.5 rounded-full">
-              {pendingAssignments.length > 0 ? "Action Required" : "Up to Date"}
+            <div className="flex items-baseline gap-1.5">
+              <span
+                className={`text-2xl sm:text-[26px] font-black font-heading tracking-tight leading-none transition-colors ${
+                  pendingAssignments.length === 0
+                    ? "text-slate-900 group-hover:text-emerald-950"
+                    : "text-amber-600 group-hover:text-amber-700"
+                }`}
+              >
+                {pendingAssignments.length}
+              </span>
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
+                Pending Tasks
+              </span>
+            </div>
+          </div>
+
+          {/* Sub-Context Row */}
+          <div className="relative z-10 mt-2 flex items-center gap-1.5 text-[10.5px] text-slate-500 font-medium">
+            {pendingAssignments.length === 0 ? (
+              <span className="inline-flex items-center gap-1 text-[9.5px] font-bold text-emerald-700 bg-emerald-50/80 border border-emerald-200/70 px-1.5 py-0.5 rounded-md shrink-0">
+                <CheckCircle2 className="w-2.5 h-2.5 text-emerald-600" />
+                Zero Backlog
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 text-[9.5px] font-bold text-amber-700 bg-amber-50/80 border border-amber-200/70 px-1.5 py-0.5 rounded-md shrink-0">
+                <AlertCircle className="w-2.5 h-2.5 text-amber-600" />
+                {pendingAssignments.length} Need Submission
+              </span>
+            )}
+            <span className="text-slate-300">•</span>
+            <span className="truncate text-slate-600 font-semibold">
+              Course Work
             </span>
           </div>
 
-          <div className="mt-2 flex items-center justify-between text-xs pt-2 border-t border-slate-100">
-            <span className="text-slate-500 font-medium">Pending:</span>
-            <span className="font-bold text-slate-700">
-              {pendingAssignments.length > 0 ? `${pendingAssignments.length} Assignment(s)` : "No pending tasks"}
-            </span>
+          {/* Footer Action Row */}
+          <div
+            className={`relative z-10 mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[10.5px] font-bold transition-colors ${
+              pendingAssignments.length === 0
+                ? "text-slate-500 group-hover:text-emerald-600"
+                : "text-slate-500 group-hover:text-amber-600"
+            }`}
+          >
+            <span className="truncate">View task deadlines</span>
+            <div
+              className={`w-5 h-5 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center transition-all duration-200 shrink-0 ${
+                pendingAssignments.length === 0
+                  ? "group-hover:bg-emerald-600 group-hover:text-white"
+                  : "group-hover:bg-amber-600 group-hover:text-white"
+              }`}
+            >
+              <ArrowRight className="w-2.5 h-2.5 group-hover:translate-x-0.5 transition-transform" />
+            </div>
           </div>
         </motion.div>
       </div>

@@ -194,6 +194,12 @@ export const MyProfileSection: React.FC<MyProfileSectionProps> = ({
                 <span className="font-semibold text-slate-700">{profile.batch}</span>
               </div>
 
+              {profile.bio && (
+                <p className="text-xs text-slate-600 max-w-xl italic pt-1 leading-relaxed">
+                  &ldquo;{profile.bio}&rdquo;
+                </p>
+              )}
+
               {uploadError && (
                 <p className="text-xs font-bold text-rose-600 flex items-center gap-1 pt-1">
                   <AlertCircle className="w-3.5 h-3.5" />

@@ -18,12 +18,17 @@ import {
   Sparkles,
   Shield,
   ChevronRight,
+  Video,
+  PlayCircle,
+  User,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type FacultyTab =
   | "overview"
+  | "profile"
   | "courses"
+  | "lectures"
   | "schedule"
   | "students"
   | "attendance"
@@ -67,9 +72,21 @@ export const FacultySidebar: React.FC<FacultySidebarProps> = ({
       icon: <LayoutDashboard className="w-4 h-4" />,
     },
     {
+      id: "profile",
+      label: "My Faculty Profile",
+      icon: <User className="w-4 h-4" />,
+      badge: "Account",
+    },
+    {
       id: "courses",
       label: "Assigned Courses",
       icon: <BookOpen className="w-4 h-4" />,
+    },
+    {
+      id: "lectures",
+      label: "Lectures Management",
+      icon: <PlayCircle className="w-4 h-4" />,
+      badge: "LMS",
     },
     {
       id: "schedule",

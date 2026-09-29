@@ -498,21 +498,44 @@ export const getCurrentUser = query({
     const user = await ctx.db.get(session.userId);
     if (!user) return null;
 
+    let facultyRecord = null;
+    const isFacultyRole = user.role === "faculty" || user.role === "FACULTY" || user.role === "teacher";
+    if (isFacultyRole) {
+      facultyRecord = await ctx.db
+        .query("faculty")
+        .withIndex("by_userId", (q) => q.eq("userId", user._id))
+        .first();
+
+      if (!facultyRecord && user.email) {
+        facultyRecord = await ctx.db
+          .query("faculty")
+          .withIndex("by_email", (q) => q.eq("email", user.email))
+          .first();
+      }
+    }
+
     return {
       id: user._id,
-      name: user.name,
+      name: facultyRecord?.fullName || user.name,
       email: user.universityEmail || user.email,
       personalEmail: user.personalEmail || user.email,
       universityEmail: user.universityEmail,
       role: user.role,
       accountStatus: user.accountStatus,
       enrollmentId: user.enrollmentId,
-      department: user.department,
+      department: facultyRecord?.department || user.department,
       departmentId: user.departmentId,
       degreeProgram: user.degreeProgram,
       degreeProgramId: user.degreeProgramId,
       currentSemester: user.currentSemester || 1,
-      profilePhoto: user.profilePhoto,
+      profilePhoto: facultyRecord?.profilePhoto || user.profilePhoto,
+      designation: facultyRecord?.designation || user.designation || (isFacultyRole ? "Assistant Professor" : undefined),
+      bio: facultyRecord?.bio || user.bio,
+      phone: facultyRecord?.phone || user.phone,
+      officeLocation: facultyRecord?.officeLocation || user.officeLocation,
+      officeHours: facultyRecord?.officeHours || user.officeHours,
+      specialization: facultyRecord?.specialization || user.specialization,
+      qualification: facultyRecord?.qualification || user.qualification,
       createdAt: user.createdAt,
     };
   },

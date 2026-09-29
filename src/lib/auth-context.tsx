@@ -18,11 +18,49 @@ export const FIXED_ADMIN_ACCOUNT = {
   department: "Central University Administration & Registrar Office",
 };
 
+export const mapRawUserToUser = (raw: any): User => ({
+  id: raw.id || raw._id,
+  name: raw.name || "User",
+  email: raw.email || "",
+  personalEmail: raw.personalEmail,
+  universityEmail: raw.universityEmail,
+  role: raw.role as UserRole,
+  accountStatus: raw.accountStatus as any,
+  enrollmentId: raw.enrollmentId,
+  department: raw.department,
+  departmentId: raw.departmentId,
+  degreeProgram: raw.degreeProgram,
+  degreeProgramId: raw.degreeProgramId,
+  currentSemester: raw.currentSemester,
+  profilePhoto: raw.profilePhoto,
+  designation: raw.designation,
+  bio: raw.bio,
+  phone: raw.phone,
+  officeLocation: raw.officeLocation,
+  officeHours: raw.officeHours,
+  specialization: raw.specialization,
+  qualification: raw.qualification,
+  createdAt: raw.createdAt || Date.now(),
+});
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const router = useRouter();
+
+  const updateUserLocally = useCallback((updated: Partial<User>) => {
+    setUser((prev) => {
+      if (!prev) return null;
+      const next = { ...prev, ...updated };
+      try {
+        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(next));
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  }, []);
 
   const refreshUser = useCallback(async () => {
     try {
@@ -33,23 +71,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (client && isConvexConfigured) {
         const freshUser = await client.query(api.auth.getCurrentUser, { token: savedToken });
         if (freshUser) {
-          const mapped: User = {
-            id: freshUser.id,
-            name: freshUser.name,
-            email: freshUser.email,
-            personalEmail: freshUser.personalEmail,
-            universityEmail: freshUser.universityEmail,
-            role: freshUser.role as UserRole,
-            accountStatus: freshUser.accountStatus as any,
-            enrollmentId: freshUser.enrollmentId,
-            department: freshUser.department,
-            departmentId: (freshUser as any).departmentId,
-            degreeProgram: (freshUser as any).degreeProgram,
-            degreeProgramId: (freshUser as any).degreeProgramId,
-            currentSemester: (freshUser as any).currentSemester,
-            profilePhoto: (freshUser as any).profilePhoto,
-            createdAt: freshUser.createdAt,
-          };
+          const mapped = mapRawUserToUser(freshUser);
           setUser(mapped);
           localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(mapped));
         }
@@ -80,8 +102,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               email: FIXED_ADMIN_ACCOUNT.email,
               password: "adminPassword123!", // Standard default, changed when admin updates
             });
-            // Ensure baseline administrative structure if needed
+            // Ensure baseline administrative structure and LMS baseline if needed
             await client.mutation(api.academicManagement.seedInitialBaselineStructure, {});
+            await client.mutation(api.lms.seedLmsBaselineData, {});
           } catch (err) {
             console.warn("Convex seeding check:", err);
           }
@@ -89,22 +112,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (savedToken) {
             const freshUser = await client.query(api.auth.getCurrentUser, { token: savedToken });
             if (freshUser) {
-              const mapped: User = {
-                id: freshUser.id,
-                name: freshUser.name,
-                email: freshUser.email,
-                personalEmail: freshUser.personalEmail,
-                universityEmail: freshUser.universityEmail,
-                role: freshUser.role as UserRole,
-                accountStatus: freshUser.accountStatus as any,
-                enrollmentId: freshUser.enrollmentId,
-                department: freshUser.department,
-                departmentId: (freshUser as any).departmentId,
-                degreeProgram: (freshUser as any).degreeProgram,
-                degreeProgramId: (freshUser as any).degreeProgramId,
-                profilePhoto: (freshUser as any).profilePhoto,
-                createdAt: freshUser.createdAt,
-              };
+              const mapped = mapRawUserToUser(freshUser);
               setUser(mapped);
               localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(mapped));
             } else if (savedUser) {
@@ -147,22 +155,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         if (result?.token && result?.user) {
-          const authUser: User = {
-            id: result.user.id,
-            name: result.user.name,
-            email: result.user.email,
-            personalEmail: result.user.personalEmail,
-            universityEmail: result.user.universityEmail,
-            role: result.user.role as UserRole,
-            accountStatus: result.user.accountStatus as any,
-            enrollmentId: result.user.enrollmentId,
-            department: result.user.department,
-            departmentId: (result.user as any).departmentId,
-            degreeProgram: (result.user as any).degreeProgram,
-            degreeProgramId: (result.user as any).degreeProgramId,
-            profilePhoto: (result.user as any).profilePhoto,
-            createdAt: result.user.createdAt,
-          };
+          const authUser = mapRawUserToUser(result.user);
 
           setToken(result.token);
           setUser(authUser);
@@ -206,21 +199,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
 
         if (result?.token && result?.user) {
-          const authUser: User = {
-            id: result.user.id,
-            name: result.user.name,
-            email: result.user.email,
-            personalEmail: result.user.personalEmail,
-            universityEmail: result.user.universityEmail,
-            role: result.user.role as UserRole,
-            accountStatus: result.user.accountStatus as any,
-            enrollmentId: (result.user as any).enrollmentId,
-            department: result.user.department,
-            departmentId: (result.user as any).departmentId,
-            degreeProgram: (result.user as any).degreeProgram,
-            degreeProgramId: (result.user as any).degreeProgramId,
-            createdAt: result.user.createdAt,
-          };
+          const authUser = mapRawUserToUser(result.user);
 
           setToken(result.token);
           setUser(authUser);
@@ -277,6 +256,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         register,
         logout,
         refreshUser,
+        updateUserLocally,
       }}
     >
       {children}

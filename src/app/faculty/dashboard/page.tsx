@@ -8,7 +8,10 @@ import { api } from "../../../../convex/_generated/api";
 import { FacultySidebar, FacultyTab } from "@/components/faculty/FacultySidebar";
 import { FacultyHeader } from "@/components/faculty/FacultyHeader";
 import { FacultyOverviewSection } from "@/components/faculty/sections/FacultyOverviewSection";
+import { FacultyProfileSection } from "@/components/faculty/sections/FacultyProfileSection";
+import { FacultyProfileModal } from "@/components/faculty/FacultyProfileModal";
 import { FacultyCoursesSection } from "@/components/faculty/sections/FacultyCoursesSection";
+import { FacultyLecturesSection } from "@/components/faculty/sections/FacultyLecturesSection";
 import { FacultyScheduleSection } from "@/components/faculty/sections/FacultyScheduleSection";
 import { FacultyStudentsSection } from "@/components/faculty/sections/FacultyStudentsSection";
 import { FacultyAttendanceSection } from "@/components/faculty/sections/FacultyAttendanceSection";
@@ -32,27 +35,30 @@ function isFacultyTab(value: string | null): value is FacultyTab {
 function FacultyDashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, token, isLoading: isAuthLoading, logout } = useAuth();
+  const { user, token, isLoading: isAuthLoading, logout, updateUserLocally, refreshUser } = useAuth();
 
   const tabParam = searchParams.get("tab");
   const activeTab: FacultyTab = isFacultyTab(tabParam) ? tabParam : "overview";
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isDataLoading, setIsDataLoading] = useState(true);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   // Live Convex Data State
   const [facultyData, setFacultyData] = useState<any>({
     faculty: {
       fullName: user?.name || "Faculty Member",
       email: user?.universityEmail || user?.email || "faculty@iqra.edu.pk",
-      employeeId: "FAC-2026-1042",
+      employeeId: user?.enrollmentId || "FAC-2026-1042",
       department: user?.department || "Department of Computing & Artificial Intelligence",
-      designation: "Assistant Professor",
-      phone: "+92 51 111 264 264",
-      officeLocation: "Faculty Block B, Office 201",
-      officeHours: "Mon-Thu 11:00 AM - 01:00 PM",
+      designation: user?.designation || "Assistant Professor",
+      phone: user?.phone || "+92 51 111 264 264",
+      officeLocation: user?.officeLocation || "Faculty Block B, Office 201",
+      officeHours: user?.officeHours || "Mon-Thu 11:00 AM - 01:00 PM",
       status: "Active",
-      specialization: "Artificial Intelligence & Distributed Systems",
-      qualification: "Ph.D. in Computer Science",
+      specialization: user?.specialization || "Artificial Intelligence & Distributed Systems",
+      qualification: user?.qualification || "Ph.D. in Computer Science",
+      bio: user?.bio || "",
+      profilePhoto: user?.profilePhoto || "",
     },
     courses: [],
     sections: [],
@@ -102,7 +108,19 @@ function FacultyDashboardContent() {
         });
 
         if (liveData) {
-          setFacultyData(liveData);
+          setFacultyData({
+            ...liveData,
+            faculty: {
+              ...liveData.faculty,
+              profilePhoto: liveData.faculty?.profilePhoto || user?.profilePhoto || "",
+              bio: liveData.faculty?.bio || user?.bio || "",
+              phone: liveData.faculty?.phone || user?.phone || "",
+              officeLocation: liveData.faculty?.officeLocation || user?.officeLocation || "",
+              officeHours: liveData.faculty?.officeHours || user?.officeHours || "",
+              specialization: liveData.faculty?.specialization || user?.specialization || "",
+              qualification: liveData.faculty?.qualification || user?.qualification || "",
+            },
+          });
         }
       }
     } catch (err) {
@@ -117,6 +135,38 @@ function FacultyDashboardContent() {
       refreshFacultyData();
     }
   }, [user, token, isAuthLoading]);
+
+  // Profile Update Handler (Immediate Local State + Context + DB Sync)
+  const handleProfileUpdated = async (updatedFaculty: any) => {
+    // 1. Instant optimistic update to Auth Context and localStorage
+    updateUserLocally({
+      name: updatedFaculty.fullName,
+      department: updatedFaculty.department,
+      designation: updatedFaculty.designation,
+      phone: updatedFaculty.phone,
+      officeLocation: updatedFaculty.officeLocation,
+      officeHours: updatedFaculty.officeHours,
+      specialization: updatedFaculty.specialization,
+      qualification: updatedFaculty.qualification,
+      bio: updatedFaculty.bio,
+      profilePhoto: updatedFaculty.profilePhoto,
+    });
+
+    // 2. Instant local faculty state update
+    setFacultyData((prev: any) => ({
+      ...prev,
+      faculty: {
+        ...prev.faculty,
+        ...updatedFaculty,
+      },
+    }));
+
+    // 3. Background server refetches to guarantee data parity
+    await refreshFacultyData();
+    if (refreshUser) {
+      await refreshUser();
+    }
+  };
 
   // Live Mutation Handlers
   const handleRecordAttendance = async (data: any) => {
@@ -182,7 +232,9 @@ function FacultyDashboardContent() {
 
   const tabTitles: Record<FacultyTab, string> = {
     overview: "Faculty Dashboard Overview",
+    profile: "Faculty Academic Profile",
     courses: "My Assigned Courses",
+    lectures: "Faculty Lecture Management",
     schedule: "Class Timetable & Schedule",
     students: "Enrolled Student Roster",
     attendance: "Class Attendance Register",
@@ -216,10 +268,15 @@ function FacultyDashboardContent() {
           designation={facultyData.faculty.designation}
           department={facultyData.faculty.department}
           universityEmail={facultyData.faculty.email}
-          activeTabTitle={tabTitles[activeTab]}
+          profilePhoto={facultyData.faculty.profilePhoto || user?.profilePhoto}
+          activeTabTitle={tabTitles[activeTab] || "Faculty Portal"}
           onOpenMobileSidebar={() => setIsMobileSidebarOpen(true)}
           onLogout={logout}
           announcementsCount={facultyData.announcements?.length || 0}
+          onOpenProfileModal={() => setIsProfileModalOpen(true)}
+          onOpenEditModal={() => setIsProfileModalOpen(true)}
+          onNavigateSettings={() => handleSelectTab("settings")}
+          onNavigateProfile={() => handleSelectTab("profile")}
         />
 
         {/* MAIN BODY CONTENT */}
@@ -235,6 +292,7 @@ function FacultyDashboardContent() {
               submissions={facultyData.submissions}
               announcements={facultyData.announcements}
               onNavigateTab={handleSelectTab}
+              onOpenProfileModal={() => setIsProfileModalOpen(true)}
             />
           )}
 
@@ -244,6 +302,10 @@ function FacultyDashboardContent() {
               sections={facultyData.sections}
               onNavigateTab={handleSelectTab}
             />
+          )}
+
+          {activeTab === "lectures" && (
+            <FacultyLecturesSection />
           )}
 
           {activeTab === "schedule" && (
@@ -303,6 +365,28 @@ function FacultyDashboardContent() {
             />
           )}
 
+          {activeTab === "profile" && (
+            <FacultyProfileSection
+              faculty={{
+                fullName: facultyData.faculty.fullName,
+                designation: facultyData.faculty.designation,
+                department: facultyData.faculty.department,
+                email: facultyData.faculty.email,
+                phone: facultyData.faculty.phone,
+                officeLocation: facultyData.faculty.officeLocation,
+                officeHours: facultyData.faculty.officeHours,
+                specialization: facultyData.faculty.specialization,
+                qualification: facultyData.faculty.qualification,
+                bio: facultyData.faculty.bio,
+                profilePhoto: facultyData.faculty.profilePhoto || user?.profilePhoto,
+                employeeId: facultyData.faculty.employeeId,
+              }}
+              onOpenEditModal={() => setIsProfileModalOpen(true)}
+              onProfileUpdated={handleProfileUpdated}
+              token={token}
+            />
+          )}
+
           {activeTab === "resources" && <FacultyResourcesSection />}
 
           {activeTab === "settings" && (
@@ -310,6 +394,28 @@ function FacultyDashboardContent() {
           )}
         </main>
       </div>
+
+      {/* FACULTY PROFILE EDIT & PREVIEW MODAL */}
+      <FacultyProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        faculty={{
+          fullName: facultyData.faculty.fullName,
+          designation: facultyData.faculty.designation,
+          department: facultyData.faculty.department,
+          email: facultyData.faculty.email,
+          phone: facultyData.faculty.phone,
+          officeLocation: facultyData.faculty.officeLocation,
+          officeHours: facultyData.faculty.officeHours,
+          specialization: facultyData.faculty.specialization,
+          qualification: facultyData.faculty.qualification,
+          bio: facultyData.faculty.bio,
+          profilePhoto: facultyData.faculty.profilePhoto || user?.profilePhoto,
+          employeeId: facultyData.faculty.employeeId,
+        }}
+        onProfileUpdated={handleProfileUpdated}
+        token={token}
+      />
     </div>
   );
 }

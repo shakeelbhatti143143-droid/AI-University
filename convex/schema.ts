@@ -40,6 +40,15 @@ export default defineSchema({
     passwordSetupTokenExpiresAt: v.optional(v.number()),
     profilePhoto: v.optional(v.string()),
     profilePhotoStorageId: v.optional(v.string()),
+    bio: v.optional(v.string()),
+    designation: v.optional(v.string()),
+    phone: v.optional(v.string()),
+    officeLocation: v.optional(v.string()),
+    officeHours: v.optional(v.string()),
+    specialization: v.optional(v.string()),
+    qualification: v.optional(v.string()),
+    address: v.optional(v.string()),
+    emergencyContact: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
@@ -185,13 +194,25 @@ export default defineSchema({
       v.literal("admission"),
       v.literal("system"),
       v.literal("academic"),
-      v.literal("security")
+      v.literal("security"),
+      v.literal("NEW_LECTURE"),
+      v.literal("ONLINE_CLASS_CREATED"),
+      v.literal("ONLINE_CLASS_REMINDER"),
+      v.literal("ONLINE_CLASS_CANCELLED"),
+      v.literal("ONLINE_CLASS_RESCHEDULED"),
+      v.literal("LECTURE_UPDATED"),
+      v.literal("LECTURE_PUBLISHED"),
+      v.literal("CLASS_RECORDING_AVAILABLE")
     ),
+    courseId: v.optional(v.string()),
+    lectureId: v.optional(v.string()),
+    classId: v.optional(v.string()),
     link: v.optional(v.string()),
     read: v.boolean(),
     createdAt: v.number(),
   })
-    .index("by_userId", ["userId"]),
+    .index("by_userId", ["userId"])
+    .index("by_userId_and_read", ["userId", "read"]),
 
   universityVideos: defineTable({
     title: v.string(),
@@ -258,14 +279,7 @@ export default defineSchema({
     employeeId: v.string(),
     department: v.string(),
     departmentId: v.optional(v.string()),
-    designation: v.union(
-      v.literal("Professor"),
-      v.literal("Associate Professor"),
-      v.literal("Assistant Professor"),
-      v.literal("Lecturer"),
-      v.literal("Visiting Faculty"),
-      v.literal("Lab Instructor")
-    ),
+    designation: v.string(),
     specialization: v.string(),
     qualification: v.string(),
     joiningDate: v.string(),
@@ -585,7 +599,6 @@ export default defineSchema({
     .index("by_module", ["module"]),
 
   // --------------------------------------------------------------------------
-<<<<<<< Updated upstream
   // UNIVERSITY PUBLIC PORTAL & WEBSITE MANAGEMENT
   // --------------------------------------------------------------------------
 
@@ -749,7 +762,8 @@ export default defineSchema({
     officeHours: v.optional(v.string()),
     updatedAt: v.number(),
   }),
-=======
+
+  // --------------------------------------------------------------------------
   // CAMPUS LIFE, RESOURCES & CAREERS
   // --------------------------------------------------------------------------
 
@@ -1039,6 +1053,68 @@ export default defineSchema({
     createdAt: v.number(),
   })
     .index("by_discussionId", ["discussionId"]),
->>>>>>> Stashed changes
-});
 
+  // --------------------------------------------------------------------------
+  // LMS: LECTURES & ONLINE CLASS SYSTEM TABLES
+  // --------------------------------------------------------------------------
+
+  lectures: defineTable({
+    courseId: v.string(),
+    courseCode: v.string(),
+    courseTitle: v.string(),
+    teacherId: v.string(),
+    teacherName: v.string(),
+    title: v.string(),
+    description: v.string(),
+    lectureNumber: v.number(),
+    videoUrl: v.optional(v.string()),
+    videoStorageId: v.optional(v.string()),
+    thumbnailUrl: v.optional(v.string()),
+    thumbnailStorageId: v.optional(v.string()),
+    duration: v.optional(v.string()),
+    durationMinutes: v.optional(v.number()),
+    lectureType: v.optional(v.string()), // "Video", "Document", "Hybrid", "Lab", "Seminar"
+    lectureDate: v.optional(v.number()),
+    publishedAt: v.optional(v.number()),
+    status: v.union(v.literal("published"), v.literal("draft")),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_courseId", ["courseId"])
+    .index("by_courseCode", ["courseCode"])
+    .index("by_teacherId", ["teacherId"])
+    .index("by_status", ["status"])
+    .index("by_course_and_status", ["courseId", "status"])
+    .index("by_courseCode_and_status", ["courseCode", "status"]),
+
+  lectureResources: defineTable({
+    lectureId: v.id("lectures"),
+    courseId: v.string(),
+    name: v.string(),
+    url: v.string(),
+    storageId: v.optional(v.string()),
+    fileType: v.string(),
+    fileSize: v.optional(v.number()),
+    createdAt: v.number(),
+  })
+    .index("by_lectureId", ["lectureId"])
+    .index("by_courseId", ["courseId"]),
+
+  lectureProgress: defineTable({
+    userId: v.id("users"),
+    studentId: v.string(),
+    lectureId: v.id("lectures"),
+    courseId: v.string(),
+    courseCode: v.string(),
+    progress: v.number(), // 0 to 100
+    lastPosition: v.number(), // seconds
+    completed: v.boolean(),
+    completedAt: v.optional(v.number()),
+    updatedAt: v.number(),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_studentId", ["studentId"])
+    .index("by_lectureId", ["lectureId"])
+    .index("by_student_and_lecture", ["studentId", "lectureId"])
+    .index("by_student_and_course", ["studentId", "courseCode"]),
+});

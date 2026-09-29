@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import {
   GraduationCap,
   TrendingUp,
@@ -15,8 +16,10 @@ import {
   Sparkles,
   AlertCircle,
   XCircle,
+  ArrowRight,
 } from "lucide-react";
 import { StudentProfile, SemesterRecord, semesterHistory, StudentProgressionData } from "@/lib/dashboard-data";
+import { calculateScholarship } from "@/lib/scholarship";
 
 interface AcademicOverviewSectionProps {
   profile: StudentProfile;
@@ -155,6 +158,70 @@ export const AcademicOverviewSection: React.FC<AcademicOverviewSectionProps> = (
           </p>
         </div>
       </div>
+
+      {/* INSTITUTIONAL MERIT SCHOLARSHIP CARD */}
+      {(() => {
+        const sch = calculateScholarship(effectiveCgpa);
+        return (
+          <div
+            className={`p-6 sm:p-7 rounded-3xl border shadow-xs transition-all flex flex-col md:flex-row md:items-center justify-between gap-6 ${
+              sch.isEligible
+                ? "bg-gradient-to-r from-emerald-50/80 via-white to-teal-50/60 border-emerald-300"
+                : "bg-white border-slate-200/90"
+            }`}
+          >
+            <div className="space-y-1.5 max-w-xl">
+              <div className="flex items-center gap-2">
+                <span
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                    sch.isEligible
+                      ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                      : "bg-slate-100 text-slate-600 border border-slate-200"
+                  }`}
+                >
+                  <Award className="w-3.5 h-3.5" />
+                  <span>Merit-Based Scholarship</span>
+                </span>
+                <span className="text-xs text-slate-400">•</span>
+                <span className="text-xs font-semibold text-slate-600">
+                  Published CGPA: {effectiveCgpa.toFixed(2)}
+                </span>
+              </div>
+              <h3 className="text-lg sm:text-xl font-black font-heading text-slate-900">
+                {sch.isEligible
+                  ? `Tuition Support Entitlement: ${sch.percentage}% (${sch.tier})`
+                  : "Currently Not Eligible for Merit Scholarship"}
+              </h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                {sch.explanation}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-4 shrink-0">
+              <div className="text-center p-3 sm:p-4 rounded-2xl bg-white border border-slate-200/80 shadow-2xs">
+                <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">
+                  Award Discount
+                </span>
+                <span
+                  className={`text-2xl sm:text-3xl font-black font-heading ${
+                    sch.isEligible ? "text-emerald-700" : "text-slate-400"
+                  }`}
+                >
+                  {sch.percentage}%
+                </span>
+              </div>
+
+              <Link
+                href="/explore/scholarships"
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#0b1f3a] hover:bg-[#122b4e] active:scale-[0.98] text-white text-xs font-bold transition-all shadow-sm"
+              >
+                <span>View Criteria</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* DEGREE PROGRESS TRACKER */}
       <div className="p-6 rounded-3xl bg-white border border-slate-200/90 shadow-xs space-y-4">

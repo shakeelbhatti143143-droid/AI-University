@@ -1471,20 +1471,35 @@ export const getFacultyDashboardData = query({
       .order("desc")
       .take(20);
 
+    const resolvedFaculty = facultyProfile
+      ? {
+          ...facultyProfile,
+          profilePhoto: facultyProfile.profilePhoto || facultyUser?.profilePhoto,
+          bio: facultyProfile.bio || facultyUser?.bio || "Faculty member and academic researcher at Iqra University Chak Shehzad Campus.",
+          phone: facultyProfile.phone || facultyUser?.phone || "+92 51 111 264 264",
+          officeLocation: facultyProfile.officeLocation || facultyUser?.officeLocation || "Faculty Block B, Office 201",
+          officeHours: facultyProfile.officeHours || facultyUser?.officeHours || "Mon-Thu 11:00 AM - 01:00 PM",
+          specialization: facultyProfile.specialization || facultyUser?.specialization || "Artificial Intelligence & Distributed Systems",
+          qualification: facultyProfile.qualification || facultyUser?.qualification || "Ph.D. Computer Science",
+        }
+      : {
+          fullName: facultyName,
+          email: facultyUser?.universityEmail || facultyUser?.email || "faculty@iqra.edu.pk",
+          employeeId: facultyUser?.enrollmentId || "IQ-01",
+          department: facultyUser?.department || "Department of Computing & Artificial Intelligence",
+          designation: facultyUser?.designation || "Assistant Professor",
+          phone: facultyUser?.phone || "+92 51 111 264 264",
+          officeLocation: facultyUser?.officeLocation || "Faculty Block B, Office 201",
+          officeHours: facultyUser?.officeHours || "Mon-Thu 11:00 AM - 01:00 PM",
+          status: "Active",
+          specialization: facultyUser?.specialization || "Artificial Intelligence & Software Systems",
+          qualification: facultyUser?.qualification || "Ph.D. Computer Science",
+          bio: facultyUser?.bio || "Faculty member and academic researcher at Iqra University Chak Shehzad Campus.",
+          profilePhoto: facultyUser?.profilePhoto,
+        };
+
     return {
-      faculty: facultyProfile || {
-        fullName: facultyName,
-        email: facultyUser?.universityEmail || facultyUser?.email || "faculty@iqra.edu.pk",
-        employeeId: "FAC-2026-001",
-        department: facultyUser?.department || "Department of Computing & Artificial Intelligence",
-        designation: "Assistant Professor",
-        phone: "+92 51 111 264 264",
-        officeLocation: "Faculty Block B, Office 201",
-        officeHours: "Mon-Thu 11:00 AM - 01:00 PM",
-        status: "Active",
-        specialization: "Artificial Intelligence & Software Systems",
-        qualification: "Ph.D. Computer Science",
-      },
+      faculty: resolvedFaculty,
       user: facultyUser
         ? {
             id: facultyUser._id,
@@ -5095,3 +5110,197 @@ export const updateUserAccountStatus = mutation({
     });
   },
 });
+
+// ============================================================================
+// MERIT SCHOLARSHIPS ENGINE
+// Strict calculation based on published results CGPA
+// ============================================================================
+
+function evaluateScholarshipFromCgpa(rawCgpa: number | null | undefined) {
+  if (rawCgpa === null || rawCgpa === undefined || isNaN(rawCgpa)) {
+    return {
+      cgpa: 0.0,
+      percentage: 0,
+      isEligible: false,
+      status: "Not Eligible" as const,
+      tier: "Not Eligible",
+      tierId: "ineligible" as const,
+      explanation: "No official published CGPA is currently on record.",
+    };
+  }
+
+  const normalized = Math.round(Number(rawCgpa) * 100) / 100;
+
+  if (normalized >= 4.00) {
+    return {
+      cgpa: normalized,
+      percentage: 85,
+      isEligible: true,
+      status: "Eligible" as const,
+      tier: "Platinum Merit Tier",
+      tierId: "platinum" as const,
+      explanation: "Eligible for 85% tuition scholarship based on exceptional distinction (perfect 4.00 CGPA).",
+    };
+  } else if (normalized >= 3.90) {
+    return {
+      cgpa: normalized,
+      percentage: 60,
+      isEligible: true,
+      status: "Eligible" as const,
+      tier: "Gold Merit Tier",
+      tierId: "gold" as const,
+      explanation: `Eligible for 60% tuition scholarship based on academic excellence (CGPA ${normalized.toFixed(2)}).`,
+    };
+  } else if (normalized >= 3.75) {
+    return {
+      cgpa: normalized,
+      percentage: 40,
+      isEligible: true,
+      status: "Eligible" as const,
+      tier: "Silver Merit Tier",
+      tierId: "silver" as const,
+      explanation: `Eligible for 40% tuition scholarship based on high academic merit (CGPA ${normalized.toFixed(2)}).`,
+    };
+  } else if (normalized >= 3.50) {
+    return {
+      cgpa: normalized,
+      percentage: 20,
+      isEligible: true,
+      status: "Eligible" as const,
+      tier: "Bronze Merit Tier",
+      tierId: "bronze" as const,
+      explanation: `Eligible for 20% tuition scholarship based on academic merit (CGPA ${normalized.toFixed(2)}).`,
+    };
+  } else {
+    return {
+      cgpa: normalized,
+      percentage: 0,
+      isEligible: false,
+      status: "Not Eligible" as const,
+      tier: "Not Eligible",
+      tierId: "ineligible" as const,
+      explanation: `Currently not eligible for merit-based scholarship. A minimum published CGPA of 3.50 is required (Current CGPA: ${normalized.toFixed(2)}).`,
+    };
+  }
+}
+
+/**
+ * Get Student Scholarship Eligibility
+ * Strict calculation using official published results only
+ */
+export const getStudentScholarshipEligibility = query({
+  args: {
+    userId: v.optional(v.id("users")),
+    studentId: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const progression = await calculateStudentAcademicProgression(ctx, args, false);
+    if (!progression) {
+      return null;
+    }
+
+    const evalResult = evaluateScholarshipFromCgpa(progression.cgpa);
+
+    return {
+      studentId: progression.studentId,
+      name: progression.name,
+      email: progression.email,
+      department: progression.department,
+      degreeProgram: progression.degreeProgram,
+      currentSemester: progression.currentSemester,
+      cgpa: progression.cgpa,
+      currentGpa: progression.currentGpa,
+      academicStanding: progression.academicStanding,
+      scholarshipPercentage: evalResult.percentage,
+      isEligible: evalResult.isEligible,
+      status: evalResult.status,
+      tier: evalResult.tier,
+      tierId: evalResult.tierId,
+      explanation: evalResult.explanation,
+      criteriaTiers: [
+        { range: "3.50 – 3.74", percentage: 20, tier: "Bronze Merit Tier" },
+        { range: "3.75 – 3.89", percentage: 40, tier: "Silver Merit Tier" },
+        { range: "3.90 – 3.95", percentage: 60, tier: "Gold Merit Tier" },
+        { range: "4.00", percentage: 85, tier: "Platinum Merit Tier" },
+      ],
+    };
+  },
+});
+
+/**
+ * Institutional Admin Scholarships Overview
+ * Displays all students with their published CGPA and merit scholarship status
+ */
+export const getAdminScholarshipsOverview = query({
+  args: {},
+  handler: async (ctx) => {
+    const students = await ctx.db
+      .query("users")
+      .withIndex("by_role", (q) => q.eq("role", "student"))
+      .collect();
+
+    let eligibleCount = 0;
+    let ineligibleCount = 0;
+    let tier85Count = 0;
+    let tier60Count = 0;
+    let tier40Count = 0;
+    let tier20Count = 0;
+    let totalScholarshipSum = 0;
+
+    const studentRecords = await Promise.all(
+      students.map(async (s) => {
+        const prog = await calculateStudentAcademicProgression(ctx, s, false);
+        const cgpa = prog?.cgpa || 0.0;
+        const evalResult = evaluateScholarshipFromCgpa(cgpa);
+
+        if (evalResult.isEligible) {
+          eligibleCount++;
+          totalScholarshipSum += evalResult.percentage;
+          if (evalResult.percentage === 85) tier85Count++;
+          else if (evalResult.percentage === 60) tier60Count++;
+          else if (evalResult.percentage === 40) tier40Count++;
+          else if (evalResult.percentage === 20) tier20Count++;
+        } else {
+          ineligibleCount++;
+        }
+
+        return {
+          id: s._id,
+          student: s.name,
+          academicId: s.enrollmentId || String(s._id).slice(-8).toUpperCase(),
+          email: s.universityEmail || s.email,
+          department: s.department || "Computing & Artificial Intelligence",
+          program: s.degreeProgram || "BS Computer Science",
+          currentSemester: prog?.currentSemester || s.currentSemester || 1,
+          cgpa,
+          scholarshipPercentage: evalResult.percentage,
+          eligibilityStatus: evalResult.status,
+          tier: evalResult.tier,
+          tierId: evalResult.tierId,
+          explanation: evalResult.explanation,
+          academicStanding: prog?.academicStanding || "Good Standing",
+        };
+      })
+    );
+
+    const totalStudents = students.length;
+    const avgScholarshipPercentage =
+      eligibleCount > 0 ? Number((totalScholarshipSum / eligibleCount).toFixed(1)) : 0.0;
+
+    return {
+      totalStudents,
+      eligibleCount,
+      ineligibleCount,
+      tierDistribution: {
+        tier85: tier85Count,
+        tier60: tier60Count,
+        tier40: tier40Count,
+        tier20: tier20Count,
+        ineligible: ineligibleCount,
+      },
+      avgScholarshipPercentage,
+      students: studentRecords,
+    };
+  },
+});
+

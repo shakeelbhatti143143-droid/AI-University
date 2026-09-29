@@ -5,13 +5,11 @@
 :root {
   --background: #0a192f;
   --foreground: #f8fafc;
-<<<<<<< Updated upstream
   --university-navy: #0b1f3a;
   --university-navy-hover: #122b4e;
   --university-navy-active: #071426;
   --university-navy-tint: #f0f4fa;
   --university-navy-border: #cbd5e1;
-=======
 
   /* Credential Design System Tokens - Light Decent Theme */
   --admin-page-bg: #f8fafc;
@@ -25,14 +23,13 @@
   --status-danger: #dc2626;
   --radius-card: 12px;
   --radius-control: 8px;
->>>>>>> Stashed changes
 }
 
 @layer base {
   * {
     box-sizing: border-box;
   }
-  
+
   html {
     scroll-behavior: smooth;
     color-scheme: dark light;
@@ -43,6 +40,108 @@
     background: var(--background);
     font-family: var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     overflow-x: hidden;
+  }
+
+  /* Ensure text inside form inputs, textareas, and selects is always high-contrast and legible */
+  input,
+  textarea,
+  select {
+    color: inherit;
+  }
+
+  /* Default light inputs */
+  input:not([class*="dark:"]):not([class*="text-white"]):not([class*="text-slate-100"]),
+  textarea:not([class*="dark:"]):not([class*="text-white"]):not([class*="text-slate-100"]),
+  select:not([class*="dark:"]):not([class*="text-white"]):not([class*="text-slate-100"]) {
+    color: #0f172a;
+  }
+
+  /* Dropdown option styles for high contrast across browsers */
+  select option {
+    background-color: #ffffff;
+    color: #0f172a;
+  }
+
+  /* Autofill default */
+  input:-webkit-autofill,
+  textarea:-webkit-autofill,
+  select:-webkit-autofill {
+    transition: background-color 5000s ease-in-out 0s;
+  }
+
+  /* Media query for dark mode (system preference) */
+  @media (prefers-color-scheme: dark) {
+
+    /* Inputs with dark text classes or dark background classes */
+    input.dark\:text-white,
+    input.dark\:text-slate-100,
+    input.dark\:text-slate-200,
+    textarea.dark\:text-white,
+    textarea.dark\:text-slate-100,
+    textarea.dark\:text-slate-200,
+    .dark\:bg-slate-900 input,
+    .dark\:bg-slate-900 textarea,
+    .dark\:bg-slate-900 select,
+    .dark\:bg-\[\#0B1528\] input,
+    .dark\:bg-\[\#0B1528\] textarea,
+    .dark\:bg-\[\#0B1528\] select,
+    .dark\:bg-slate-950 input,
+    .dark\:bg-slate-950 textarea,
+    .dark\:bg-slate-950 select {
+      color: #ffffff !important;
+      -webkit-text-fill-color: #ffffff !important;
+      caret-color: #38bdf8 !important;
+    }
+
+    /* Dark select dropdown options */
+    select option {
+      background-color: #0f172a !important;
+      color: #f8fafc !important;
+    }
+
+    /* Clear placeholders in dark mode */
+    input::placeholder,
+    textarea::placeholder {
+      color: #94a3b8 !important;
+      -webkit-text-fill-color: #94a3b8 !important;
+      opacity: 1;
+    }
+
+    /* Autofill in dark mode */
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus,
+    textarea:-webkit-autofill,
+    textarea:-webkit-autofill:hover,
+    textarea:-webkit-autofill:focus,
+    select:-webkit-autofill,
+    select:-webkit-autofill:hover,
+    select:-webkit-autofill:focus {
+      -webkit-text-fill-color: #ffffff !important;
+      -webkit-box-shadow: 0 0 0px 1000px #0f172a inset !important;
+      box-shadow: 0 0 0px 1000px #0f172a inset !important;
+    }
+  }
+
+  /* Support explicit .dark class if toggled on html/body */
+  .dark input,
+  .dark textarea,
+  .dark select {
+    color: #f8fafc;
+    caret-color: #38bdf8;
+  }
+
+  .dark select option {
+    background-color: #0f172a;
+    color: #f8fafc;
+  }
+
+  .dark input:-webkit-autofill,
+  .dark textarea:-webkit-autofill,
+  .dark select:-webkit-autofill {
+    -webkit-text-fill-color: #ffffff !important;
+    -webkit-box-shadow: 0 0 0px 1000px #0f172a inset !important;
+    box-shadow: 0 0 0px 1000px #0f172a inset !important;
   }
 }
 
@@ -106,4 +205,103 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background: #0284c7;
+}
+
+/* ========================================================================= */
+/* PREMIUM UNIVERSITY 3D BRANDING & MICRO-INTERACTIONS                       */
+/* ========================================================================= */
+
+@keyframes crest-sheen-sweep {
+
+  0%,
+  100% {
+    transform: translateX(-160%) skewX(-22deg);
+    opacity: 0;
+  }
+
+  12% {
+    opacity: 0.4;
+  }
+
+  28% {
+    transform: translateX(240%) skewX(-22deg);
+    opacity: 0;
+  }
+}
+
+@keyframes crest-depth-float {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-1.5px);
+  }
+}
+
+@keyframes hero-reflection-sweep {
+
+  0%,
+  100% {
+    background-position: -200% 0;
+  }
+
+  28% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-crest-sheen {
+  animation: crest-sheen-sweep 7s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.animate-crest-depth {
+  animation: crest-depth-float 5s ease-in-out infinite;
+}
+
+.hero-reflection-effect {
+  background: linear-gradient(90deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.25) 50%,
+      rgba(255, 255, 255, 0) 100%);
+  background-size: 200% 100%;
+  animation: hero-reflection-sweep 8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .animate-crest-sheen,
+  .animate-crest-depth,
+  .hero-reflection-effect {
+    animation: none !important;
+  }
+}
+
+/* ========================================================================= */
+/* PHOTOGRAPHIC KNOCKOUT / CUTOUT TEXT TYPOGRAPHY                            */
+/* ========================================================================= */
+.photo-cutout-iqra {
+  background-image: url('/images/campus-hero.jpg');
+  background-size: cover;
+  background-position: center 30%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.8));
+  display: inline-block;
+}
+
+.photo-cutout-banner {
+  background-image: url('/images/campus-hero.jpg');
+  background-size: cover;
+  background-position: center 38%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  filter: drop-shadow(0 6px 24px rgba(0, 0, 0, 0.9));
+  display: inline-block;
 }

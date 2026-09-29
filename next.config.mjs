@@ -3,6 +3,7 @@ const nextConfig = {
   reactStrictMode: true,
   images: {
     unoptimized: true,
+    qualities: [75, 92],
   },
   async rewrites() {
     return [
